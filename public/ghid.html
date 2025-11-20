@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <title>Ghid de înregistrare</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/css/ghid.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <!-- Hero -->
+      <header class="hero">
+        <span class="kicker">Ghid rapid</span>
+        <h1>Înregistrare pe platformă</h1>
+        <p class="lead">
+          Parcurge cei patru pași de mai jos. Ghid conform
+          <strong>Dispoziției 11D / 2025</strong>.
+        </p>
+
+        <div class="progress" aria-hidden="true">
+          <div class="dot"><span class="dot__c"><span>1</span></span> Descărcare</div>
+          <div class="dot"><span class="dot__c"><span>2</span></span> Completare</div>
+          <div class="dot"><span class="dot__c"><span>3</span></span> Semnare</div>
+          <div class="dot"><span class="dot__c"><span>4</span></span> Expediere</div>
+        </div>
+      </header>
+
+      <!-- Steps -->
+      <section class="steps">
+        <div class="grid">
+          <!-- Pasul 1 -->
+          <article class="step" id="pas1">
+            <h3><span class="badge">1</span> Descarcă anexa</h3>
+            <p>Fișierul standard pentru inițierea accesului la baza de date.</p>
+            <div class="actions center">
+              <a class="btn btn-primary" href="/files/anexe.docx" download>
+                ⬇️ Descarcă anexa (.docx)
+              </a>
+            </div>
+            <div class="hint">Dacă nu se descarcă, click dreapta → „Save link as…”.</div>
+          </article>
+
+          <!-- Pasul 2 -->
+          <article class="step" id="pas2">
+            <h3><span class="badge">2</span> Completează corect</h3>
+            <p>Completează câmpurile obligatorii: instituție, nume, IDNP, rol.</p>
+            <div class="callout">
+              <strong>Tips:</strong> folosește diacritice și formatul de dată
+              <span class="mono">zz.ll.aaaa</span>.
+            </div>
+          </article>
+
+          <!-- Pasul 3 -->
+          <article class="step" id="pas3">
+            <h3><span class="badge">3</span> Semnează electronic</h3>
+            <p>
+              Aplică semnătură electronică calificată. Salvează ca
+              <span class="mono">.pdf</span> sau <span class="mono">.p7m</span>.
+            </p>
+            <div class="callout">
+              <strong>Nume fișier:</strong>
+              <span class="mono">Anexa1_Nume_Prenume_Data.pdf</span>
+            </div>
+          </article>
+
+          <!-- Pasul 4 -->
+          <article class="step" id="pas4">
+            <h3><span class="badge">4</span> Expediază documentul</h3>
+            <p>
+              Trimite la
+              <span class="mono" id="email">anp.siarprac@anp.gov.md</span>
+              și include nume, instituție, telefon.
+            </p>
+            <div class="actions center">
+              <button class="btn btn-ghost" id="copyMail" type="button">
+                📋 Copiază adresa
+              </button>
+            </div>
+            <div class="hint">Atașează documentul semnat (recomandat &lt; 10 MB).</div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Footer minimalist -->
+      <div class="foot" id="confirm">
+        <small>Întrebări? Scrie-ne și îți răspundem rapid.</small>
+        <div class="actions center">
+          <a class="btn btn-ghost" href="/">⟵ Pagina principală</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">Adresa a fost copiată în clipboard.</div>
+
+  <script>
+    (function(){
+      var btn   = document.getElementById('copyMail');
+      var toast = document.getElementById('toast');
+      var emailNode = document.getElementById('email');
+
+      function showToast(){
+        toast.className = 'toast show';
+        setTimeout(function(){ toast.className = 'toast'; }, 1800);
+      }
+      function fallbackCopy(text){
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch(e){}
+        document.body.removeChild(ta);
+        showToast();
+      }
+
+      if(btn && emailNode){
+        btn.addEventListener('click', function(){
+          var email = emailNode.innerText || emailNode.textContent;
+          if (navigator.clipboard && navigator.clipboard.writeText){
+            navigator.clipboard.writeText(email).then(showToast, function(){ fallbackCopy(email); });
+          } else {
+            fallbackCopy(email);
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
