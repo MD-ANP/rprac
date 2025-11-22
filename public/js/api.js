@@ -1,12 +1,24 @@
 // public/js/api.js
 const API_BASE_URL = "/api";
 
+function getAuthHeaders() {
+  const headers = {
+    "Accept": "application/json"
+  };
+  
+  // Retrieve the User ID from the browser session
+  const userId = sessionStorage.getItem("prison.userId");
+  if (userId) {
+    headers["X-User-Id"] = userId;
+  }
+  
+  return headers;
+}
+
 async function apiGet(path) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     credentials: "same-origin",
-    headers: {
-      Accept: "application/json"
-    }
+    headers: getAuthHeaders() // <--- Now includes X-User-Id
   });
 
   const data = await response.json().catch(() => ({}));
@@ -20,13 +32,13 @@ async function apiGet(path) {
 }
 
 async function apiPost(path, body) {
+  const headers = getAuthHeaders();
+  headers["Content-Type"] = "application/json"; // Add content type for POST
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "POST",
     credentials: "same-origin",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json"
-    },
+    headers: headers,
     body: JSON.stringify(body || {})
   });
 

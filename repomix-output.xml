@@ -1,0 +1,5166 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.gitignore
+package.json
+public/app/index.html
+public/css/ghid.css
+public/css/styles.css
+public/files/anexe.docx
+public/ghid.html
+public/img/logo.png
+public/js/admin.js
+public/js/api.js
+public/js/app.js
+public/js/cautare.js
+public/js/interogari.js
+public/js/login.js
+public/js/profil.js
+public/js/shell.js
+public/login.html
+src/config.js
+src/db.js
+src/modulesConfig.js
+src/routes/admin.js
+src/routes/auth.js
+src/routes/health.js
+src/routes/interogari.js
+src/routes/nav.js
+src/routes/profile.js
+src/routes/search.js
+src/server.js
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".gitignore">
+node_modules
+build
+npm-debug.log
+.env
+.DS_Store
+</file>
+
+<file path="package.json">
+{
+  "name": "prison-app-login",
+  "version": "1.0.0",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.19.2",
+    "oracledb": "^6.5.0"
+  }
+}
+</file>
+
+<file path="public/app/index.html">
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplicație – Panou principal</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+  <div class="topbar-left">
+    <span class="app-logo">PRISON APP</span>
+  </div>
+  <nav class="topbar-nav" id="navLinks">
+    <!-- links injected by JS -->
+  </nav>
+  <div class="topbar-right">
+    <span id="userInfo" class="user-info"></span>
+    <button id="logoutBtn" class="btn-ghost">Deconectare</button>
+  </div>
+</header>
+
+
+  <main class="app-main">
+    <section class="app-content" id="appContent">
+      <h1 class="app-title">Bine ai venit</h1>
+      <p class="app-subtitle">
+        Selectează un modul din meniul de sus.
+      </p>
+    </section>
+  </main>
+
+  <!-- Common API helper -->
+  <script src="../js/api.js" defer></script>
+
+  <!-- Per-module scripts -->
+  <script src="../js/cautare.js" defer></script>
+  <script src="../js/interogari.js" defer></script> <!-- ADDED -->
+  <script src="../js/profil.js" defer></script>
+  <script src="../js/admin.js" defer></script>
+  
+
+  <!-- Shell / router (must be last) -->
+  <script src="../js/shell.js" defer></script>
+</body>
+</html>
+</file>
+
+<file path="public/css/ghid.css">
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top left, #e0e7ff 0, #f5f7fb 45%);
+  color: #111827;
+}
+
+.wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  max-width: 960px;
+  width: 100%;
+  padding: 20px 18px 18px;
+}
+
+.hero .kicker {
+  display: inline-block;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.hero h1 {
+  margin: 0 0 4px;
+  font-size: 1.6rem;
+}
+
+.hero .lead {
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+
+.progress {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+.dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot__c {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background-color: #2563eb;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.steps {
+  margin-top: 18px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+
+.step {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 10px 12px 12px;
+  background-color: #f9fafb;
+  font-size: 0.92rem;
+}
+
+.step h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background-color: #111827;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.callout {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.85rem;
+}
+
+.mono {
+  font-family: "SF Mono", ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.actions {
+  margin-top: 8px;
+}
+
+.actions.center {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn {
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-primary {
+  background: linear-gradient(to right, #2563eb, #1d4ed8);
+  color: #fff;
+  box-shadow: 0 12px 25px rgba(37, 99, 235, 0.4);
+}
+
+.btn-ghost {
+  background-color: #fff;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.btn-ghost:hover {
+  background-color: #f3f4f6;
+}
+
+.hint {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.foot {
+  margin-top: 16px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 8px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* Toast */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  background-color: #111827;
+  color: #f9fafb;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease-out, transform 180ms ease-out;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+@media (max-width: 800px) {
+  .card {
+    padding: 18px 14px 14px;
+  }
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+</file>
+
+<file path="public/css/styles.css">
+:root {
+  --bg-page: #f5f7fb;
+  --bg-card: #ffffff;
+  --border-color: #d6d9e2;
+  --text-main: #1e2230;
+  --text-muted: #6b7280;
+  --primary: #1d4ed8;
+  --primary-hover: #1e40af;
+  --danger: #b91c1c;
+  --success: #15803d;
+  --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.12);
+  --radius-card: 14px;
+  --radius-input: 8px;
+  --transition-fast: 150ms ease-out;
+  --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: var(--font-main);
+  color: var(--text-main);
+}
+
+body {
+  background: radial-gradient(circle at top left, #e0e7ff 0, #f5f7fb 45%);
+}
+
+/* =========================
+   ADMIN PAGE
+   ========================= */
+
+.admin-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1600px; /* Wide layout for data tables */
+  width: 95%;        
+  margin: 0 auto;
+}
+
+.admin-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+
+/* Modern Tabs */
+.admin-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 8px;
+}
+
+.admin-tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 12px 4px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: -2px; /* Overlap the border */
+}
+
+.admin-tab-btn:hover {
+  color: var(--primary);
+}
+
+.admin-tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+/* Admin Panels */
+.admin-panel {
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border: 1px solid #e2e8f0;
+  padding: 24px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.admin-panel h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Forms & Grids */
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.btn-danger {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.btn-danger:hover {
+  background-color: #fecaca;
+  color: #7f1d1d;
+}
+
+.admin-grid-2 label {
+  margin-bottom: 6px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.admin-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.admin-form label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 4px;
+}
+
+.admin-form input[type="text"],
+.admin-form input[type="password"],
+.admin-form select,
+.admin-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background-color: #fff;
+  font-size: 0.9rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.admin-form input:focus,
+.admin-form select:focus,
+.admin-form textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
+}
+
+/* Messages / Alerts */
+.admin-msg {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-top: 12px;
+  display: none; /* Hidden by default until content exists */
+}
+
+.admin-msg:not(:empty) {
+  display: block;
+}
+
+.admin-msg.success {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.admin-msg.error {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* Search Results - User Cards */
+.admin-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.admin-user-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-user-card h3 {
+  margin-top: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.admin-card-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end; /* Pushes buttons to the right */
+  margin-top: 8px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 16px;
+}
+
+.admin-user-card:hover {
+  border-color: #cbd5e1;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.admin-user-title {
+  font-size: 1rem;
+  color: #0f172a;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+/* Rights Table Polish */
+.rights-wrap {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+.rights-top {
+  padding: 12px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rights-filter {
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  min-width: 200px;
+}
+
+.rights-bulk button {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+.rights-bulk button:hover { background: #f3f4f6; }
+
+.rights-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.rights-table th {
+  background: #f1f5f9;
+  text-align: left;
+  padding: 10px 12px;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
+
+.rights-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.rights-table tr:last-child td { border-bottom: none; }
+.rights-table tr:hover td { background-color: #f8fafc; }
+
+.rights-table th.c, 
+.rights-table td.c { text-align: center; width: 80px; }
+
+/* Announcements */
+.ann-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.ann-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  border-left: 4px solid var(--primary);
+}
+
+.ann-id { font-weight: 700; color: #9ca3af; font-size: 0.8rem; margin-right: 10px;}
+.ann-text { font-size: 0.9rem; color: #1f2937; flex: 1; }
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .admin-grid-2 { grid-template-columns: 1fr; }
+  .admin-tabs { overflow-x: auto; white-space: nowrap; }
+}
+
+.admin-toolbar-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start; /* Aligns tops of textarea/button */
+  width: 100%;
+}
+
+/* The input/textarea gets all available space */
+.admin-toolbar-row input, 
+.admin-toolbar-row textarea {
+  flex: 1; 
+  width: auto; /* Override any 100% defaults */
+  min-width: 0; /* Prevents flexbox collapse */
+}
+
+/* The button gets only the space it needs */
+.admin-toolbar-row button {
+  flex: 0 0 auto; /* Do not grow, do not shrink */
+  width: auto;    /* Natural width based on text */
+  white-space: nowrap;
+  height: fit-content;
+}
+
+/* 2. Override the global "width: 100%" on buttons inside Admin Panels */
+.admin-panel .btn-primary,
+.admin-panel .btn-danger,
+.admin-panel .btn-secondary {
+  width: auto; /* Let them be natural size */
+  display: inline-flex;
+  padding: 8px 20px;
+}
+
+.admin-user-card .admin-grid-2 {
+  grid-template-columns: 1fr !important; /* Override generic 2-col rule */
+  gap: 12px;
+}
+
+/* Ensure inputs and selects use all available width */
+.admin-user-card input,
+.admin-user-card select {
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+/* Fix the buttons at the bottom of the card */
+.admin-card-actions {
+  display: flex;
+  flex-direction: column; /* Stack them vertically */
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.admin-card-actions button {
+  width: 100%; /* Full width buttons */
+  justify-content: center;
+}
+
+/* Adjust labels to save vertical space */
+.admin-user-card label {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+/* =========================
+   LOGIN PAGE
+   ========================= */
+
+.auth-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.auth-logo img {
+  max-width: 400px;
+  max-height: 400px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.auth-extra {
+  margin-top: 6px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: center;
+}
+
+.auth-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.auth-card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+  padding: 28px 26px 24px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  width: 100%;
+  max-width: 420px;
+}
+
+.auth-title {
+  margin: 0 0 4px;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.auth-subtitle {
+  margin: 0 0 20px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+  border-radius: var(--radius-input);
+  border: 1px solid var(--border-color);
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  outline: none;
+  background-color: #f9fafb;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+  background-color: #ffffff;
+}
+
+.form-footer {
+  margin-top: 4px;
+}
+
+.btn-primary {
+  width: 100%;
+  border-radius: 999px;
+  border: none;
+  padding: 9px 14px;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(to right, var(--primary), #2563eb);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+  box-shadow: 0 12px 25px rgba(37, 99, 235, 0.4);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(to right, var(--primary-hover), #1d4ed8);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 35px rgba(37, 99, 235, 0.55);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.35);
+}
+
+.btn-primary:disabled {
+  cursor: default;
+  opacity: 0.7;
+  box-shadow: none;
+}
+
+.form-message {
+  margin-top: 10px;
+  min-height: 1.2em;
+  font-size: 0.85rem;
+}
+
+.form-message.error {
+  color: var(--danger);
+}
+
+.form-message.success {
+  color: var(--success);
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 22px 18px 18px;
+  }
+
+  .auth-title {
+    font-size: 1.25rem;
+  }
+}
+
+
+/* =========================
+   APP SHELL / NAVBAR
+   ========================= */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 18px;
+  background-color: #ffffff;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-logo {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-size: 0.9rem;
+  color: #111827;
+}
+
+.topbar-nav {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-info {
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.btn-ghost {
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 5px 11px;
+  font-size: 0.85rem;
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: background-color 120ms ease-out, border-color 120ms ease-out;
+}
+
+.btn-ghost:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.nav-link {
+  font-size: 0.9rem;
+  text-decoration: none;
+  color: #4b5563;
+  padding: 6px 10px;
+  border-radius: 999px;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+
+.nav-link:hover {
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+.nav-link-active {
+  background-color: #1d4ed8;
+  color: #ffffff;
+}
+
+/* =========================
+   APP CONTENT
+   ========================= */
+
+.app-main {
+  max-width: 960px;
+  margin: 18px auto 24px;
+  padding: 0 16px;
+}
+
+.app-content {
+  background-color: #ffffff;
+  border-radius: 14px;
+  padding: 20px 18px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.app-title {
+  margin: 0 0 6px;
+  font-size: 1.3rem;
+}
+
+.app-subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 640px) {
+  .topbar {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .topbar-left {
+    margin-bottom: 4px;
+  }
+
+  .topbar-nav {
+    order: 3;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .topbar-right {
+    margin-left: auto;
+  }
+}
+
+/* =========================
+   PROFILE PAGE
+   ========================= */
+
+.profile-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.profile-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 14px 12px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.section-title {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.detail-label {
+  color: var(--text-muted);
+}
+
+.detail-value {
+  font-weight: 500;
+}
+
+/* =========================
+   TABLES (Consolidated)
+   ========================= */
+
+.table-wrapper {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  background: #fff;
+}
+
+.data-table th {
+  background-color: #f1f5f9; /* Light gray background */
+  color: #334155;            /* Dark text */
+  font-weight: 700;          /* Bold text */
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  padding: 12px 16px;
+  border-bottom: 2px solid #cbd5e1;
+  text-align: left;
+}
+
+.data-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+  color: #1e293b;
+}
+
+/* Specific styling for the last column (Detalii/Actions) */
+.data-table th:last-child,
+.data-table td:last-child {
+  text-align: center;
+  width: 110px;
+}
+
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.table-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 20px;
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.badge-write {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.badge-read {
+  background-color: #e0f2fe;
+  color: #1d4ed8;
+}
+
+.badge-none {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+@media (max-width: 640px) {
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+
+/* =========================
+   SEARCH MODULE
+   ========================= */
+
+.search-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 14px 12px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  margin-top: 12px;
+}
+
+.search-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fields-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.fields-grid .f {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fields-grid label {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.search-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.search-results {
+  margin-top: 18px;
+}
+
+.search-results-info {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 2px 0 8px;
+}
+
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px 12px;
+}
+
+.search-result-card {
+  background-color: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.search-result-card .result-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.search-result-card .result-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.search-result-card .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.search-result-card .row .k {
+  color: var(--text-muted);
+}
+
+.search-result-card .row .v {
+  font-weight: 500;
+  text-align: right;
+}
+
+.search-result-card .result-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.btn-small {
+  padding: 3px 8px;
+  font-size: 0.78rem;
+}
+
+/* status badge */
+.badge-status {
+  background-color: #eef2ff;
+  color: #312e81;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .fields-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .fields-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .search-result-card .row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .search-result-card .row .v {
+    text-align: left;
+  }
+}
+
+/* =========================
+   UTILITIES / INTEROGARI
+   ========================= */
+
+.hidden { display: none !important; }
+.full-width { width: 100%; }
+.mb-2 { margin-bottom: 8px; }
+.mt-4 { margin-top: 16px; }
+.row-flex { display: flex; gap: 8px; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.text-center { text-align: center; }
+.span-2 { grid-column: span 2; }
+
+/* Card Actions (Query Boxes) */
+.card-action {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-action h3 {
+  margin: 0 0 4px 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.card-action p {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0 0 8px 0;
+}
+
+.sm-input { width: 80px; }
+
+.btn-small { padding: 2px 8px; font-size: 0.75rem; background: #e0f2fe; color: #0369a1; border: none; border-radius: 4px; cursor: pointer; }
+.btn-small:hover { background: #bae6fd; }
+</file>
+
+<file path="public/ghid.html">
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <title>Ghid de înregistrare</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/css/ghid.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <!-- Hero -->
+      <header class="hero">
+        <span class="kicker">Ghid rapid</span>
+        <h1>Înregistrare pe platformă</h1>
+        <p class="lead">
+          Parcurge cei patru pași de mai jos. Ghid conform
+          <strong>Dispoziției 11D / 2025</strong>.
+        </p>
+
+        <div class="progress" aria-hidden="true">
+          <div class="dot"><span class="dot__c"><span>1</span></span> Descărcare</div>
+          <div class="dot"><span class="dot__c"><span>2</span></span> Completare</div>
+          <div class="dot"><span class="dot__c"><span>3</span></span> Semnare</div>
+          <div class="dot"><span class="dot__c"><span>4</span></span> Expediere</div>
+        </div>
+      </header>
+
+      <!-- Steps -->
+      <section class="steps">
+        <div class="grid">
+          <!-- Pasul 1 -->
+          <article class="step" id="pas1">
+            <h3><span class="badge">1</span> Descarcă anexa</h3>
+            <p>Fișierul standard pentru inițierea accesului la baza de date.</p>
+            <div class="actions center">
+              <a class="btn btn-primary" href="/files/anexe.docx" download>
+                ⬇️ Descarcă anexa (.docx)
+              </a>
+            </div>
+            <div class="hint">Dacă nu se descarcă, click dreapta → „Save link as…”.</div>
+          </article>
+
+          <!-- Pasul 2 -->
+          <article class="step" id="pas2">
+            <h3><span class="badge">2</span> Completează corect</h3>
+            <p>Completează câmpurile obligatorii: instituție, nume, IDNP, rol.</p>
+            <div class="callout">
+              <strong>Tips:</strong> folosește diacritice și formatul de dată
+              <span class="mono">zz.ll.aaaa</span>.
+            </div>
+          </article>
+
+          <!-- Pasul 3 -->
+          <article class="step" id="pas3">
+            <h3><span class="badge">3</span> Semnează electronic</h3>
+            <p>
+              Aplică semnătură electronică calificată. Salvează ca
+              <span class="mono">.pdf</span> sau <span class="mono">.p7m</span>.
+            </p>
+            <div class="callout">
+              <strong>Nume fișier:</strong>
+              <span class="mono">Anexa1_Nume_Prenume_Data.pdf</span>
+            </div>
+          </article>
+
+          <!-- Pasul 4 -->
+          <article class="step" id="pas4">
+            <h3><span class="badge">4</span> Expediază documentul</h3>
+            <p>
+              Trimite la
+              <span class="mono" id="email">anp.siarprac@anp.gov.md</span>
+              și include nume, instituție, telefon.
+            </p>
+            <div class="actions center">
+              <button class="btn btn-ghost" id="copyMail" type="button">
+                📋 Copiază adresa
+              </button>
+            </div>
+            <div class="hint">Atașează documentul semnat (recomandat &lt; 10 MB).</div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Footer minimalist -->
+      <div class="foot" id="confirm">
+        <small>Întrebări? Scrie-ne și îți răspundem rapid.</small>
+        <div class="actions center">
+          <a class="btn btn-ghost" href="/">⟵ Pagina principală</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">Adresa a fost copiată în clipboard.</div>
+
+  <script>
+    (function(){
+      var btn   = document.getElementById('copyMail');
+      var toast = document.getElementById('toast');
+      var emailNode = document.getElementById('email');
+
+      function showToast(){
+        toast.className = 'toast show';
+        setTimeout(function(){ toast.className = 'toast'; }, 1800);
+      }
+      function fallbackCopy(text){
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch(e){}
+        document.body.removeChild(ta);
+        showToast();
+      }
+
+      if(btn && emailNode){
+        btn.addEventListener('click', function(){
+          var email = emailNode.innerText || emailNode.textContent;
+          if (navigator.clipboard && navigator.clipboard.writeText){
+            navigator.clipboard.writeText(email).then(showToast, function(){ fallbackCopy(email); });
+          } else {
+            fallbackCopy(email);
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
+</file>
+
+<file path="public/js/admin.js">
+// public/js/admin.js
+(function () {
+  const api = window.prisonApi;
+
+  // --- Helper Functions ---
+  function qs(root, sel) {
+    return root.querySelector(sel);
+  }
+  function qsa(root, sel) {
+    return Array.from(root.querySelectorAll(sel));
+  }
+
+  function setMsg(el, text, type) {
+    if (!el) return;
+    el.textContent = text || "";
+    el.className = "admin-msg" + (type ? " " + type : "");
+  }
+
+  function fillSelect(sel, items, placeholder) {
+    if (!sel) return;
+    sel.innerHTML = "";
+    if (placeholder) {
+      const o = document.createElement("option");
+      o.value = "";
+      o.textContent = placeholder;
+      sel.appendChild(o);
+    }
+    items.forEach((it) => {
+      const o = document.createElement("option");
+      o.value = it.id;
+      o.textContent = it.name;
+      sel.appendChild(o);
+    });
+  }
+
+  async function loadMeta() {
+    const data = await api.get("/admin/meta");
+    if (!data.success) throw new Error(data.error || "Eroare meta.");
+    return data;
+  }
+
+  // --- Rights Management ---
+  async function loadRights(container, userId) {
+    container.textContent = "Se încarcă drepturile...";
+    const data = await api.get(`/admin/user/${userId}/rights`);
+    if (!data.success) {
+      container.textContent = data.error || "Eroare drepturi.";
+      return;
+    }
+    const mods = data.modules || [];
+    if (!mods.length) {
+      container.textContent = "Nu există module definite.";
+      return;
+    }
+
+    const rows = mods
+      .map((m) => {
+        const id = m.moduleId;
+        const drept = (m.drept || "N").toUpperCase();
+        return `
+        <tr data-module-id="${id}" data-access-id="${m.accessId || ""}">
+          <td>${m.moduleName}</td>
+          <td class="c"><input type="radio" name="mod-${id}" value="N"${
+          drept === "N" ? " checked" : ""
+        }></td>
+          <td class="c"><input type="radio" name="mod-${id}" value="R"${
+          drept === "R" ? " checked" : ""
+        }></td>
+          <td class="c"><input type="radio" name="mod-${id}" value="W"${
+          drept === "W" ? " checked" : ""
+        }></td>
+        </tr>
+      `;
+      })
+      .join("");
+
+    container.innerHTML = `
+      <div class="rights-wrap">
+        <div class="rights-top">
+          <input type="text" class="rights-filter" placeholder="Filtrează module..." />
+          <div class="rights-bulk">
+            <button type="button" data-bulk="N">Fără</button>
+            <button type="button" data-bulk="R">Citire</button>
+            <button type="button" data-bulk="W">Scriere</button>
+          </div>
+        </div>
+        <table class="rights-table">
+          <thead>
+            <tr>
+              <th>Modul</th>
+              <th class="c">Fără</th>
+              <th class="c">Citire</th>
+              <th class="c">Scriere</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="form-buttons right">
+          <button type="button" class="btn-secondary rights-save">Salvează drepturi</button>
+        </div>
+        <div class="admin-msg" id="rightsMsg"></div>
+      </div>
+    `;
+
+    const filter = qs(container, ".rights-filter");
+    const tbody = qs(container, "tbody");
+    const msg = qs(container, "#rightsMsg");
+
+    if (filter && tbody) {
+      filter.addEventListener("input", () => {
+        const q = filter.value.toLowerCase();
+        qsa(tbody, "tr").forEach((tr) => {
+          const name = (tr.cells[0].textContent || "").toLowerCase();
+          tr.style.display = name.indexOf(q) !== -1 ? "" : "none";
+        });
+      });
+    }
+
+    qsa(container, "[data-bulk]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const v = btn.getAttribute("data-bulk");
+        qsa(tbody, `input[type=radio][value=${v}]`).forEach(
+          (r) => (r.checked = true)
+        );
+      });
+    });
+
+    const saveBtn = qs(container, ".rights-save");
+    if (saveBtn) {
+      saveBtn.addEventListener("click", async () => {
+        setMsg(msg, "", "");
+        const rights = [];
+        qsa(tbody, "tr").forEach((tr) => {
+          const moduleId = Number(tr.getAttribute("data-module-id"));
+          const accessId = tr.getAttribute("data-access-id");
+          const checked = qs(tr, "input[type=radio]:checked");
+          if (!checked) return;
+          rights.push({
+            moduleId,
+            accessId: accessId ? Number(accessId) : null,
+            drept: checked.value,
+          });
+        });
+        try {
+          const resp = await api.post(`/admin/user/${userId}/rights`, {
+            rights,
+          });
+          if (!resp.success) throw new Error(resp.error || "Eroare salvare.");
+          setMsg(msg, "Drepturi salvate.", "success");
+        } catch (e) {
+          setMsg(msg, e.message || "Eroare la salvarea drepturilor.", "error");
+        }
+      });
+    }
+  }
+
+  // --- User Cards & Actions ---
+  function renderUserCard(user, meta) {
+    const div = document.createElement("div");
+    div.className = "admin-user-card";
+    
+    // FIX: Format the date to be short and readable (DD.MM.YYYY HH:MM)
+    let lastLogin = "N/A";
+    if (user.lastLogin) {
+      try {
+        const d = new Date(user.lastLogin);
+        // Check if date is valid
+        if (!isNaN(d.getTime())) {
+          lastLogin = d.toLocaleString('ro-RO', { 
+            day: '2-digit', month: '2-digit', year: 'numeric', 
+            hour: '2-digit', minute: '2-digit' 
+          });
+        } else {
+            lastLogin = user.lastLogin; // Fallback
+        }
+      } catch(e) { lastLogin = user.lastLogin; }
+    }
+
+    div.innerHTML = `
+      <h3 class="admin-user-title">
+        ${user.username} <span style="font-weight:400; color:#64748b; font-size:0.9em;">(ID: ${user.id})</span>
+      </h3>
+      
+      <div class="admin-grid-2">
+        <div class="f">
+           <label>Ultima autentificare</label>
+           <input type="text" value="${lastLogin}" readonly style="background:#f8fafc; color:#64748b;">
+        </div>
+
+        <div class="f">
+          <label>Username (Login)</label>
+          <input type="text" name="username" value="${user.username}">
+        </div>
+
+        <div class="f">
+          <label>Resetare Parolă</label>
+          <input type="text" name="password" value="" placeholder="(Lasă gol pt. a păstra)">
+        </div>
+
+        <div class="f">
+          <label>Rol Acces</label>
+          <select name="roleId"></select>
+        </div>
+
+        <div class="f">
+          <label>Penitenciar</label>
+          <select name="penitenciarId"></select>
+        </div>
+      </div>
+
+      <div class="admin-card-actions">
+        <button type="button" class="btn-primary btn-save">Salvează schimbări</button>
+        <button type="button" class="btn-danger btn-deactivate">Dezactivează utilizator</button>
+      </div>
+      
+      <div class="admin-msg user-msg"></div>
+    `;
+
+    // ... (Rest of the logic remains identical: filling selects and event listeners) ...
+    const roleSel = qs(div, "select[name=roleId]");
+    const penSel = qs(div, "select[name=penitenciarId]");
+    
+    fillSelect(roleSel, meta.roles, null);
+    fillSelect(penSel, meta.penitenciars, null);
+    if (user.roleId) roleSel.value = String(user.roleId);
+    if (user.penitenciarId) penSel.value = String(user.penitenciarId);
+
+    const msg = qs(div, ".user-msg");
+    
+    const btnSave = qs(div, ".btn-save");
+    btnSave.addEventListener("click", async () => {
+      setMsg(msg, "Se salvează...", "");
+      const payload = {
+        username: qs(div, "input[name=username]").value.trim(),
+        password: qs(div, "input[name=password]").value.trim(),
+        roleId: roleSel.value,
+        penitenciarId: penSel.value,
+      };
+      try {
+        const resp = await api.post(`/admin/user/${user.id}/update`, payload);
+        if (!resp.success) throw new Error(resp.error || "Eroare actualizare.");
+        setMsg(msg, "Salvat cu succes.", "success");
+        qs(div, "input[name=password]").value = "";
+      } catch (e) {
+        setMsg(msg, e.message, "error");
+      }
+    });
+
+    const btnDeact = qs(div, ".btn-deactivate");
+    btnDeact.addEventListener("click", async () => {
+      if (!confirm("Sigur dezactivați acest utilizator?")) return;
+      try {
+        const resp = await api.post(`/admin/user/${user.id}/deactivate`, {});
+        if (!resp.success) throw new Error(resp.error || "Eroare dezactivare.");
+        setMsg(msg, "Utilizator dezactivat.", "success");
+        div.style.opacity = "0.5";
+        div.style.pointerEvents = "none";
+      } catch (e) {
+        setMsg(msg, e.message, "error");
+      }
+    });
+
+    return div;
+  }
+
+  // --- Announcements ---
+  async function initAnnouncements(root) {
+    const listEl = qs(root, "#adminAnnList");
+    const form = qs(root, "#adminAnnForm");
+    const msg = qs(root, "#adminAnnMsg");
+    const delAll = qs(root, "#adminAnnDelAll");
+
+    async function refresh() {
+      listEl.textContent = "Se încarcă...";
+      try {
+        const data = await api.get("/admin/ann");
+        if (!data.success) throw new Error(data.error || "Eroare anunțuri.");
+        const items = data.items || [];
+        if (!items.length) {
+          listEl.textContent = "Niciun anunț.";
+          return;
+        }
+        listEl.innerHTML = "";
+        items.forEach((it) => {
+          const row = document.createElement("div");
+          row.className = "ann-item";
+          row.innerHTML = `
+            <span class="ann-id">#${it.id}</span>
+            <span class="ann-text">${it.message}</span>
+            <button type="button" data-id="${it.id}">Șterge</button>
+          `;
+          const btn = qs(row, "button");
+          btn.addEventListener("click", async () => {
+            if (!confirm(`Ștergi anunțul #${it.id}?`)) return;
+            try {
+              const resp = await api.del(`/admin/ann/${it.id}`);
+              if (!resp.success)
+                throw new Error(resp.error || "Eroare ștergere.");
+              refresh();
+            } catch (e) {
+              setMsg(msg, e.message || "Eroare ștergere.", "error");
+            }
+          });
+          listEl.appendChild(row);
+        });
+      } catch (e) {
+        listEl.textContent = e.message || "Eroare anunțuri.";
+      }
+    }
+
+    if (form) {
+      form.addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        setMsg(msg, "", "");
+        const text = qs(form, "textarea[name=message]").value.trim();
+        if (!text) {
+          setMsg(msg, "Textul este gol.", "error");
+          return;
+        }
+        try {
+          const resp = await api.post("/admin/ann", { message: text });
+          if (!resp.success) throw new Error(resp.error || "Eroare salvare.");
+          qs(form, "textarea[name=message]").value = "";
+          setMsg(msg, "Anunț publicat.", "success");
+          refresh();
+        } catch (e) {
+          setMsg(msg, e.message || "Eroare salvare.", "error");
+        }
+      });
+    }
+
+    if (delAll) {
+      delAll.addEventListener("click", async () => {
+        if (!confirm("Ștergi TOATE anunțurile?")) return;
+        setMsg(msg, "", "");
+        try {
+          const resp = await api.del("/admin/ann");
+          if (!resp.success) throw new Error(resp.error || "Eroare ștergere.");
+          setMsg(msg, "Toate anunțurile au fost șterse.", "success");
+          refresh();
+        } catch (e) {
+          setMsg(msg, e.message || "Eroare ștergere.", "error");
+        }
+      });
+    }
+
+    refresh();
+  }
+
+  // --- Panels Initialization ---
+  async function initCreatePanel(root, meta) {
+    const form = qs(root, "#adminCreateForm");
+    const msg = qs(root, "#adminCreateMsg");
+    if (!form) return;
+
+    fillSelect(qs(form, "select[name=roleId]"), meta.roles, "-- Rol --");
+    fillSelect(
+      qs(form, "select[name=penitenciarId]"),
+      meta.penitenciars,
+      "-- Penitenciar --"
+    );
+
+    form.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      setMsg(msg, "", "");
+      const fd = new FormData(form);
+      const payload = {
+        username: fd.get("username"),
+        password: fd.get("password"),
+        autoPassword: fd.get("autoPassword") === "on",
+        roleId: fd.get("roleId"),
+        penitenciarId: fd.get("penitenciarId"),
+      };
+      try {
+        const data = await api.post("/admin/user/create", payload);
+        if (!data.success) throw new Error(data.error || "Eroare creare.");
+        let txt = `Utilizator creat: ${data.username}`;
+        if (data.autoPassword) txt += ` | Parolă: ${data.autoPassword}`;
+        setMsg(msg, txt, "success");
+        form.reset();
+      } catch (e) {
+        setMsg(msg, e.message || "Eroare creare.", "error");
+      }
+    });
+  }
+
+  async function initBulkPanel(root, meta) {
+    const form = qs(root, "#adminBulkForm");
+    const msg = qs(root, "#adminBulkMsg");
+    const report = qs(root, "#adminBulkReport");
+    if (!form) return;
+
+    fillSelect(qs(form, "select[name=roleId]"), meta.roles, "-- Rol --");
+    fillSelect(
+      qs(form, "select[name=penitenciarId]"),
+      meta.penitenciars,
+      "-- Penitenciar --"
+    );
+
+    form.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      setMsg(msg, "", "");
+      report.textContent = "";
+      const fd = new FormData(form);
+      const payload = {
+        usernamesText: fd.get("usernamesText"),
+        roleId: fd.get("roleId"),
+        penitenciarId: fd.get("penitenciarId"),
+        autoPassword: fd.get("autoPassword") === "on",
+        samePassword: fd.get("samePassword"),
+      };
+      try {
+        const data = await api.post("/admin/user/bulk", payload);
+        if (!data.success) throw new Error(data.error || "Eroare bulk.");
+        setMsg(
+          msg,
+          `Adăugate: ${data.okCount || 0}, Eșecuri: ${data.failCount || 0}`,
+          "success"
+        );
+        report.textContent = (data.report || []).join("\n");
+      } catch (e) {
+        setMsg(msg, e.message || "Eroare bulk.", "error");
+      }
+    });
+  }
+
+  async function initSearchPanel(root, meta) {
+    const form = qs(root, "#adminSearchForm");
+    const results = qs(root, "#adminSearchResults");
+    if (!form || !results) return;
+
+    form.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const q = qs(form, "input[name=q]").value.trim();
+      if (!q) {
+        results.textContent = "Introduceți un termen de căutare.";
+        return;
+      }
+      results.textContent = "Se caută...";
+      try {
+        const data = await api.get(
+          `/admin/user/search?q=${encodeURIComponent(q)}`
+        );
+        if (!data.success) throw new Error(data.error || "Eroare căutare.");
+        const users = data.users || [];
+        if (!users.length) {
+          results.textContent = "Nu a fost găsit niciun utilizator.";
+          return;
+        }
+        results.innerHTML = "";
+        users.forEach((u) => results.appendChild(renderUserCard(u, meta)));
+      } catch (e) {
+        results.textContent = e.message || "Eroare căutare.";
+      }
+    });
+  }
+
+  function setupTabs(root) {
+    const buttons = qsa(root, "[data-admin-tab]");
+    const panels = qsa(root, "[data-admin-panel]");
+    function show(name) {
+      panels.forEach((p) => {
+        p.style.display =
+          p.getAttribute("data-admin-panel") === name ? "" : "none";
+      });
+      buttons.forEach((b) => {
+        // Reset all classes to base state
+        b.className = "admin-tab-btn"; 
+        // Add active class if matched
+        if (b.getAttribute("data-admin-tab") === name) {
+          b.classList.add("active");
+        }
+      });
+    }
+    buttons.forEach((b) =>
+      b.addEventListener("click", () => show(b.getAttribute("data-admin-tab")))
+    );
+    show("create"); // Default tab
+  }
+
+  // --- Main Render Function ---
+  // --- Main Render Function ---
+  async function renderAdminPage(mainEl) {
+    if (!mainEl) return;
+    mainEl.innerHTML = `<div class="admin-msg">Se încarcă administrarea...</div>`;
+    try {
+      const meta = await loadMeta();
+
+      mainEl.innerHTML = `
+        <div class="admin-page">
+          <header class="admin-header-main">
+            <h1 class="admin-title">Administrare</h1>
+            <p class="app-subtitle">Gestionează utilizatori, drepturi și anunțuri.</p>
+          </header>
+
+          <div class="admin-tabs">
+            <button type="button" class="admin-tab-btn" data-admin-tab="create">Adaugă User</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="bulk">Import Masiv</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="search">Caută & Editează</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="ann">Anunțuri</button>
+          </div>
+
+          <section class="admin-panel" data-admin-panel="create">
+            <h2>👤 Adaugă utilizator nou</h2>
+            <form id="adminCreateForm" class="admin-form">
+              <div class="admin-grid-2">
+                <div class="f">
+                  <label>Username (lowercase)</label>
+                  <input type="text" name="username" autocomplete="off" placeholder="ex: popescu.ion">
+                </div>
+                <div class="f">
+                  <label>Parolă</label>
+                  <input type="text" name="password" autocomplete="off" placeholder="Parolă inițială">
+                  <label style="margin-top:6px; font-weight:400; font-size:0.8rem; color:#666;">
+                    <input type="checkbox" name="autoPassword"> Generează automat
+                  </label>
+                </div>
+                <div class="f">
+                  <label>Rol</label>
+                  <select name="roleId"></select>
+                </div>
+                <div class="f">
+                  <label>Penitenciar</label>
+                  <select name="penitenciarId"></select>
+                </div>
+              </div>
+              <div class="form-buttons right">
+                <button type="submit" class="btn-primary">Creează utilizator</button>
+              </div>
+              <div id="adminCreateMsg" class="admin-msg"></div>
+            </form>
+          </section>
+
+          <section class="admin-panel" data-admin-panel="bulk">
+            <h2>📥 Adaugă utilizatori în masă</h2>
+            <p style="font-size:0.85rem; color:#6b7280; margin-bottom:12px;">
+              Introduceți o listă de utilizatori (unul pe linie sau separați prin virgulă).
+            </p>
+            <form id="adminBulkForm" class="admin-form">
+              <textarea name="usernamesText" rows="6" placeholder="popescu.ion&#10;vasile.george&#10;..." style="font-family:monospace;"></textarea>
+
+              <div class="admin-grid-2">
+                <div class="f">
+                  <label>Rol (pentru toți)</label>
+                  <select name="roleId"></select>
+                </div>
+                <div class="f">
+                  <label>Penitenciar (pentru toți)</label>
+                  <select name="penitenciarId"></select>
+                </div>
+              </div>
+
+              <div style="background:#f3f4f6; padding:10px; border-radius:8px;">
+                <label style="margin-bottom:8px; display:block;">Setări Parolă</label>
+                <div class="admin-grid-2">
+                  <label style="font-weight:400;">
+                    <input type="checkbox" name="autoPassword"> Generare aleatorie unică
+                  </label>
+                  <div>
+                    <input type="text" name="samePassword" placeholder="Sau o parolă comună..." style="margin-top:0;">
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-buttons right">
+                <button type="submit" class="btn-primary">Procesează lista</button>
+              </div>
+              <pre id="adminBulkReport" class="admin-report"></pre>
+              <div id="adminBulkMsg" class="admin-msg"></div>
+            </form>
+          </section>
+
+          <section class="admin-panel" data-admin-panel="search">
+            <h2>🔎 Caută și gestionează</h2>
+            <form id="adminSearchForm" class="admin-form">
+               <div style="display:flex; gap:10px;">
+                 <div style="flex:1;">
+                    <input type="text" name="q" autocomplete="off" placeholder="Caută după nume sau ID..." style="width:100%;">
+                 </div>
+                 <button type="submit" class="btn-primary">Caută</button>
+               </div>
+            </form>
+            <div id="adminSearchResults" class="admin-results"></div>
+          </section>
+
+          <section class="admin-panel" data-admin-panel="ann">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+               <h2>📢 Anunțuri sistem</h2>
+               <button type="button" id="adminAnnDelAll" class="btn-danger btn-small" style="padding:4px 8px; font-size:0.75rem;">Șterge Tot</button>
+            </div>
+            
+            <form id="adminAnnForm" class="admin-form">
+              <label>Mesaj nou</label>
+              <div style="display:flex; gap:10px; align-items:flex-start;">
+                <textarea name="message" rows="2" style="flex:1;" placeholder="Scrie un mesaj pentru toți utilizatorii..."></textarea>
+                <button type="submit" class="btn-primary" style="margin-top:4px;">Publică</button>
+              </div>
+            </form>
+            
+            <div id="adminAnnMsg" class="admin-msg"></div>
+            <div id="adminAnnList" class="ann-list"></div>
+          </section>
+        </div>
+      `;
+
+      const root = mainEl.firstElementChild;
+      setupTabs(root);
+      await initCreatePanel(root, meta);
+      await initBulkPanel(root, meta);
+      await initSearchPanel(root, meta);
+      await initAnnouncements(root);
+    } catch (err) {
+      mainEl.innerHTML = `<div class="admin-msg error">${
+        err.message || "Eroare la încărcare."
+      }</div>`;
+    }
+  }
+
+  // --- Also update setupTabs to use the new class name ---
+  function setupTabs(root) {
+    const buttons = qsa(root, "[data-admin-tab]");
+    const panels = qsa(root, "[data-admin-panel]");
+    function show(name) {
+      panels.forEach((p) => {
+        p.style.display =
+          p.getAttribute("data-admin-panel") === name ? "" : "none";
+      });
+      buttons.forEach((b) => {
+        // Reset all classes to base state
+        b.className = "admin-tab-btn"; 
+        // Add active class if matched
+        if (b.getAttribute("data-admin-tab") === name) {
+          b.classList.add("active");
+        }
+      });
+    }
+    buttons.forEach((b) =>
+      b.addEventListener("click", () => show(b.getAttribute("data-admin-tab")))
+    );
+    show("create"); // Default tab
+  }
+
+  // --- MODULE REGISTRATION ---
+  // This is the part that was missing/broken in the previous version.
+  // We now register "admin" so shell.js knows how to call it.
+  window.prisonModules = window.prisonModules || {};
+  window.prisonModules.admin = {
+    init({ userId, container }) {
+      renderAdminPage(container);
+    },
+  };
+})();
+</file>
+
+<file path="public/js/api.js">
+// public/js/api.js
+const API_BASE_URL = "/api";
+
+function getAuthHeaders() {
+  const headers = {
+    "Accept": "application/json"
+  };
+  
+  // Retrieve the User ID from the browser session
+  const userId = sessionStorage.getItem("prison.userId");
+  if (userId) {
+    headers["X-User-Id"] = userId;
+  }
+  
+  return headers;
+}
+
+async function apiGet(path) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: "same-origin",
+    headers: getAuthHeaders() // <--- Now includes X-User-Id
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const msg = data.error || data.message || "Eroare la comunicarea cu serverul.";
+    throw new Error(msg);
+  }
+
+  return data;
+}
+
+async function apiPost(path, body) {
+  const headers = getAuthHeaders();
+  headers["Content-Type"] = "application/json"; // Add content type for POST
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: headers,
+    body: JSON.stringify(body || {})
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const msg = data.error || data.message || "Eroare la comunicarea cu serverul.";
+    const err = new Error(msg);
+    err.details = data;
+    throw err;
+  }
+
+  return data;
+}
+
+// Expose globally (no bundler)
+window.prisonApi = {
+  get: apiGet,
+  post: apiPost
+};
+</file>
+
+<file path="public/js/app.js">
+// public/js/app.js
+(function () {
+  const navContainer = document.getElementById("navLinks");
+  const userInfoEl = document.getElementById("userInfo");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const appContent = document.getElementById("appContent");
+
+  function getCurrentModuleKey() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("module") || null;
+  }
+
+  function ensureLoggedIn() {
+    const userId = sessionStorage.getItem("prison.userId");
+    const username = sessionStorage.getItem("prison.username");
+
+    if (!userId || !username) {
+      window.location.href = "/";
+      return null;
+    }
+
+    userInfoEl.textContent = username;
+    return userId;
+  }
+
+  function renderNav(modules, activeKey) {
+    navContainer.innerHTML = "";
+
+    modules.forEach((mod) => {
+      const link = document.createElement("a");
+      link.href = mod.path;
+      link.textContent = mod.label;
+      link.className = "nav-link";
+      if (mod.key === activeKey) {
+        link.classList.add("nav-link-active");
+      }
+      navContainer.appendChild(link);
+    });
+  }
+
+  function renderModuleContent(activeKey) {
+    // Simple placeholder for now
+    let title = "Bine ai venit";
+    let subtitle = "Selectează un modul din meniul de sus.";
+
+    if (activeKey === "cautare") {
+      title = "Modul: Căutare";
+      subtitle = "Aici vei avea formularul de căutare.";
+    } else if (activeKey === "profil") {
+      title = "Modul: Profil utilizator";
+      subtitle = "Aici vei afișa și edita datele utilizatorului.";
+    } else if (activeKey === "admin") {
+      title = "Modul: Pagina admin";
+      subtitle = "Aici vor fi funcțiile administrative.";
+    }
+
+    appContent.innerHTML = `
+      <h1 class="app-title">${title}</h1>
+      <p class="app-subtitle">${subtitle}</p>
+    `;
+  }
+
+  async function init() {
+    const userId = ensureLoggedIn();
+    if (!userId) return;
+
+    const activeKey = getCurrentModuleKey();
+
+    try {
+      const data = await window.prisonApi.get(
+        `/nav?userId=${encodeURIComponent(userId)}`
+      );
+
+      if (!data.success) {
+        throw new Error(data.error || "Nu s-a putut încărca meniul.");
+      }
+
+      const modules = Array.isArray(data.modules) ? data.modules : [];
+      renderNav(modules, activeKey);
+      renderModuleContent(activeKey);
+    } catch (err) {
+      console.error("Eroare la încărcarea meniului:", err);
+      appContent.innerHTML = `
+        <h1 class="app-title">Eroare</h1>
+        <p class="app-subtitle">${err.message || "Nu s-a putut încărca meniul sau modulul."}</p>
+      `;
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    init().catch(() => {});
+
+    logoutBtn.addEventListener("click", () => {
+      try {
+        sessionStorage.removeItem("prison.userId");
+        sessionStorage.removeItem("prison.username");
+      } catch (e) {
+        // ignore
+      }
+      window.location.href = "/";
+    });
+  });
+})();
+</file>
+
+<file path="public/js/cautare.js">
+// public/js/cautare.js
+(function () {
+  function escapeHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function buildLayout(container) {
+    container.innerHTML = `
+      <h1 class="app-title">Modul: Căutare</h1>
+      <p class="app-subtitle">
+        Căutare deținuți după nume, IDNP, dată naștere sau număr de dosar.
+        Introduceți cel puțin un criteriu.
+      </p>
+
+      <section class="search-card">
+        <h2 class="section-title">Criterii de căutare</h2>
+        <form class="search-form" data-role="search">
+          <div class="fields-grid">
+            <div class="f">
+              <label for="searchSurname">Nume</label>
+              <input id="searchSurname" name="surname" type="text" autocomplete="off" placeholder="EX: POPESCU" />
+            </div>
+            <div class="f">
+              <label for="searchName">Prenume</label>
+              <input id="searchName" name="name" type="text" autocomplete="off" placeholder="EX: ION" />
+            </div>
+            <div class="f">
+              <label for="searchSecName">Patronimic</label>
+              <input id="searchSecName" name="secName" type="text" autocomplete="off" placeholder="EX: VASILE" />
+            </div>
+            <div class="f">
+              <label for="searchIdnp">IDNP</label>
+              <input id="searchIdnp" name="idnp" type="text" autocomplete="off" placeholder="EX: 1234567890123" />
+            </div>
+            <div class="f">
+              <label for="searchBirth">Data nașterii</label>
+              <input id="searchBirth" name="birth" type="text" autocomplete="off" placeholder="ZZ.LL.AAAA" />
+            </div>
+            <div class="f">
+              <label for="searchId">Nr. Dosar</label>
+              <input id="searchId" name="id" type="text" autocomplete="off" placeholder="EX: 12345" />
+            </div>
+          </div>
+
+          <div class="search-actions">
+            <button type="submit" class="btn-primary" data-role="submit">Caută</button>
+          </div>
+          <p class="form-message" id="searchMessage"></p>
+        </form>
+      </section>
+
+      <section class="search-results" id="searchResultsSection" style="display:none;">
+        <h2 class="section-title">Rezultate</h2>
+        <p class="search-results-info" id="searchResultsInfo"></p>
+        <div class="search-grid" id="searchGrid"></div>
+      </section>
+    `;
+  }
+
+  function setMessage(msgEl, text, type) {
+    if (!msgEl) return;
+    msgEl.textContent = text || "";
+    msgEl.className = "form-message" + (type ? " " + type : "");
+  }
+
+  function renderResults(sectionEl, infoEl, gridEl, data) {
+    const results = Array.isArray(data.results) ? data.results : [];
+    if (!results.length) {
+      sectionEl.style.display = "block";
+      infoEl.textContent = "Nu a fost găsită nicio coincidență.";
+      gridEl.innerHTML = "";
+      return;
+    }
+
+    const maxRows = data.maxRows || results.length;
+    const count = data.count || results.length;
+
+    infoEl.textContent =
+      count >= maxRows
+        ? `Primele ${count} rezultate (limitat la ${maxRows}).`
+        : `Rezultate găsite: ${count}.`;
+
+    const cardsHtml = results
+      .map((item) => {
+        return `
+          <article class="search-result-card">
+            <div class="result-header">
+              <span class="badge badge-status">${escapeHtml(
+                (item.statut || "").toUpperCase()
+              )}</span>
+            </div>
+            <div class="result-body">
+              <div class="row"><span class="k">IDNP</span><span class="v">${escapeHtml(
+                item.idnp
+              )}</span></div>
+              <div class="row"><span class="k">Nume</span><span class="v">${escapeHtml(
+                item.surname
+              )}</span></div>
+              <div class="row"><span class="k">Prenume</span><span class="v">${escapeHtml(
+                item.name
+              )}</span></div>
+              <div class="row"><span class="k">Patronimic</span><span class="v">${escapeHtml(
+                item.secName
+              )}</span></div>
+              <div class="row"><span class="k">Naștere</span><span class="v">${escapeHtml(
+                item.birth
+              )}</span></div>
+              <div class="row"><span class="k">Mișcare</span><span class="v">${escapeHtml(
+                item.miscareText
+              )}</span></div>
+            </div>
+            <div class="result-footer">
+              <button type="button" class="btn-ghost btn-small" disabled title="Detalii încă nu sunt implementate">
+                Detalii
+              </button>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
+
+    gridEl.innerHTML = cardsHtml;
+    sectionEl.style.display = "block";
+  }
+
+  async function handleSubmit(ev, container) {
+    ev.preventDefault();
+    const form = ev.currentTarget;
+    const msgEl = form.querySelector("#searchMessage");
+    const submitBtn = form.querySelector('[data-role="submit"]');
+    const sectionEl = container.querySelector("#searchResultsSection");
+    const infoEl = container.querySelector("#searchResultsInfo");
+    const gridEl = container.querySelector("#searchGrid");
+
+    setMessage(msgEl, "", "");
+    if (sectionEl) sectionEl.style.display = "none";
+    if (gridEl) gridEl.innerHTML = "";
+
+    const formData = new FormData(form);
+    const payload = {
+      surname: (formData.get("surname") || "").toString(),
+      name: (formData.get("name") || "").toString(),
+      secName: (formData.get("secName") || "").toString(),
+      idnp: (formData.get("idnp") || "").toString(),
+      birth: (formData.get("birth") || "").toString(),
+      id: (formData.get("id") || "").toString()
+    };
+
+    const hasAny =
+      payload.surname.trim() ||
+      payload.name.trim() ||
+      payload.secName.trim() ||
+      payload.idnp.trim() ||
+      payload.birth.trim() ||
+      payload.id.trim();
+
+    if (!hasAny) {
+      setMessage(
+        msgEl,
+        "Introduceți cel puțin un criteriu de căutare.",
+        "error"
+      );
+      return;
+    }
+
+    submitBtn.disabled = true;
+    setMessage(msgEl, "Se caută, vă rugăm așteptați...", "");
+
+    try {
+      const data = await window.prisonApi.post(
+        "/search/detinuti",
+        payload
+      );
+
+      if (!data.success) {
+        throw new Error(data.error || "Căutarea a eșuat.");
+      }
+
+      renderResults(sectionEl, infoEl, gridEl, data);
+      setMessage(msgEl, "", "");
+    } catch (err) {
+      console.error("Eroare la căutare:", err);
+      setMessage(
+        msgEl,
+        err.message || "Eroare la comunicarea cu serverul.",
+        "error"
+      );
+    } finally {
+      submitBtn.disabled = false;
+    }
+  }
+
+  window.prisonModules = window.prisonModules || {};
+  window.prisonModules.cautare = {
+    init({ userId, container }) {
+      buildLayout(container);
+
+      const form = container.querySelector('form[data-role="search"]');
+      if (form) {
+        form.addEventListener("submit", (ev) => handleSubmit(ev, container));
+      }
+    }
+  };
+})();
+</file>
+
+<file path="public/js/interogari.js">
+// public/js/interogari.js
+(function () {
+  let currentUser = null;
+  let institutions = [];
+
+  async function loadInstitutions() {
+    const d = await window.prisonApi.get("/interogari/institutions");
+    if (d.success) institutions = d.items || [];
+  }
+
+  function renderTabs(container) {
+    container.innerHTML = `
+      <div class="admin-page">
+         <header class="admin-header-main">
+            <h1 class="admin-title">Interogări și Rapoarte</h1>
+            <p class="app-subtitle">Generare rapoarte operaționale.</p>
+         </header>
+
+         <div class="admin-tabs">
+            <button class="admin-tab-btn active" data-tab="detinuti">👤 Deținuți</button>
+            <button class="admin-tab-btn" data-tab="colete">📦 Colete & Vizite</button>
+            <button class="admin-tab-btn" data-tab="transfer">🚐 Transferuri</button>
+            <button class="admin-tab-btn" data-tab="evidenta">📋 Evidență & Acte</button>
+            <button class="admin-tab-btn" data-tab="straini">🌍 Străini</button>
+         </div>
+
+         <!-- TAB: DETINUTI -->
+         <div class="admin-panel" data-panel="detinuti">
+            <h2>Rapoarte Deținuți</h2>
+            <div class="admin-grid-2">
+               <div class="card-action">
+                  <h3>Lista Generală</h3>
+                  <p>Afișează toți deținuții din penitenciarul curent.</p>
+                  <button class="btn-primary" onclick="runQuery('LISTA')">Generează Lista</button>
+               </div>
+               <div class="card-action">
+                  <h3>Lista pe Instituție</h3>
+                  <select id="sel_inst_listap" class="full-width mb-2">
+                     <option value="">Selectează Penitenciar...</option>
+                     ${institutions.map(i => `<option value="${i.ID}">${i.NAME}</option>`).join('')}
+                  </select>
+                  <button class="btn-primary" onclick="runQuery('LISTAP', {institution_id: getValue('sel_inst_listap')})">Generează</button>
+               </div>
+               <div class="card-action span-2">
+                  <h3>Căutare Vârstă</h3>
+                  <div class="row-flex">
+                     <input type="number" id="age_min" placeholder="Min Ani" class="sm-input">
+                     <input type="number" id="age_max" placeholder="Max Ani" class="sm-input">
+                     <select id="sel_inst_age">
+                        ${institutions.map(i => `<option value="${i.ID}">${i.NAME}</option>`).join('')}
+                     </select>
+                     <button class="btn-primary" onclick="runQuery('SEARCH_BY_AGE', {min_age: getValue('age_min'), max_age: getValue('age_max'), institution_id: getValue('sel_inst_age')})">Caută</button>
+                  </div>
+               </div>
+            </div>
+         </div>
+
+         <!-- TAB: COLETE -->
+         <div class="admin-panel hidden" data-panel="colete">
+            <h2>Colete și Vizite</h2>
+            <div class="admin-grid-2">
+               <div class="card-action">
+                  <h3>Caută Colet (Sursă)</h3>
+                  <input type="text" id="col_source" placeholder="Nume sursă..." class="mb-2 full-width">
+                  <button class="btn-primary" onclick="runQuery('COLETE', {sursa: getValue('col_source')})">Caută</button>
+               </div>
+               <div class="card-action">
+                  <h3>Colete după Dată</h3>
+                  <div class="row-flex mb-2">
+                     <input type="text" id="col_d1" placeholder="DD.MM.YYYY">
+                     <input type="text" id="col_d2" placeholder="DD.MM.YYYY">
+                  </div>
+                  <button class="btn-primary" onclick="runQuery('SEARCH_COLETA_DATE', {start_date: getValue('col_d1'), end_date: getValue('col_d2')})">Caută</button>
+               </div>
+               <div class="card-action span-2">
+                  <h3>Căutare Întrevedere</h3>
+                  <input type="text" id="viz_name" placeholder="Nume vizitator..." class="mb-2 full-width">
+                  <button class="btn-primary" onclick="runQuery('CAUTINTREVEDERE', {term: getValue('viz_name')})">Caută</button>
+               </div>
+            </div>
+         </div>
+
+         <!-- TAB: TRANSFER -->
+         <div class="admin-panel hidden" data-panel="transfer">
+             <h2>Transferuri și Escortări</h2>
+             <div class="admin-grid-2">
+                <div class="card-action">
+                   <h3>Tabel Escortare</h3>
+                   <input type="text" id="esc_date" placeholder="DD.MM.YYYY" value="${new Date().toLocaleDateString('ro-RO')}" class="mb-2 full-width">
+                   <button class="btn-primary" onclick="runQuery('TABELESCORTARE', {date: getValue('esc_date')})">Generează</button>
+                </div>
+                <div class="card-action">
+                   <h3>Transfer Penitenciare</h3>
+                   <input type="text" id="trans_date" placeholder="DD.MM.YYYY" value="${new Date().toLocaleDateString('ro-RO')}" class="mb-2 full-width">
+                   <button class="btn-primary" onclick="runQuery('TABELTRANSFERPENITENCIARE', {date: getValue('trans_date')})">Generează</button>
+                </div>
+                <div class="card-action">
+                   <h3>Mișcare Celule</h3>
+                   <div class="row-flex mb-2">
+                     <input type="text" id="cell_d1" placeholder="Start (DD.MM.YYYY)">
+                     <input type="text" id="cell_d2" placeholder="End">
+                   </div>
+                   <button class="btn-primary" onclick="runQuery('LISTADUPACELULE', {start_date: getValue('cell_d1'), end_date: getValue('cell_d2')})">Caută</button>
+                </div>
+                <div class="card-action">
+                   <h3>Securitate Personală (206)</h3>
+                   <p>Deținuți cu regim special.</p>
+                   <button class="btn-primary" onclick="runQuery('LISTA206')">Generează</button>
+                </div>
+                 <div class="card-action">
+                   <h3>Ecusoane</h3>
+                   <p>Generare listă pentru ecusoane.</p>
+                   <button class="btn-primary" onclick="runQuery('ECUSON')">Generează</button>
+                </div>
+             </div>
+         </div>
+
+         <!-- TAB: EVIDENTA -->
+         <div class="admin-panel hidden" data-panel="evidenta">
+             <h2>Evidență și Acte</h2>
+             <div class="admin-grid-2">
+                <div class="card-action">
+                   <h3>Acte Expirate</h3>
+                   <p>Listă completă deținuți cu acte expirate.</p>
+                   <button class="btn-primary" onclick="runQuery('SEARCH_ACTE_EXPIRED')">Caută</button>
+                </div>
+                 <div class="card-action">
+                   <h3>Căutare după Articol</h3>
+                   <input type="text" id="art_num" placeholder="Număr articol..." class="mb-2 full-width">
+                   <button class="btn-primary" onclick="runQuery('CAUTARTICOL', {article: getValue('art_num')})">Caută</button>
+                </div>
+                <div class="card-action">
+                   <h3>Deținuți Eliberați</h3>
+                    <div class="row-flex mb-2">
+                     <input type="text" id="rel_d1" placeholder="Start">
+                     <input type="text" id="rel_d2" placeholder="End">
+                   </div>
+                   <button class="btn-primary" onclick="runQuery('ELIBERATI', {start_date: getValue('rel_d1'), end_date: getValue('rel_d2')})">Caută</button>
+                </div>
+                 <div class="card-action">
+                   <h3>Registru Leziuni</h3>
+                    <div class="row-flex mb-2">
+                     <input type="text" id="lez_d1" placeholder="Start">
+                     <input type="text" id="lez_d2" placeholder="End">
+                   </div>
+                   <button class="btn-primary" onclick="runQuery('SEARCH_LEZIUNI', {start_date: getValue('lez_d1'), end_date: getValue('lez_d2')})">Caută</button>
+                </div>
+             </div>
+         </div>
+         
+         <!-- TAB: STRAINI -->
+         <div class="admin-panel hidden" data-panel="straini">
+            <h2>Evidență Străini</h2>
+             <div class="admin-grid-2">
+                <div class="card-action">
+                   <h3>Cetățeni Străini</h3>
+                   <p>Listă activă.</p>
+                   <button class="btn-primary" onclick="runQuery('CETATENI')">Generează</button>
+                </div>
+                <div class="card-action">
+                   <h3>Străini Eliberați (An Curent)</h3>
+                   <p>Rapoarte pe anul în curs.</p>
+                   <button class="btn-primary" onclick="runQuery('STRAINI_ELIBERATI')">Generează</button>
+                </div>
+             </div>
+         </div>
+
+         <!-- RESULTS SECTION -->
+         <div id="queryResultsArea" class="mt-4 hidden">
+            <div class="flex-between">
+               <h2 id="resTitle">Rezultate</h2>
+               <button class="btn-secondary" onclick="printCurrentResults()">🖨️ Printează PDF</button>
+            </div>
+            <div class="table-wrapper">
+               <table class="data-table" id="resTable">
+                  <thead></thead>
+                  <tbody></tbody>
+               </table>
+            </div>
+         </div>
+      </div>
+    `;
+
+    // Helper logic for tabs
+    container.querySelectorAll('.admin-tab-btn').forEach(btn => {
+       btn.addEventListener('click', () => {
+          container.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          container.querySelectorAll('.admin-panel').forEach(p => p.classList.add('hidden'));
+          container.querySelector(`[data-panel="${btn.dataset.tab}"]`).classList.remove('hidden');
+       });
+    });
+  }
+
+  // Global helpers exposed to inline onclicks
+  window.getValue = (id) => {
+     const el = document.getElementById(id);
+     return el ? el.value.trim() : '';
+  };
+
+  let lastResult = null;
+
+  window.runQuery = async (type, params = {}) => {
+     const resArea = document.getElementById('queryResultsArea');
+     const tHead = document.querySelector('#resTable thead');
+     const tBody = document.querySelector('#resTable tbody');
+     const titleEl = document.getElementById('resTitle');
+
+     // Clear previous
+     resArea.classList.remove('hidden');
+     tBody.innerHTML = '<tr><td colspan="10" class="text-center">Se încarcă...</td></tr>';
+     
+     try {
+        const data = await window.prisonApi.post('/interogari/exec', { type, params });
+        if(!data.success) throw new Error(data.error);
+
+        lastResult = data; // Store for printing
+        titleEl.textContent = data.title;
+        
+        // CHANGED: Updated <th>Acțiuni</th> to <th>Detalii</th>
+        tHead.innerHTML = `<tr>${data.headers.map(h => `<th>${h}</th>`).join('')}<th>Detalii</th></tr>`;
+        
+        // Render Rows
+        if(data.rows.length === 0) {
+           tBody.innerHTML = `<tr><td colspan="${data.headers.length + 1}" class="text-center p-4">Nu au fost găsite rezultate.</td></tr>`;
+        } else {
+           tBody.innerHTML = data.rows.map(r => {
+              // We ignore the first column 'ID' usually used for links, but let's grab it if exists
+              const id = r.ID || r.IDDETINUT || 0; 
+              const cells = Object.values(r).map(v => `<td>${v === null ? '' : v}</td>`).join('');
+              // Simple link logic
+              const btn = id ? `<button class="btn-small" onclick="window.location.href='/app/index.html?module=profile&id=${id}'">Detalii</button>` : '';
+              return `<tr>${cells}<td>${btn}</td></tr>`;
+           }).join('');
+        }
+     } catch(e) {
+        tBody.innerHTML = `<tr><td colspan="10" class="error-text">Eroare: ${e.message}</td></tr>`;
+     }
+  };
+
+  window.printCurrentResults = async () => {
+     if(!lastResult) return;
+     
+     // Send data to backend to render HTML page
+     // We use a trick: create a hidden form and submit it to new tab
+     const form = document.createElement('form');
+     form.method = 'POST';
+     form.action = '/api/interogari/print';
+     form.target = '_blank';
+     
+     // Add auth token if needed (cookies usually handle this, but let's see. 
+     // Since it's a form post to new tab, custom headers are hard.
+     // We will rely on IP or if needed, pass token in hidden input, though less secure)
+     
+     // Actually, the fetch approach is cleaner but requires blob handling for new tab.
+     // Let's stick to fetch -> blob -> URL
+     
+     try {
+       const resp = await fetch('/api/interogari/print', {
+          method: 'POST',
+          headers: {
+             'Content-Type': 'application/json',
+             'x-user-id': sessionStorage.getItem("prison.userId")
+          },
+          body: JSON.stringify(lastResult)
+       });
+       const blob = await resp.blob();
+       const url = URL.createObjectURL(blob);
+       window.open(url, '_blank');
+     } catch(e) {
+        alert("Eroare la generarea printului.");
+     }
+  };
+
+  // Register Module
+  window.prisonModules = window.prisonModules || {};
+  window.prisonModules.interogari = {
+    async init({ userId, container }) {
+      await loadInstitutions();
+      renderTabs(container);
+    }
+  };
+})();
+</file>
+
+<file path="public/js/login.js">
+// public/js/login.js
+(function () {
+  const formEl = document.getElementById("loginForm");
+  const usernameEl = document.getElementById("username");
+  const passwordEl = document.getElementById("password");
+  const motivationEl = document.getElementById("motivation");
+  const messageEl = document.getElementById("loginMessage");
+  const loginBtn = document.getElementById("loginBtn");
+  const guideBtn = document.getElementById("guideBtn");
+  const authCard = document.querySelector(".auth-card");
+
+  function setMessage(text, type) {
+    if (!messageEl) return;
+    messageEl.textContent = text || "";
+    messageEl.className = "form-message" + (type ? " " + type : "");
+  }
+
+  async function checkHealth() {
+    if (!authCard) return;
+    try {
+      const data = await window.prisonApi.get("/health");
+
+      // Doar dacă serverul spune explicit că DB NU e disponibilă
+      if (data && data.dbAvailable === false) {
+        authCard.innerHTML = `
+          <h1 class="auth-title">Eroare conexiune bază de date</h1>
+          <p class="auth-subtitle">
+            Pagina web este accesibilă dar conexiunea cu baza de date a eșuat.
+            Vă rugăm contactați-ne de urgență la
+            <a href="mailto:anp.siarprac@anp.gov.md">anp.siarprac@anp.gov.md</a>.
+          </p>
+        `;
+      }
+      // Dacă dbAvailable este true sau null/undefined → nu facem nimic,
+      // lăsăm login-ul să funcționeze normal.
+    } catch (err) {
+      // Nu mai speriem utilizatorul; doar logăm în consolă.
+      console.error("Eroare la /api/health:", err);
+    }
+  }
+
+  async function loadMotives() {
+    if (!motivationEl) return;
+    try {
+      const data = await window.prisonApi.get("/motives");
+      if (!data.success || !Array.isArray(data.motives)) {
+        throw new Error(data.error || "Nu s-au putut încărca motivele de acces.");
+      }
+
+      motivationEl.innerHTML =
+        '<option value="">-- Selectați motivul --</option>';
+      data.motives.forEach((m) => {
+        const opt = document.createElement("option");
+        opt.value = m.id;
+        opt.textContent = m.text;
+        motivationEl.appendChild(opt);
+      });
+    } catch (err) {
+      console.error("Eroare la /api/motives:", err);
+      // Lăsăm opțiunea default, utilizatorul nu poate continua fără selectare oricum.
+    }
+  }
+
+  async function handleSubmit(ev) {
+    ev.preventDefault();
+    if (!formEl) return;
+    setMessage("", "");
+    if (!usernameEl || !passwordEl || !motivationEl || !loginBtn) return;
+
+    const username = usernameEl.value.trim();
+    const password = passwordEl.value;
+    const motivId = motivationEl.value;
+
+    if (!username || !password || !motivId) {
+      setMessage("Completați utilizatorul, parola și motivul de acces.", "error");
+      return;
+    }
+
+    loginBtn.disabled = true;
+
+    try {
+      const payload = {
+        username,
+        password,
+        motivId
+      };
+
+      const data = await window.prisonApi.post("/login", payload);
+      if (!data.success) {
+        throw new Error(data.error || "Autentificare eșuată.");
+      }
+
+      try {
+        sessionStorage.setItem("prison.userId", String(data.user.id));
+        sessionStorage.setItem("prison.username", String(data.user.username));
+      } catch (e) {
+        // ignore
+      }
+
+      window.location.href = "/app/index.html?module=cautare";
+    } catch (err) {
+      console.error("Eroare la login:", err);
+      setMessage(
+        err.message || "Nu s-a putut realiza autentificarea.",
+        "error"
+      );
+    } finally {
+      if (loginBtn) loginBtn.disabled = false;
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    checkHealth().catch(() => {});
+    loadMotives().catch(() => {});
+
+    if (formEl) {
+      formEl.addEventListener("submit", handleSubmit);
+    }
+
+    if (guideBtn) {
+      guideBtn.addEventListener("click", () => {
+        window.location.href = "/ghid.html";
+      });
+    }
+  });
+})();
+</file>
+
+<file path="public/js/profil.js">
+// public/js/profil.js
+(function () {
+  function formatDate(value) {
+    if (!value) return "";
+    const d = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(d.getTime())) {
+      return String(value);
+    }
+    return d.toLocaleString("ro-RO");
+  }
+
+  function escapeHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  async function loadProfile(userId) {
+    const data = await window.prisonApi.get(
+      `/profile?userId=${encodeURIComponent(userId)}`
+    );
+    if (!data.success) {
+      throw new Error(data.error || "Nu s-a putut încărca profilul.");
+    }
+    return data;
+  }
+
+  function renderProfile(container, profileData) {
+    const { user, logs, permissions } = profileData;
+
+    const logsRows =
+      (logs || [])
+        .map(
+          (log) => `
+        <tr>
+          <td>${escapeHtml(log.action)}</td>
+          <td>${escapeHtml(formatDate(log.date))}</td>
+          <td>${escapeHtml(log.detail)}</td>
+        </tr>
+      `
+        )
+        .join("") ||
+      `<tr><td colspan="3" class="table-empty">Nu există activitate înregistrată.</td></tr>`;
+
+    const permRows =
+      (permissions || [])
+        .map((p) => {
+          let badgeClass = "badge-none";
+          if (p.drept === "W") badgeClass = "badge-write";
+          else if (p.drept === "R") badgeClass = "badge-read";
+
+          return `
+        <tr>
+          <td>${escapeHtml(p.moduleName)}</td>
+          <td><span class="badge ${badgeClass}">${escapeHtml(
+            p.permissionLabel
+          )}</span></td>
+        </tr>
+      `;
+        })
+        .join("") ||
+      `<tr><td colspan="2" class="table-empty">Nu există module definite.</td></tr>`;
+
+    container.innerHTML = `
+      <h1 class="app-title">Profil utilizator</h1>
+      <p class="app-subtitle">
+        Informații și drepturi pentru utilizatorul <strong>${escapeHtml(
+          user.username
+        )}</strong>.
+      </p>
+
+      <div class="profile-sections">
+        <section class="profile-card">
+          <h2 class="section-title">Detalii utilizator</h2>
+          <div class="profile-details">
+            <div class="detail-row">
+              <span class="detail-label">ID utilizator</span>
+              <span class="detail-value">${user.id}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Rol (ID_ROLE)</span>
+              <span class="detail-value">${
+                user.id_role !== null && user.id_role !== undefined
+                  ? user.id_role
+                  : "—"
+              }</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">ID penitenciar</span>
+              <span class="detail-value">${
+                user.id_penitentiary !== null &&
+                user.id_penitentiary !== undefined
+                  ? user.id_penitentiary
+                  : "—"
+              }</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="profile-card">
+          <h2 class="section-title">Drepturi pe module</h2>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Modul</th>
+                  <th>Drept</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${permRows}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="profile-card">
+          <h2 class="section-title">Activitate recentă (ultimele 10 înregistrări)</h2>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Acțiune</th>
+                  <th>Dată</th>
+                  <th>Detalii</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${logsRows}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
+  // Register module
+  window.prisonModules = window.prisonModules || {};
+  window.prisonModules.profil = {
+    async init({ userId, container }) {
+      try {
+        const data = await loadProfile(userId);
+        renderProfile(container, data);
+      } catch (err) {
+        console.error("Eroare la profil:", err);
+        container.innerHTML = `
+          <h1 class="app-title">Eroare</h1>
+          <p class="app-subtitle">${escapeHtml(
+            err.message || "Nu s-a putut încărca profilul utilizatorului."
+          )}</p>
+        `;
+      }
+    }
+  };
+})();
+</file>
+
+<file path="public/js/shell.js">
+// public/js/shell.js
+(function () {
+  const navContainer = document.getElementById("navLinks");
+  const userInfoEl = document.getElementById("userInfo");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const appContent = document.getElementById("appContent");
+
+  function getCurrentModuleKey() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("module") || null;
+  }
+
+  function ensureLoggedIn() {
+    const userId = sessionStorage.getItem("prison.userId");
+    const username = sessionStorage.getItem("prison.username");
+
+    if (!userId || !username) {
+      window.location.href = "/";
+      return null;
+    }
+
+    userInfoEl.textContent = username;
+    return userId;
+  }
+
+  function renderNav(modules, activeKey) {
+    navContainer.innerHTML = "";
+
+    modules.forEach((mod) => {
+      const link = document.createElement("a");
+      link.href = mod.path;
+      link.textContent = mod.label;
+      link.className = "nav-link";
+      if (mod.key === activeKey) {
+        link.classList.add("nav-link-active");
+      }
+      navContainer.appendChild(link);
+    });
+  }
+
+  function renderDefaultContent(activeKey) {
+    let title = "Bine ai venit";
+    let subtitle = "Selectează un modul din meniul de sus.";
+
+    if (activeKey) {
+      subtitle = `Modulul "${activeKey}" nu are încă o implementare dedicată.`;
+    }
+
+    appContent.innerHTML = `
+      <h1 class="app-title">${title}</h1>
+      <p class="app-subtitle">${subtitle}</p>
+    `;
+  }
+
+  function runModule(activeKey, userId) {
+    const registry = window.prisonModules || {};
+    appContent.innerHTML = "";
+
+    if (registry[activeKey] && typeof registry[activeKey].init === "function") {
+      registry[activeKey].init({ userId, container: appContent });
+    } else {
+      renderDefaultContent(activeKey);
+    }
+  }
+
+  
+
+  async function initApp() {
+    const userId = ensureLoggedIn();
+    if (!userId) return;
+
+    let activeKey = getCurrentModuleKey();
+
+    try {
+
+      // Meanwhile, load the nav.
+      const navData = await window.prisonApi.get(
+        `/nav?userId=${encodeURIComponent(userId)}`
+      );
+
+      if (!navData.success) {
+        throw new Error(navData.error || "Nu s-a putut încărca meniul.");
+      }
+
+      const modules = Array.isArray(navData.modules) ? navData.modules : [];
+
+      // default active module
+      if (!activeKey && modules.length > 0) {
+        activeKey = modules[0].key;
+        const url = new URL(window.location.href);
+        url.searchParams.set("module", activeKey);
+        window.history.replaceState({}, "", url.toString());
+      }
+
+      // if URL module not allowed, fallback
+      if (
+        activeKey &&
+        !modules.some((m) => m.key === activeKey) &&
+        modules.length > 0
+      ) {
+        activeKey = modules[0].key;
+        const url = new URL(window.location.href);
+        url.searchParams.set("module", activeKey);
+        window.history.replaceState({}, "", url.toString());
+      }
+
+      renderNav(modules, activeKey);
+      runModule(activeKey, userId);
+
+
+    } catch (err) {
+      console.error("Eroare la încărcarea aplicației:", err);
+      appContent.innerHTML = `
+        <h1 class="app-title">Eroare</h1>
+        <p class="app-subtitle">${(err && err.message) || "Nu s-a putut încărca meniul sau modulul."}</p>
+      `;
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    initApp().catch(() => {});
+
+    logoutBtn.addEventListener("click", () => {
+      try {
+        sessionStorage.removeItem("prison.userId");
+        sessionStorage.removeItem("prison.username");
+      } catch (e) {
+        // ignore
+      }
+      window.location.href = "/";
+    });
+  });
+})();
+</file>
+
+<file path="public/login.html">
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- cale absolută ca să fim siguri că se încarcă CSS-ul -->
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <!-- LOGO -->
+      <div class="auth-logo">
+        <img src="/img/logo.png" alt="Sigla ANP" />
+      </div>
+
+      <form id="loginForm" class="auth-form">
+        <div class="form-group">
+          <label for="username">Utilizator</label>
+          <input
+            id="username"
+            name="username"
+            type="text"
+            autocomplete="off"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="password">Parolă</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="off"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="motivation">Motiv acces</label>
+          <select id="motivation" name="motivation" required>
+            <option value="">-- Selectați motivul --</option>
+          </select>
+        </div>
+
+        <div class="form-footer">
+          <button type="submit" id="loginBtn" class="btn-primary">
+            Autentificare
+          </button>
+        </div>
+        
+      <div class="auth-extra">
+        <button type="button" id="guideBtn" class="btn-primary">
+          Ghid de înregistrare utilizatori
+        </button>
+      </div>
+      
+        <p id="loginMessage" class="form-message"></p>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/api.js" defer></script>
+  <script src="/js/login.js" defer></script>
+</body>
+</html>
+</file>
+
+<file path="src/config.js">
+// src/config.js
+
+module.exports = {
+  port: process.env.PORT || 3000,
+
+  // Oracle 11g connection
+  dbUser: process.env.DB_USER || "PRISON",
+  dbPassword: process.env.DB_PASSWORD || "ANP35",
+  dbConnectString:
+    process.env.DB_CONNECT_STRING ||
+    "(DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=10.0.0.200)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=XEPDB1)))",
+
+  // Login security
+  loginCooldownMinutes: 15,
+  loginMaxFailedAttempts: 5
+};
+</file>
+
+<file path="src/db.js">
+// src/db.js
+const oracledb = require("oracledb");
+const config = require("./config");
+
+oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
+// Optional: get DATEs as strings if you want
+// oracledb.fetchAsString = [oracledb.DATE];
+
+let pool = null;
+
+async function initPool() {
+  if (pool) return pool;
+
+  // If you use Instant Client on Windows/Linux:
+  // oracledb.initOracleClient({ libDir: "C:\\oracle\\instantclient_19_17" });
+
+  pool = await oracledb.createPool({
+    user: config.dbUser,
+    password: config.dbPassword,
+    connectString: config.dbConnectString,
+    poolMin: 1,
+    poolMax: 5,
+    poolIncrement: 1
+  });
+
+  console.log("Oracle pool created");
+  return pool;
+}
+
+async function getConnection() {
+  const p = await initPool();
+  const conn = await p.getConnection();
+
+  // Match legacy NLS date format
+  await conn.execute("ALTER SESSION SET NLS_DATE_FORMAT = 'DD.MM.YYYY'");
+
+  return conn;
+}
+
+async function execute(sql, binds = {}, options = {}) {
+  const conn = await getConnection();
+  try {
+    const result = await conn.execute(sql, binds, options);
+    return result;
+  } finally {
+    try {
+      await conn.close();
+    } catch (err) {
+      console.error("Error closing connection:", err);
+    }
+  }
+}
+
+module.exports = {
+  initPool,
+  getConnection,
+  execute
+};
+</file>
+
+<file path="src/modulesConfig.js">
+// src/modulesConfig.js
+
+const modules = [
+  {
+    key: "cautare",
+    label: "Căutare",
+    path: "/app/index.html?module=cautare",
+    oracleModuleId: null,
+    requiredRoles: null,
+    minPermission: null
+  },
+  {
+    key: "interogari",
+    label: "Rapoarte & Interogări",
+    path: "/app/index.html?module=interogari",
+    oracleModuleId: null, 
+    requiredRoles: [7],
+    minPermission: null
+  },
+  {
+    key: "profil",
+    label: "Profil utilizator",
+    path: "/app/index.html?module=profil",
+    oracleModuleId: null,
+    requiredRoles: null,
+    minPermission: null
+  },
+  {
+    key: "admin",
+    label: "Pagina admin",
+    path: "/app/index.html?module=admin",
+    oracleModuleId: null,
+    requiredRoles: [7],
+    minPermission: "W"
+  }
+];
+
+module.exports = modules;
+</file>
+
+<file path="src/routes/admin.js">
+// src/routes/admin.js
+const express = require("express");
+const db = require("../db");
+
+const router = express.Router();
+
+/** Simple admin guard: requires x-user-id and role 7 */
+async function adminGuard(req, res, next) {
+  const uid = Number(req.header("x-user-id") || req.header("X-User-Id"));
+  if (!uid) return res.status(401).json({ success: false, error: "Neautorizat." });
+
+  try {
+    const r = await db.execute(
+      "SELECT ID_ROLE FROM USERS WHERE ID = :id",
+      { id: uid }
+    );
+    if (!r.rows || !r.rows.length) {
+      return res.status(401).json({ success: false, error: "Utilizator inexistent." });
+    }
+    const roleId = Number(r.rows[0].ID_ROLE);
+    if (roleId !== 7) {
+      return res.status(403).json({ success: false, error: "Acces interzis (rol ≠ 7)." });
+    }
+    req.adminId = uid;
+    next();
+  } catch (err) {
+    console.error("adminGuard:", err);
+    res.status(500).json({ success: false, error: "Eroare internă." });
+  }
+}
+
+router.use(adminGuard);
+
+/** GET /api/admin/meta -> roles + penitenciars */
+router.get("/admin/meta", async (req, res) => {
+  try {
+    const rolesRes = await db.execute(
+      "SELECT ID, NAME FROM SPR_ROLES ORDER BY NAME"
+    );
+    const penRes = await db.execute(
+      "SELECT ID, NAME FROM SPR_PENITENCIAR ORDER BY NAME"
+    );
+
+    res.json({
+      success: true,
+      roles: (rolesRes.rows || []).map(r => ({ id: Number(r.ID), name: r.NAME })),
+      penitenciars: (penRes.rows || []).map(r => ({ id: Number(r.ID), name: r.NAME }))
+    });
+  } catch (err) {
+    console.error("/admin/meta:", err);
+    res.status(500).json({ success: false, error: "Eroare meta." });
+  }
+});
+
+function genPassword(len = 10) {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$%";
+  let out = "";
+  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+
+/** POST /api/admin/user/create */
+router.post("/admin/user/create", async (req, res) => {
+  try {
+    let { username, password, autoPassword, roleId, penitenciarId } = req.body || {};
+    username = (username || "").trim().toLowerCase();
+    password = (password || "").trim();
+    const autoPass = !!autoPassword;
+    const role = Number(roleId);
+    const pen = Number(penitenciarId);
+
+    if (!username || (!password && !autoPass) || !role || !pen) {
+      return res.status(400).json({
+        success: false,
+        error: "Username, rol, penitenciar și parolă / auto-parolă obligatorii."
+      });
+    }
+    if (autoPass) password = genPassword(10);
+
+    await db.execute(
+      `INSERT INTO USERS (USERNAME, PASSWD, ID_ROLE, ID_PENITENTIAR, USERTYPE, USERDATE)
+       VALUES (:u, :p, :r, :pen, 1, SYSDATE)`,
+      { u: username, p: password, r: role, pen },
+      { autoCommit: true }
+    );
+
+    res.json({
+      success: true,
+      username,
+      autoPassword: autoPass ? password : null
+    });
+  } catch (err) {
+    console.error("/admin/user/create:", err);
+    res.status(500).json({ success: false, error: "Eroare la crearea utilizatorului." });
+  }
+});
+
+/** POST /api/admin/user/bulk */
+router.post("/admin/user/bulk", async (req, res) => {
+  let conn;
+  try {
+    let { usernamesText, roleId, penitenciarId, autoPassword, samePassword } = req.body || {};
+    const blob = (usernamesText || "").trim();
+    const role = Number(roleId);
+    const pen = Number(penitenciarId);
+    const autoPass = !!autoPassword;
+    const onePass = (samePassword || "").trim();
+
+    if (!blob || !role || !pen) {
+      return res.status(400).json({
+        success: false,
+        error: "Lista utilizatori, rol și penitenciar obligatorii."
+      });
+    }
+
+    const list = blob
+      .split(/[\r\n,;]+/)
+      .map(v => v.trim().toLowerCase())
+      .filter(v => v.length);
+
+    if (!list.length) {
+      return res.status(400).json({ success: false, error: "Nu există usernames valide." });
+    }
+
+    conn = await db.getConnection();
+    let ok = 0, fail = 0;
+    const report = [];
+
+    for (const u of list) {
+      let pwd = "";
+      if (autoPass) pwd = genPassword(10);
+      else if (onePass) pwd = onePass;
+      else {
+        fail++;
+        report.push(`⨯ ${u} — lipsă parolă`);
+        continue;
+      }
+
+      try {
+        await conn.execute(
+          `INSERT INTO USERS (USERNAME, PASSWD, ID_ROLE, ID_PENITENTIAR, USERTYPE, USERDATE)
+           VALUES (:u, :p, :r, :pen, 1, SYSDATE)`,
+          { u, p: pwd, r: role, pen }
+        );
+        ok++;
+        report.push(autoPass ? `✓ ${u} — parolă: ${pwd}` : `✓ ${u}`);
+      } catch (e) {
+        fail++;
+        report.push(`⨯ ${u} — ${e.message || "Eroare"}`);
+      }
+    }
+
+    await conn.commit();
+    res.json({ success: true, okCount: ok, failCount: fail, report });
+  } catch (err) {
+    console.error("/admin/user/bulk:", err);
+    if (conn) try { await conn.rollback(); } catch (_) {}
+    res.status(500).json({ success: false, error: "Eroare la adăugarea în masă." });
+  } finally {
+    if (conn) try { await conn.close(); } catch (_) {}
+  }
+});
+
+/** GET /api/admin/user/search?q=... */
+router.get("/admin/user/search", async (req, res) => {
+  try {
+    const q = (req.query.q || "").toString().trim().toLowerCase();
+    if (!q) {
+      return res.status(400).json({ success: false, error: "Termen de căutare lipsă." });
+    }
+    const like = q + "%";
+    const isNum = /^[0-9]+$/.test(q);
+    let sql, binds = { term: like };
+    if (isNum) {
+      sql = `
+        SELECT ID, USERNAME, PASSWD, ID_ROLE, ID_PENITENTIAR, LAST_LOGIN
+        FROM USERS
+        WHERE LOWER(USERNAME) LIKE :term OR ID = :id
+        ORDER BY ID
+      `;
+      binds.id = Number(q);
+    } else {
+      sql = `
+        SELECT ID, USERNAME, PASSWD, ID_ROLE, ID_PENITENTIAR, LAST_LOGIN
+        FROM USERS
+        WHERE LOWER(USERNAME) LIKE :term
+        ORDER BY ID
+      `;
+    }
+
+    const r = await db.execute(sql, binds);
+    const users = (r.rows || []).map(row => ({
+      id: Number(row.ID),
+      username: row.USERNAME,
+      password: row.PASSWD,
+      roleId: Number(row.ID_ROLE),
+      penitenciarId: Number(row.ID_PENITENTIAR),
+      lastLogin: row.LAST_LOGIN || null
+    }));
+    res.json({ success: true, users });
+  } catch (err) {
+    console.error("/admin/user/search:", err);
+    res.status(500).json({ success: false, error: "Eroare la căutare." });
+  }
+});
+
+/** POST /api/admin/user/:id/update */
+router.post("/admin/user/:id/update", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ success: false, error: "ID invalid." });
+
+    let { username, password, roleId, penitenciarId } = req.body || {};
+    username = (username || "").trim().toLowerCase();
+    password = (password || "").trim();
+    const role = Number(roleId);
+    const pen = Number(penitenciarId);
+    if (!username || !role || !pen) {
+      return res.status(400).json({ success: false, error: "Câmpuri obligatorii lipsă." });
+    }
+
+    let sql, binds;
+    if (password) {
+      sql = `
+        UPDATE USERS
+        SET USERNAME = :u, PASSWD = :p, ID_ROLE = :r, ID_PENITENCIAR = :pen
+        WHERE ID = :id
+      `;
+      binds = { u: username, p: password, r: role, pen, id };
+    } else {
+      sql = `
+        UPDATE USERS
+        SET USERNAME = :u, ID_ROLE = :r, ID_PENITENCIAR = :pen
+        WHERE ID = :id
+      `;
+      binds = { u: username, r: role, pen, id };
+    }
+
+    await db.execute(sql, binds, { autoCommit: true });
+    res.json({ success: true });
+  } catch (err) {
+    console.error("/admin/user/:id/update:", err);
+    res.status(500).json({ success: false, error: "Eroare la actualizare." });
+  }
+});
+
+/** POST /api/admin/user/:id/deactivate */
+router.post("/admin/user/:id/deactivate", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ success: false, error: "ID invalid." });
+
+    const randomHex =
+      Math.floor(100000000 + Math.random() * 900000000).toString(16) +
+      Math.floor(100000000 + Math.random() * 900000000).toString(16);
+
+    await db.execute(
+      `UPDATE USERS
+       SET USERNAME = 'INACTIV.' || USERNAME,
+           PASSWD   = :p
+       WHERE ID = :id`,
+      { p: randomHex, id },
+      { autoCommit: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error("/admin/user/:id/deactivate:", err);
+    res.status(500).json({ success: false, error: "Eroare la dezactivare." });
+  }
+});
+
+/** GET /api/admin/user/:id/rights */
+router.get("/admin/user/:id/rights", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ success: false, error: "ID invalid." });
+
+    const r = await db.execute(
+      `
+      SELECT
+        m.ID   AS MODULE_ID,
+        m.NAME AS MODULE_NAME,
+        a.ID   AS ACCESS_ID,
+        a.DREPT
+      FROM SPR_MODULES m
+      LEFT JOIN SPR_ACCESS a
+        ON a.ID_MODUL = m.ID
+       AND a.ID_USER  = :uid
+      ORDER BY m.NAME
+      `,
+      { uid: id }
+    );
+
+    const modules = (r.rows || []).map(row => ({
+      moduleId: Number(row.MODULE_ID),
+      moduleName: row.MODULE_NAME,
+      accessId: row.ACCESS_ID ? Number(row.ACCESS_ID) : null,
+      drept: row.DREPT || "N"
+    }));
+    res.json({ success: true, modules });
+  } catch (err) {
+    console.error("/admin/user/:id/rights:", err);
+    res.status(500).json({ success: false, error: "Eroare la încărcarea drepturilor." });
+  }
+});
+
+/** POST /api/admin/user/:id/rights */
+router.post("/admin/user/:id/rights", async (req, res) => {
+  let conn;
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ success: false, error: "ID invalid." });
+
+    const rights = Array.isArray(req.body.rights) ? req.body.rights : [];
+    if (!rights.length) {
+      return res.status(400).json({ success: false, error: "Nu există drepturi de salvat." });
+    }
+
+    conn = await db.getConnection();
+
+    for (const r of rights) {
+      const modul = Number(r.moduleId);
+      const drept = (r.drept || "N").toUpperCase();
+      if (!modul || !["N", "R", "W"].includes(drept)) continue;
+
+      const accessId = r.accessId ? Number(r.accessId) : null;
+      if (!accessId && (drept === "R" || drept === "W")) {
+        await conn.execute(
+          `INSERT INTO PRISON.SPR_ACCESS (ID, ID_MODUL, ID_USER, DREPT)
+           VALUES (PRISON.SPR_ACCESS_SEQ.NEXTVAL, :m, :u, :d)`,
+          { m: modul, u: id, d: drept }
+        );
+      } else if (accessId && drept === "N") {
+        await conn.execute(
+          "DELETE FROM SPR_ACCESS WHERE ID = :id",
+          { id: accessId }
+        );
+      } else if (accessId) {
+        await conn.execute(
+          "UPDATE SPR_ACCESS SET DREPT = :d WHERE ID = :id",
+          { d: drept, id: accessId }
+        );
+      }
+    }
+
+    await conn.commit();
+    res.json({ success: true });
+  } catch (err) {
+    console.error("/admin/user/:id/rights:", err);
+    if (conn) try { await conn.rollback(); } catch (_) {}
+    res.status(500).json({ success: false, error: "Eroare la salvarea drepturilor." });
+  } finally {
+    if (conn) try { await conn.close(); } catch (_) {}
+  }
+});
+
+/** Announcements */
+
+// GET /api/admin/ann
+router.get("/admin/ann", async (req, res) => {
+  try {
+    const r = await db.execute(
+      "SELECT ID, MESAJ FROM PRISON.ANUNT ORDER BY ID DESC"
+    );
+    res.json({
+      success: true,
+      items: (r.rows || []).map(row => ({
+        id: Number(row.ID),
+        message: (row.MESAJ || "").trim()
+      }))
+    });
+  } catch (err) {
+    console.error("/admin/ann GET:", err);
+    res.status(500).json({ success: false, error: "Eroare la încărcarea anunțurilor." });
+  }
+});
+
+// POST /api/admin/ann
+router.post("/admin/ann", async (req, res) => {
+  try {
+    const msg = (req.body.message || "").trim();
+    if (!msg) {
+      return res.status(400).json({ success: false, error: "Textul este gol." });
+    }
+    await db.execute(
+      "INSERT INTO PRISON.ANUNT (ID, MESAJ) VALUES (ANUNT_SEQ.NEXTVAL, :m)",
+      { m: msg },
+      { autoCommit: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error("/admin/ann POST:", err);
+    res.status(500).json({ success: false, error: "Eroare la salvare." });
+  }
+});
+
+// DELETE /api/admin/ann (all)
+router.delete("/admin/ann", async (req, res) => {
+  try {
+    await db.execute("DELETE FROM PRISON.ANUNT", {}, { autoCommit: true });
+    res.json({ success: true });
+  } catch (err) {
+    console.error("/admin/ann DELETE all:", err);
+    res.status(500).json({ success: false, error: "Eroare la ștergere." });
+  }
+});
+
+// DELETE /api/admin/ann/:id
+router.delete("/admin/ann/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ success: false, error: "ID invalid." });
+
+    await db.execute(
+      "DELETE FROM PRISON.ANUNT WHERE ID = :id",
+      { id },
+      { autoCommit: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error("/admin/ann/:id DELETE:", err);
+    res.status(500).json({ success: false, error: "Eroare la ștergere." });
+  }
+});
+
+module.exports = router;
+</file>
+
+<file path="src/routes/auth.js">
+// src/routes/auth.js
+const express = require("express");
+const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
+const db = require("../db");
+const config = require("../config");
+
+const router = express.Router();
+
+/**
+ * Legacy password verification:
+ * - plain text match
+ * - bcrypt ($2*... 60 chars)
+ * - MD5 (32 hex chars)
+ */
+function verifyPasswordLegacy(input, dbHash) {
+  if (!dbHash) return false;
+  input = String(input);
+  dbHash = String(dbHash);
+
+  // Plain text
+  if (input === dbHash) return true;
+
+  // bcrypt
+  if (dbHash.length === 60 && dbHash.startsWith("$2")) {
+    try {
+      return bcrypt.compareSync(input, dbHash);
+    } catch {
+      return false;
+    }
+  }
+
+  // MD5
+  if (dbHash.length === 32 && /^[a-fA-F0-9]{32}$/.test(dbHash)) {
+    const md5 = crypto.createHash("md5").update(input, "utf8").digest("hex");
+    return md5.toLowerCase() === dbHash.toLowerCase();
+  }
+
+  return false;
+}
+
+async function logUserAction(username, action, detail) {
+  const safeUser = String(username || "").substring(0, 30);
+  const safeDetail = String(detail || "").substring(0, 50);
+
+  const sql =
+    "INSERT INTO USER_LOGS (USERNAME, ACTION, E_DATE, DETINUT) " +
+    "VALUES (:u, :a, SYSDATE, :d)";
+
+  try {
+    await db.execute(
+      sql,
+      { u: safeUser, a: action, d: safeDetail },
+      { autoCommit: true }
+    );
+  } catch (err) {
+    console.error("USER_LOGS insert failed:", err);
+  }
+}
+
+async function isLoginBlocked(username) {
+  const intervalDays = config.loginCooldownMinutes / (60 * 24); // minutes -> fraction of day
+
+  const sql =
+    "SELECT COUNT(*) AS CNT " +
+    "FROM USER_LOGS " +
+    "WHERE USERNAME = :u " +
+    "  AND ACTION = 'LOGIN_FAIL' " +
+    "  AND E_DATE >= SYSDATE - :intervalDays";
+
+  try {
+    const result = await db.execute(
+      sql,
+      { u: username, intervalDays },
+      {}
+    );
+    const rows = result.rows || [];
+    const count = rows.length ? Number(rows[0].CNT) : 0;
+    return {
+      blocked: count >= config.loginMaxFailedAttempts,
+      failedCount: count
+    };
+  } catch (err) {
+    console.error("Cooldown check failed:", err);
+    return { blocked: false, failedCount: 0 };
+  }
+}
+
+/**
+ * GET /api/motives
+ * Load SPR_MOTIV_ACCESS for dropdown.
+ */
+router.get("/motives", async (req, res) => {
+  try {
+    const sql =
+      "SELECT ID, TEXT " +
+      "FROM SPR_MOTIV_ACCESS " +
+      "ORDER BY TEXT";
+    const result = await db.execute(sql, {}, {});
+    const motives = (result.rows || []).map((row) => ({
+      id: Number(row.ID),
+      text: String(row.TEXT || "")
+    }));
+
+    res.json({
+      success: true,
+      motives
+    });
+  } catch (err) {
+    console.error("SPR_MOTIV_ACCESS query failed:", err);
+    res.status(500).json({
+      success: false,
+      error: "Nu s-au putut încărca motivele de acces."
+    });
+  }
+});
+
+/**
+ * POST /api/login
+ * Body: { username, password, motivId }
+ */
+router.post("/login", async (req, res) => {
+  const usernameRaw = (req.body.username || "").trim();
+  const password = String(req.body.password || "");
+  const motivId = Number(req.body.motivId || 0);
+
+  if (!usernameRaw || !password || !motivId) {
+    return res.status(400).json({
+      success: false,
+      error: "Utilizator, parolă și motiv acces sunt obligatorii."
+    });
+  }
+
+  // Adjust if your DB stores usernames uppercased
+  const username = usernameRaw; // or usernameRaw.toUpperCase();
+
+  // Cooldown check
+  const { blocked } = await isLoginBlocked(username);
+  if (blocked) {
+    await logUserAction(
+      username,
+      "LOGIN_BLOCKED",
+      "Cooldown after too many failed attempts"
+    );
+    return res.status(429).json({
+      success: false,
+      error: "Prea multe încercări eșuate. Așteptați înainte de a reîncerca.",
+      code: "COOLDOWN",
+      retryAfterMinutes: config.loginCooldownMinutes
+    });
+  }
+
+  try {
+    // 1. Load user
+    const userSql =
+      "SELECT ID, USERNAME, PASSWD, ID_PENITENTIAR, ID_ROLE " +
+      "FROM USERS " +
+      "WHERE USERNAME = :u";
+
+    const userResult = await db.execute(userSql, { u: username }, {});
+    const userRows = userResult.rows || [];
+
+    if (!userRows.length) {
+      await logUserAction(username, "LOGIN_FAIL", "Invalid username or password");
+      return res.status(401).json({
+        success: false,
+        error: "Utilizator sau parolă incorectă."
+      });
+    }
+
+    const userRow = userRows[0];
+    const dbHash = userRow.PASSWD || "";
+
+    if (!verifyPasswordLegacy(password, dbHash)) {
+      await logUserAction(username, "LOGIN_FAIL", "Invalid username or password");
+      return res.status(401).json({
+        success: false,
+        error: "Utilizator sau parolă incorectă."
+      });
+    }
+
+    // 2. Load motive text
+    const motivSql = "SELECT TEXT FROM SPR_MOTIV_ACCESS WHERE ID = :id";
+    const motivResult = await db.execute(motivSql, { id: motivId }, {});
+    const motivRows = motivResult.rows || [];
+
+    if (!motivRows.length || !motivRows[0].TEXT) {
+      return res.status(400).json({
+        success: false,
+        error: "Motiv de acces invalid."
+      });
+    }
+
+    const motivText = String(motivRows[0].TEXT);
+
+    // 3. Update USERS: LAST_LOGIN + NOTES
+    const updateSql =
+      "UPDATE USERS " +
+      "SET LAST_LOGIN = SYSDATE, " +
+      "    NOTES = :note " +
+      "WHERE ID = :id";
+
+    await db.execute(
+      updateSql,
+      {
+        note: motivText.substring(0, 50), // NOTES is VARCHAR2(50)
+        id: userRow.ID
+      },
+      { autoCommit: true }
+    );
+
+    // 4. Log success
+    await logUserAction(username, "LOGIN_OK", motivText);
+
+    // 5. Return user payload
+    const userPayload = {
+      id: Number(userRow.ID),
+      username: String(userRow.USERNAME),
+      id_penitentiary: userRow.ID_PENITENTIAR != null ? Number(userRow.ID_PENITENTIAR) : null,
+      id_role: userRow.ID_ROLE != null ? Number(userRow.ID_ROLE) : null
+    };
+
+    return res.json({
+      success: true,
+      user: userPayload
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Eroare internă la autentificare."
+    });
+  }
+});
+
+module.exports = router;
+</file>
+
+<file path="src/routes/health.js">
+// src/routes/health.js
+const express = require("express");
+const db = require("../db");
+
+const router = express.Router();
+
+/**
+ * GET /api/health
+ * Tries a trivial SELECT 1 FROM DUAL.
+ * If it fails (Oracle client missing, DB down, etc.), we tell the frontend
+ * that the DB connection is not available.
+ */
+router.get("/health", async (req, res) => {
+  try {
+    await db.execute("SELECT 1 FROM DUAL", {}, {});
+    return res.json({
+      success: true,
+      dbAvailable: true
+    });
+  } catch (err) {
+    console.error("DB health check failed:", err);
+    return res.status(200).json({
+      success: false,
+      dbAvailable: false,
+      message:
+        "Pagina web este accesibilă dar conexiunea cu baza de date a eșuat. Vă rugăm contactați-ne de urgență la anp.siarprac@anp.gov.md."
+    });
+  }
+});
+
+module.exports = router;
+</file>
+
+<file path="src/routes/interogari.js">
+// src/routes/interogari.js
+const express = require("express");
+const db = require("../db");
+const router = express.Router();
+
+/* HELPER: Standardize DB responses 
+*/
+function formatRows(rows) {
+  return (rows || []).map(r => {
+    // Normalize Oracle keys to lowercase for easier frontend handling? 
+    // Or keep them as is. Let's keep standard object structure.
+    return r;
+  });
+}
+
+/* HELPER: Get User Info for Print Headers
+*/
+async function getUserInfo(req) {
+  const uid = Number(req.header("x-user-id") || 0);
+  if (!uid) return { username: "Unknown", role: 0 };
+  
+  try {
+    const r = await db.execute("SELECT USERNAME, ID_ROLE FROM USERS WHERE ID = :id", { id: uid });
+    if (r.rows && r.rows.length) {
+      return { username: r.rows[0].USERNAME, role: Number(r.rows[0].ID_ROLE) };
+    }
+  } catch (e) { console.error(e); }
+  return { username: "Unknown", role: 0 };
+}
+
+/*
+  ===========================================================================
+  ENDPOINT: /api/interogari/exec
+  BODY: { type: 'LISTA', params: { ... } }
+  ===========================================================================
+*/
+router.post("/interogari/exec", async (req, res) => {
+  const { type, params } = req.body;
+  const uid = Number(req.header("x-user-id"));
+  
+  // Security check (basic role check can be expanded here based on the PHP array logic)
+  // For now, we assume the frontend handles visibility, and we rely on DB binding security.
+  
+  let sql = "";
+  let binds = {};
+  let headers = []; // For print feature
+  let title = "";
+
+  try {
+    switch (type) {
+      // ========================================================================
+      // GROUP: DETINUTI
+      // ========================================================================
+      
+      case 'LISTA': // Lista Deținuți (Instituția Curentă a Userului)
+        // Need user's penitentiary. Fetch it first.
+        const uRes = await db.execute("SELECT ID_PENITENTIAR FROM USERS WHERE ID = :id", { id: uid });
+        const userPen = uRes.rows[0]?.ID_PENITENTIAR;
+        
+        sql = `
+          SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PM.ID_PENETENCIAR AS PENITENCIAR
+          FROM PRISON.DETINUTI pd 
+          INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp) 
+          INNER JOIN (SELECT pm2.idnp AS idnp, MAX(pm2.adate) AS dt FROM PRISON.MISCARI pm2 GROUP BY pm2.idnp) md
+             ON (md.idnp = pd.idnp AND pm.adate = md.dt)
+          WHERE PM.ID_PENETENCIAR = :pid AND PM.ID_TYPE_MISCARI IN (1,3)
+          GROUP BY PD.SURNAME, PD.NAME, PD.SEC_NAME, PD.BIRDTH, PM.ID_PENETENCIAR, PD.ID, PD.IDNP
+          ORDER BY NUME, PRENUME
+        `;
+        binds = { pid: userPen || 0 };
+        headers = ["Nr.", "IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar"];
+        title = "Lista Deținuți (Instituția Curentă)";
+        break;
+
+      case 'LISTAP': // Lista pe Instituție (Selectată)
+        // Requires params.institution_id
+        sql = `
+          SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PM.ID_PENETENCIAR AS PENITENCIAR,
+                 pen.NAME as PEN_NAME
+          FROM PRISON.DETINUTI pd
+          INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp)
+          INNER JOIN PRISON.SPR_PENITENCIAR pen ON (pm.ID_PENETENCIAR = pen.ID)
+          INNER JOIN (SELECT pm2.idnp AS idnp, MAX(pm2.adate) AS dt FROM PRISON.MISCARI pm2 GROUP BY pm2.idnp) md
+             ON (md.idnp = pd.idnp AND pm.adate = md.dt)
+          WHERE PM.ID_PENETENCIAR = :pid AND (PM.ID_TYPE_MISCARI IN (1,3))
+          GROUP BY PD.SURNAME, PD.NAME, PD.SEC_NAME, PD.BIRDTH, PM.ID_PENETENCIAR, PD.ID, PD.IDNP, pen.NAME
+          ORDER BY NUME, PRENUME
+        `;
+        binds = { pid: params.institution_id };
+        headers = ["Nr.", "IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar"];
+        title = "Lista Deținuți pe Instituție";
+        break;
+
+      case 'SEARCH_BY_AGE':
+        sql = `
+          SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, 
+                 TRUNC(MONTHS_BETWEEN(SYSDATE, PD.BIRDTH)/12) AS VARSTA,
+                 PEN.NAME AS PENITENCIAR
+          FROM PRISON.DETINUTI PD
+          INNER JOIN PRISON.MISCARI PM ON PD.IDNP = PM.IDNP
+          INNER JOIN PRISON.SPR_PENITENCIAR PEN ON PEN.ID = PM.ID_PENETENCIAR
+          INNER JOIN (SELECT IDNP, MAX(ADATE) AS DT FROM PRISON.MISCARI GROUP BY IDNP) LAST
+            ON LAST.IDNP = PD.IDNP AND LAST.DT = PM.ADATE
+          WHERE PM.ID_TYPE_MISCARI IN (1,3)
+            AND PM.ID_PENETENCIAR = :idpen
+            AND TRUNC(MONTHS_BETWEEN(SYSDATE, PD.BIRDTH)/12) BETWEEN :minage AND :maxage
+          ORDER BY NUME, PRENUME
+        `;
+        binds = { idpen: params.institution_id, minage: params.min_age, maxage: params.max_age };
+        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Vârsta", "Penitenciar"];
+        title = `Căutare Vârstă (${params.min_age}-${params.max_age} ani)`;
+        break;
+
+      // ========================================================================
+      // GROUP: STRAINI
+      // ========================================================================
+      case 'CETATENI':
+        // Assuming V_STRAINI view exists and has IDNP
+        // We add a WHERE clause if user is restricted to a penitentiary, but for simplicity here we fetch all 
+        // unless specific requirement. The PHP code checked $idpenitenciar.
+        
+        const uRes2 = await db.execute("SELECT ID_PENITENTIAR FROM USERS WHERE ID = :id", { id: uid });
+        const myPen = uRes2.rows[0]?.ID_PENITENTIAR;
+
+        let whereClause = "";
+        binds = {};
+        if (myPen) {
+          whereClause = "WHERE PENITENCIAR = :pid";
+          binds.pid = myPen; // Note: V_STRAINI.PENITENCIAR might be ID or Name. Assuming ID based on PHP logic.
+        }
+
+        sql = `SELECT * FROM V_STRAINI ${whereClause} ORDER BY CETATENIE`;
+        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar", "Cetățenie"];
+        title = "Cetățeni Străini";
+        break;
+
+      case 'STRAINI_ELIBERATI':
+        const currentYear = new Date().getFullYear();
+        sql = `
+          SELECT 
+            PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+            TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PD.SEX, sprpen.name AS PENITENCIARUL,
+            NVL((SELECT listagg(sprstz.name,',') WITHIN GROUP (ORDER BY sprstz.name)
+                 FROM PRISON.SITIZEN stz 
+                 INNER JOIN Prison.SPR_SITIZEN sprstz ON (stz.id_sitizen = sprstz.id)
+                 WHERE stz.idnp = PD.IDNP GROUP BY stz.idnp), '-') AS CETATENIE
+          FROM PRISON.DETINUTI pd 
+          INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp)
+          INNER JOIN PRISON.SITIZEN pst ON (pst.IDNP = pd.IDNP)
+          INNER JOIN PRISON.SPR_PENITENCIAR sprpen ON (sprpen.id = pm.id_penetenciar)
+          INNER JOIN (SELECT pm2.idnp AS idnp, MAX(pm2.adate) AS dt FROM PRISON.MISCARI pm2 GROUP BY pm2.idnp) md
+             ON (md.idnp = pd.idnp AND pm.adate = md.dt)
+          WHERE (pst.ID_SITIZEN NOT IN (498)) 
+            AND (PM.ID_TYPE_MISCARI = 4) 
+            AND pm.ADATE BETWEEN TO_DATE('01.01.${currentYear}','DD.MM.YYYY') AND TO_DATE('31.12.${currentYear}','DD.MM.YYYY')
+          ORDER BY PENITENCIARUL
+        `;
+        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Sex", "Penitenciar", "Cetățenie"];
+        title = `Străini Eliberați (${currentYear})`;
+        break;
+
+      // ========================================================================
+      // GROUP: TRANSFERURI / ESCORTARE
+      // ========================================================================
+      case 'TABELESCORTARE':
+        sql = `
+          SELECT d.ID AS ID, d.IDNP, d.NAME AS PRENUME, d.SURNAME AS NUME, d.SEC_NAME AS PATRONIMIC,
+                 TO_CHAR(vcitatie.ADATE, 'DD.MM.YYYY') AS DATASEDINTA, vcitatie.ORASEDINTA, vcitatie.NAME_INSTANTE, vcitatie.NPPJUDECATOR,
+                 vcitatie.NRSALA, vcitatie.NAME_LOCJUDECATA, pen.NAME AS PENITENCIAR, vcitatie.EXECUTOR_TRANSFER
+          FROM PRISON.V_CITATIE vcitatie
+          INNER JOIN PRISON.DETINUTI d ON (vcitatie.IDNP = d.IDNP)
+          INNER JOIN PRISON.MISCARI pm ON (d.idnp = pm.idnp)
+          INNER JOIN PRISON.SPR_PENITENCIAR pen ON (PM.ID_PENETENCIAR = pen.ID)
+          INNER JOIN (SELECT pm2.idnp AS idnp, MAX(pm2.adate) AS dt FROM PRISON.MISCARI pm2  GROUP BY pm2.idnp) md
+            ON (md.idnp = d.idnp AND pm.adate = md.dt)
+          WHERE (PM.ID_TYPE_MISCARI IN (1,3)) AND vcitatie.ADATE = TO_DATE(:d,'DD.MM.YYYY') AND vcitatie.ANULAT <> 'Y'
+          GROUP BY d.ID, d.IDNP, d.NAME, d.SURNAME, d.SEC_NAME, vcitatie.ADATE, vcitatie.ORASEDINTA, vcitatie.NAME_INSTANTE,
+                   vcitatie.NPPJUDECATOR, vcitatie.NRSALA, pen.NAME, vcitatie.EXECUTOR_TRANSFER, vcitatie.NAME_LOCJUDECATA
+          ORDER BY pen.NAME, vcitatie.NAME_INSTANTE
+        `;
+        binds = { d: params.date }; // format DD.MM.YYYY
+        headers = ["IDNP", "Nume Complet", "Data Ședință", "Detalii Instanță", "Loc Judecată", "Executor", "Penitenciar"];
+        title = `Tabel Escortare (${params.date})`;
+        break;
+
+      case 'TABELTRANSFERPENITENCIARE':
+        sql = `
+          SELECT d.ID AS ID, d.IDNP, d.NAME AS PRENUME, d.SURNAME AS NUME, d.SEC_NAME AS PATRONIMIC,
+                 TO_CHAR(vcitatie.ADATE, 'DD.MM.YYYY') AS DATASEDINTA, vcitatie.ORASEDINTA, vcitatie.NAME_INSTANTE, vcitatie.NPPJUDECATOR,
+                 vcitatie.NRSALA, pen.NAME AS PENITENCIAR
+          FROM PRISON.V_CITATIE vcitatie
+          INNER JOIN PRISON.DETINUTI d ON (vcitatie.IDNP = d.IDNP)
+          INNER JOIN PRISON.MISCARI pm ON (d.idnp = pm.idnp)
+          INNER JOIN PRISON.SPR_PENITENCIAR pen ON (PM.ID_PENETENCIAR = pen.ID)
+          INNER JOIN (SELECT pm2.idnp AS idnp, MAX(pm2.adate) AS dt FROM PRISON.MISCARI pm2 GROUP BY pm2.idnp) md
+            ON (md.idnp = d.idnp AND pm.adate = md.dt)
+          WHERE (PM.ID_TYPE_MISCARI IN (1,3)) AND vcitatie.ADATE = TO_DATE(:d,'DD.MM.YYYY') AND vcitatie.ANULAT <> 'Y'
+          GROUP BY d.ID, d.IDNP, d.NAME, d.SURNAME, d.SEC_NAME, vcitatie.ADATE, vcitatie.ORASEDINTA, vcitatie.NAME_INSTANTE,
+                   vcitatie.NPPJUDECATOR, vcitatie.NRSALA, pen.NAME, vcitatie.EXECUTOR_TRANSFER
+          ORDER BY pen.NAME, vcitatie.NAME_INSTANTE
+        `;
+        binds = { d: params.date };
+        headers = ["IDNP", "Nume Complet", "Data Transfer", "Destinație (Penitenciar/Instanță)", "Penitenciar Curent"];
+        title = `Transfer Penitenciare (${params.date})`;
+        break;
+
+      case 'LISTADUPACELULE':
+        sql = `
+          SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PMC.ROOM AS CELULA, 
+                 TO_CHAR(PMC.ADATE, 'DD.MM.YYYY HH24:MI') AS DATAMISCARECELULA, pen.NAME AS PENITENCIAR
+          FROM PRISON.DETINUTI pd
+          INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp)
+          INNER JOIN PRISON.SPR_PENITENCIAR pen ON (PM.ID_PENETENCIAR = pen.ID)
+          INNER JOIN PRISON.MISCARI_CELULE pmc ON (pmc.ID_MISCARI = pm.ID)
+          WHERE (PM.ID_TYPE_MISCARI IN (1,3))
+            AND (pmc.ADATE BETWEEN TO_DATE(:b,'DD.MM.YYYY') AND TO_DATE(:e,'DD.MM.YYYY'))
+          ORDER BY pen.NAME, PMC.ADATE
+        `;
+        binds = { b: params.start_date, e: params.end_date };
+        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Naștere", "Celulă", "Data Mișcare", "Penitenciar"];
+        title = `Mișcare Celule (${params.start_date} - ${params.end_date})`;
+        break;
+
+      case 'LISTA206': // Securitate Personala
+        const uRes3 = await db.execute("SELECT ID_PENITENTIAR FROM USERS WHERE ID = :id", { id: uid });
+        const pen206 = uRes3.rows[0]?.ID_PENITENTIAR || 0;
+        
+        sql = `
+          SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, penit.NAME AS PENITENCIAR
+          FROM PRISON.DETINUTI pd
+          INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp)
+          INNER JOIN PRISON.SPR_PENITENCIAR penit ON (penit.ID = PM.ID_PENETENCIAR)
+          INNER JOIN PRISON.SECURITATE_PERSONALA secpers ON (secpers.idnp = pd.idnp)
+          INNER JOIN (SELECT pm2.idnp AS idnp, MAX(pm2.adate) AS dt FROM PRISON.MISCARI pm2 GROUP BY pm2.idnp) md
+            ON (md.idnp = pd.idnp AND pm.adate = md.dt)
+          WHERE PM.ID_PENETENCIAR = :pid AND secpers.EDATE IS NULL AND PM.ID_TYPE_MISCARI IN (1,3)
+          GROUP BY PD.SURNAME, PD.NAME, PD.SEC_NAME, PD.BIRDTH, penit.NAME, PD.ID, PD.IDNP
+          ORDER BY penit.NAME, PD.SURNAME, PD.NAME
+        `;
+        binds = { pid: pen206 };
+        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar"];
+        title = "Securitate Personală (Art. 206)";
+        break;
+
+      case 'ECUSON':
+         const uRes4 = await db.execute("SELECT ID_PENITENTIAR FROM USERS WHERE ID = :id", { id: uid });
+         const penBadge = uRes4.rows[0]?.ID_PENITENTIAR || 0;
+         sql = `
+          SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PM.ID_PENETENCIAR AS PENITENCIAR
+          FROM PRISON.DETINUTI pd 
+          INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp )
+          INNER JOIN (SELECT pm2.idnp AS idnp, MAX(pm2.adate) AS dt FROM PRISON.MISCARI pm2 GROUP BY pm2.idnp) md
+            ON (md.idnp = pd.idnp AND pm.adate = md.dt)
+          WHERE PM.ID_PENETENCIAR = :pid AND PM.ID_TYPE_MISCARI IN (1,3)
+          GROUP BY PD.SURNAME, PD.NAME, PD.SEC_NAME, PD.BIRDTH, PM.ID_PENETENCIAR, PD.ID, PD.IDNP
+          ORDER BY NUME, PRENUME
+         `;
+         binds = { pid: penBadge };
+         headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar"];
+         title = "Generare Ecusoane";
+         break;
+
+      // ========================================================================
+      // GROUP: COLETE / VIZITE
+      // ========================================================================
+      case 'COLETE': // by Source
+        sql = `
+          SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC, 
+                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, penit.NAME AS PENITENCIAR,
+                 c.SURSA_PROV, TO_CHAR(c.DATE_IN, 'DD.MM.YYYY') AS DATA_INTRARE
+          FROM PRISON.DETINUTI pd
+          INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp)
+          INNER JOIN PRISON.SPR_PENITENCIAR penit ON (penit.ID = PM.ID_PENETENCIAR)
+          INNER JOIN PRISON.COLETA c ON (c.idnp = pd.idnp)
+          INNER JOIN (SELECT pm2.idnp AS idnp, MAX(pm2.adate) AS dt FROM PRISON.MISCARI pm2 GROUP BY pm2.idnp) md
+             ON (md.idnp = pd.idnp AND pm.adate = md.dt)
+          WHERE UPPER(c.SURSA_PROV) LIKE :s 
+          GROUP BY PD.ID, PD.IDNP, PD.SURNAME, PD.NAME, PD.SEC_NAME, PD.BIRDTH, penit.NAME, c.SURSA_PROV, c.DATE_IN
+          ORDER BY NUME, PRENUME
+        `;
+        binds = { s: `%${(params.sursa || '').toUpperCase()}%` };
+        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar", "Sursa", "Data Intrare"];
+        title = `Colete (Sursa: ${params.sursa})`;
+        break;
+
+      case 'SEARCH_COLETA_DATE':
+        sql = `
+          SELECT c.ID, c.IDNP, TO_CHAR(c.DATE_IN, 'DD.MM.YYYY') AS DATE_IN, c.PERSON, c.CONTINUT, c.SURSA_PROV,
+                 d.ID AS DETINUT_ID, d.SURNAME || ' ' || d.NAME as NUME_DETINUT
+          FROM PRISON.COLETA c
+          LEFT JOIN PRISON.DETINUTI d ON d.IDNP = c.IDNP
+          WHERE c.DATE_IN BETWEEN TO_DATE(:b,'DD.MM.YYYY') AND TO_DATE(:e,'DD.MM.YYYY')
+          ORDER BY c.DATE_IN DESC
+        `;
+        binds = { b: params.start_date, e: params.end_date };
+        headers = ["IDNP", "Deținut", "Persoană Predare", "Data", "Conținut", "Sursă"];
+        title = `Colete (${params.start_date} - ${params.end_date})`;
+        break;
+        
+      case 'CAUTINTREVEDERE':
+         const qTerm = (params.term || '').toUpperCase();
+         sql = `
+            SELECT I.IDNP, I.NRDOCUMENT, I.SURNAME, I.NAME, I.SEC_NAME, I.ID, D.ID AS PROFIL_DET,
+                   TO_CHAR(I.DATA_INTREVEDERE, 'DD.MM.YYYY') AS DATA_VIZITA
+            FROM PRISON.INTREVEDERI I
+            LEFT JOIN PRISON.DETINUTI D ON I.IDNP = D.IDNP
+            WHERE UPPER(I.SURNAME) LIKE '%' || :q || '%'
+               OR UPPER(I.SEC_NAME) LIKE '%' || :q || '%'
+               OR UPPER(I.NAME)    LIKE '%' || :q || '%'
+               OR UPPER(I.NRDOCUMENT) LIKE '%' || :q || '%'
+            ORDER BY I.SURNAME, I.NAME
+         `;
+         binds = { q: qTerm };
+         headers = ["IDNP", "Nume Vizitator", "Prenume", "Patronimic", "Nr. Doc", "Data"];
+         title = `Întrevederi (${params.term})`;
+         break;
+
+      // ========================================================================
+      // GROUP: EVIDENTA (Released, Acts, Articles, Lesions)
+      // ========================================================================
+      case 'ELIBERATI':
+        sql = `
+          SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, pen.NAME AS PENITENCIAR, 
+                 TO_CHAR(PM.ADATE, 'DD.MM.YYYY') AS DATAELIBERARE
+          FROM PRISON.DETINUTI pd
+          INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp)
+          INNER JOIN PRISON.SPR_PENITENCIAR pen ON (PM.ID_PENETENCIAR = pen.ID)
+          INNER JOIN (SELECT pm2.idnp AS idnp, MAX(pm2.adate) AS dt FROM PRISON.MISCARI pm2 GROUP BY pm2.idnp) md
+            ON (md.idnp = pd.idnp AND pm.adate = md.dt)
+          WHERE (PM.ID_TYPE_MISCARI = 4)
+            AND (PM.ADATE BETWEEN TO_DATE(:b,'DD.MM.YYYY') AND TO_DATE(:e,'DD.MM.YYYY'))
+          ORDER BY NUME, PRENUME
+        `;
+        binds = { b: params.start_date, e: params.end_date };
+        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Naștere", "Penitenciar", "Data Eliberare"];
+        title = `Eliberați (${params.start_date} - ${params.end_date})`;
+        break;
+
+      case 'SEARCH_ACTE_EXPIRED':
+        sql = `
+          SELECT DISTINCT d.ID, d.IDNP, d.SURNAME AS NUME, d.NAME AS PRENUME, d.SEC_NAME AS PATRONIMIC,
+                 TO_CHAR(d.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, pen.NAME AS PENITENCIARUL
+          FROM PRISON.DETINUTI d
+          JOIN PRISON.MISCARI m ON m.IDNP = d.IDNP
+          JOIN (
+              SELECT IDNP FROM PRISON.ACTE GROUP BY IDNP HAVING MAX(VALABIL_PINA) < TRUNC(SYSDATE)
+          ) a ON a.IDNP = d.IDNP
+          JOIN PRISON.SPR_PENITENCIAR pen ON pen.ID = m.ID_PENETENCIAR
+          JOIN (SELECT IDNP, MAX(ADATE) AS ADATE FROM PRISON.MISCARI GROUP BY IDNP) md
+            ON md.IDNP = m.IDNP AND md.ADATE = m.ADATE
+          WHERE m.ID_TYPE_MISCARI IN (1, 3)
+          ORDER BY pen.NAME, d.SURNAME
+        `;
+        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Naștere", "Penitenciar"];
+        title = "Acte Expirate (Toate)";
+        break;
+        
+      case 'SEARCH_LEZIUNI':
+         sql = `
+          SELECT i.IDNP, TO_CHAR(i.INSERTEDDATE, 'DD.MM.YYYY') AS INSERTEDDATE, i.CIRCUMSTANTE, i.MEDICAL_CONCLUSION, 
+                 s.NAME AS INCIDENT_TYPE, p.NAME AS PENITENCIAR, d.ID AS DETINUT_ID, d.SURNAME || ' ' || d.NAME as NUME
+          FROM PRISON.INCIDENTS i
+          JOIN PRISON.SPR_TYPE_INCIDENT s ON i.ID_TYPE_INCIDENT = s.ID
+          JOIN PRISON.SPR_PENITENCIAR p ON i.ID_PENITENCIAR = p.ID
+          LEFT JOIN PRISON.DETINUTI d ON d.IDNP = i.IDNP
+          WHERE i.INSERTEDDATE BETWEEN TO_DATE(:b,'DD.MM.YYYY') AND TO_DATE(:e,'DD.MM.YYYY')
+          ORDER BY i.INSERTEDDATE DESC
+         `;
+         binds = { b: params.start_date, e: params.end_date };
+         headers = ["IDNP", "Nume", "Data", "Tip", "Circumstanțe", "Concluzie", "Penitenciar"];
+         title = `Leziuni (${params.start_date} - ${params.end_date})`;
+         break;
+         
+      case 'CAUTARTICOL':
+         // First get article ID
+         const aRes = await db.execute("SELECT ID FROM PRISON.SPR_ARTICOL WHERE ANUMBER = :anum", { anum: params.article });
+         if (!aRes.rows.length) {
+             return res.json({ success: true, rows: [], headers: [], title: "Căutare Articol: " + params.article });
+         }
+         const artId = aRes.rows[0].ID;
+         
+         sql = `
+           SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+                  TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PEN.NAME AS PENITENCIARUL
+           FROM PRISON.DETINUTI PD
+           INNER JOIN PRISON.MISCARI PM ON (PD.IDNP = PM.IDNP)
+           INNER JOIN PRISON.HOTARIRI_JUD PHOT ON (PD.IDNP = PHOT.IDNP)
+           INNER JOIN PRISON.SPR_PENITENCIAR PEN ON (PM.ID_PENETENCIAR = PEN.ID)
+           INNER JOIN PRISON.ARTICOLES PART ON (PHOT.ID = PART.ID_DOCUMENT AND PART.TYPE_DOCUMENT = 2 AND PART.ID_ARTICOL = :id)
+           INNER JOIN (SELECT PM2.IDNP, MAX(PM2.ADATE) AS DT FROM PRISON.MISCARI PM2 GROUP BY PM2.IDNP) MD
+              ON (MD.IDNP = PD.IDNP AND PM.ADATE = MD.DT)
+           WHERE PM.ID_TYPE_MISCARI IN (1,3)
+           GROUP BY PD.ID, PD.IDNP, PD.SURNAME, PD.NAME, PD.SEC_NAME, PD.BIRDTH, PEN.NAME
+           ORDER BY PD.SURNAME
+         `;
+         binds = { id: artId };
+         headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar"];
+         title = `Căutare după Articol: ${params.article}`;
+         break;
+
+      default:
+        return res.status(400).json({ success: false, error: "Tip interogare necunoscut." });
+    }
+
+    const result = await db.execute(sql, binds);
+    const rows = result.rows || [];
+    
+    res.json({
+      success: true,
+      rows: rows,
+      headers: headers,
+      title: title
+    });
+
+  } catch (err) {
+    console.error("Interogari Error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/*
+  ENDPOINT: /api/interogari/print
+  Renders a pure HTML page for printing
+*/
+router.post("/interogari/print", async (req, res) => {
+  const { headers, rows, title } = req.body;
+  const userInfo = await getUserInfo(req);
+  const dateStr = new Date().toLocaleString('ro-RO');
+
+  const html = `
+  <!DOCTYPE html>
+  <html lang="ro">
+  <head>
+    <meta charset="UTF-8">
+    <title>Raport: ${title}</title>
+    <style>
+      body { font-family: "Courier New", Courier, monospace; font-size: 12px; padding: 20px; }
+      h1 { font-size: 16px; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+      .meta { margin-bottom: 20px; font-size: 11px; color: #333; }
+      table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+      th, td { border: 1px solid #000; padding: 4px 6px; text-align: left; font-size: 11px; }
+      th { background-color: #f0f0f0; font-weight: bold; }
+      @media print {
+        .no-print { display: none; }
+        th { background-color: #ddd !important; -webkit-print-color-adjust: exact; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="no-print" style="margin-bottom: 20px;">
+      <button onclick="window.print()" style="padding: 8px 16px; cursor:pointer;">🖨️ Printează acum</button>
+      <button onclick="window.close()" style="padding: 8px 16px; cursor:pointer;">Închide</button>
+    </div>
+
+    <h1>RAPORT: ${title}</h1>
+    
+    <div class="meta">
+      <strong>Generat de:</strong> ${userInfo.username} (Rol: ${userInfo.role})<br/>
+      <strong>Data generării:</strong> ${dateStr}<br/>
+      <strong>Total înregistrări:</strong> ${rows.length}
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          ${headers.map(h => `<th>${h}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(row => `
+          <tr>
+             ${headers.map((_, i) => {
+                // Try to match object keys to headers index or just generic object iteration
+                // Since row is an object from DB (e.g. {IDNP: '...', NUME: '...'}), we need to map headers to keys
+                // But the headers array sent from frontend doesn't carry keys.
+                // Quick fix: Backend sends 'rows' as array of objects. 
+                // We will trust the object key order OR map generically.
+                const keys = Object.keys(row);
+                // We skip 'ID' if it's the first key and headers doesn't look like it wants ID (usually for links)
+                // For robustness, let's just dump values.
+                const val = Object.values(row)[i] || ''; 
+                return `<td>${val}</td>`;
+             }).join('')}
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  </body>
+  </html>
+  `;
+
+  res.send(html);
+});
+
+// Helper for select dropdowns (Institutions)
+router.get("/interogari/institutions", async (req, res) => {
+  try {
+    const r = await db.execute("SELECT ID, NAME FROM PRISON.SPR_PENITENCIAR ORDER BY NAME");
+    res.json({ success: true, items: r.rows });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+module.exports = router;
+</file>
+
+<file path="src/routes/nav.js">
+// src/routes/nav.js
+const express = require("express");
+const db = require("../db");
+const modulesConfig = require("../modulesConfig");
+
+const router = express.Router();
+
+/**
+ * GET /api/nav?userId=123
+ */
+router.get("/nav", async (req, res) => {
+  const userId = Number(req.query.userId || 0);
+
+  if (!userId) {
+    return res.status(400).json({
+      success: false,
+      error: "Parametrul userId este obligatoriu."
+    });
+  }
+
+  try {
+    // 1) Load user (ID_ROLE)
+    const userSql =
+      "SELECT ID, USERNAME, ID_ROLE " +
+      "FROM USERS " +
+      "WHERE ID = :id";
+    const userResult = await db.execute(userSql, { id: userId }, {});
+    const userRows = userResult.rows || [];
+
+    if (!userRows.length) {
+      return res.status(401).json({
+        success: false,
+        error: "Utilizator inexistent sau invalid."
+      });
+    }
+
+    const userRow = userRows[0];
+    const roleId =
+      userRow.ID_ROLE !== null && userRow.ID_ROLE !== undefined
+        ? Number(userRow.ID_ROLE)
+        : null;
+
+    // 2) Prepare list of module IDs that need SPR_ACCESS check
+    const moduleIds = modulesConfig
+      .map((m) => m.oracleModuleId)
+      .filter((id) => id !== null && id !== undefined);
+
+    let accessMap = {};
+
+    if (moduleIds.length > 0) {
+      const bindParams = { userId: userId };
+      const placeholders = moduleIds
+        .map((id, idx) => {
+          const name = `m${idx}`;
+          bindParams[name] = id;
+          return `:${name}`;
+        })
+        .join(",");
+
+      const accessSql =
+        "SELECT ID_MODUL, DREPT " +
+        "FROM SPR_ACCESS " +
+        "WHERE ID_USER = :userId " +
+        `  AND ID_MODUL IN (${placeholders})`;
+
+      const accessResult = await db.execute(accessSql, bindParams, {});
+      const accessRows = accessResult.rows || [];
+
+      accessRows.forEach((row) => {
+        const modId = Number(row.ID_MODUL);
+        const drept = String(row.DREPT || "").toUpperCase();
+        accessMap[modId] = drept; // 'R' or 'W'
+      });
+    }
+
+    function hasMinPermission(minPermission, drept) {
+      if (!drept) return false;
+      drept = drept.toUpperCase();
+      if (minPermission === "W") {
+        return drept === "W";
+      }
+      // minPermission === "R"
+      return drept === "R" || drept === "W";
+    }
+
+    const allowedModules = modulesConfig
+      .filter((mod) => {
+        // Check role requirement first
+        if (Array.isArray(mod.requiredRoles) && mod.requiredRoles.length > 0) {
+          if (roleId === null || !mod.requiredRoles.includes(roleId)) {
+            return false;
+          }
+        }
+
+        // If no oracleModuleId, rely only on role
+        if (mod.oracleModuleId === null) {
+          return true;
+        }
+
+        const drept = accessMap[mod.oracleModuleId];
+        return hasMinPermission(mod.minPermission || "R", drept);
+      })
+      .map((mod) => ({
+        key: mod.key,
+        label: mod.label,
+        path: mod.path,
+        minPermission: mod.minPermission,
+        oracleModuleId: mod.oracleModuleId
+      }));
+
+    return res.json({
+      success: true,
+      user: {
+        id: Number(userRow.ID),
+        username: String(userRow.USERNAME),
+        id_role: roleId
+      },
+      modules: allowedModules
+    });
+  } catch (err) {
+    console.error("Error in /api/nav:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Eroare internă la generarea meniului."
+    });
+  }
+});
+
+module.exports = router;
+</file>
+
+<file path="src/routes/profile.js">
+// src/routes/profile.js
+const express = require("express");
+const db = require("../db");
+
+const router = express.Router();
+
+/**
+ * GET /api/profile?userId=123
+ *
+ * Returns:
+ *  - user info (USERS)
+ *  - last 40 USER_LOGS by USERNAME
+ *  - permissions for all SPR_MODULES, based on SPR_ACCESS for this user
+ */
+router.get("/profile", async (req, res) => {
+  const userId = Number(req.query.userId || 0);
+  if (!userId) {
+    return res.status(400).json({
+      success: false,
+      error: "Parametrul userId este obligatoriu."
+    });
+  }
+
+  try {
+    // --- 1) User info ---
+    let userRow;
+
+    try {
+      const userSql =
+        "SELECT ID, USERNAME, ID_ROLE, ID_PENITENTIAR " +
+        "FROM USERS " +
+        "WHERE ID = :id";
+
+      const userResult = await db.execute(userSql, { id: userId }, {});
+      const userRows = userResult.rows || [];
+
+      if (!userRows.length) {
+        return res.status(404).json({
+          success: false,
+          error: "Utilizatorul nu a fost găsit."
+        });
+      }
+
+      userRow = userRows[0];
+    } catch (err) {
+      console.error("USERS query failed in /api/profile:", err);
+      return res.status(500).json({
+        success: false,
+        error: "Eroare internă la încărcarea utilizatorului."
+      });
+    }
+
+    const username = String(userRow.USERNAME);
+
+    // --- 2) Logs (last 40) ---
+    let logs = [];
+    try {
+      const logsSql =
+        "SELECT * FROM (" +
+        "  SELECT USERNAME, ACTION, E_DATE, DETINUT " +
+        "  FROM PRISON.USER_LOGS " +
+        "  WHERE USERNAME = :u " +
+        "  ORDER BY E_DATE DESC" +
+        ") WHERE ROWNUM <= 10";
+
+      const logsResult = await db.execute(logsSql, { u: username }, {});
+      logs = (logsResult.rows || []).map((row) => ({
+        username: String(row.USERNAME || ""),
+        action: String(row.ACTION || ""),
+        date: row.E_DATE,
+        detail: String(row.DETINUT || "")
+      }));
+    } catch (err) {
+      console.error("USER_LOGS query failed in /api/profile:", err);
+      // logs stays []
+    }
+
+    // --- 3) Permissions (modules + SPR_ACCESS) ---
+    let permissions = [];
+    try {
+      const permSql =
+        "SELECT m.ID AS MODULE_ID, m.NAME AS MODULE_NAME, a.DREPT " +
+        "FROM PRISON.SPR_MODULES m " +
+        "LEFT JOIN PRISON.SPR_ACCESS a " +
+        "  ON a.ID_MODUL = m.ID " +
+        " AND a.ID_USER = :p_user_id " + // <--- bind name changed here
+        "ORDER BY m.NAME";
+
+      const permResult = await db.execute(permSql, { p_user_id: userId }, {});
+      permissions = (permResult.rows || []).map((row) => {
+        const dreptRaw = row.DREPT ? String(row.DREPT).toUpperCase() : null;
+        let label = "Niciun Drept";
+        if (dreptRaw === "W") label = "SCRIERE";
+        else if (dreptRaw === "R") label = "Citire";
+
+        return {
+          moduleId: Number(row.MODULE_ID),
+          moduleName: String(row.MODULE_NAME || ""),
+          drept: dreptRaw, // 'R', 'W', null
+          permissionLabel: label
+        };
+      });
+    } catch (err) {
+      console.error("SPR_MODULES/SPR_ACCESS query failed in /api/profile:", err);
+      // permissions stays []
+    }
+
+    // --- 4) Successful JSON payload ---
+    return res.json({
+      success: true,
+      user: {
+        id: Number(userRow.ID),
+        username,
+        id_role:
+          userRow.ID_ROLE !== null && userRow.ID_ROLE !== undefined
+            ? Number(userRow.ID_ROLE)
+            : null,
+        id_penitentiary:
+          userRow.ID_PENITENTIAR !== null &&
+          userRow.ID_PENITENTIAR !== undefined
+            ? Number(userRow.ID_PENITENTIAR)
+            : null
+      },
+      logs,
+      permissions
+    });
+  } catch (err) {
+    console.error("Unexpected error in /api/profile:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Eroare internă la încărcarea profilului."
+    });
+  }
+});
+
+module.exports = router;
+</file>
+
+<file path="src/routes/search.js">
+// src/routes/search.js
+const express = require("express");
+const db = require("../db");
+
+const router = express.Router();
+
+/**
+ * POST /api/search/detinuti
+ *
+ * Body JSON:
+ *  {
+ *    surname: string,
+ *    name: string,
+ *    secName: string,
+ *    idnp: string,
+ *    birth: "DD.MM.YYYY",
+ *    id: string
+ *  }
+ *
+ * Returns up to maxRows results, with last movement info.
+ */
+router.post("/search/detinuti", async (req, res) => {
+  const body = req.body || {};
+
+  let surname  = (body.surname  || "").trim();
+  let name     = (body.name     || "").trim();
+  let secName  = (body.secName  || "").trim();
+  let idnp     = (body.idnp     || "").trim();
+  let birth    = (body.birth    || "").trim();
+  let id       = (body.id       || "").trim();
+
+  // Normalize to uppercase (DB columns are uppercase, keeps indexes usable)
+  if (surname) surname = surname.toUpperCase();
+  if (name)    name    = name.toUpperCase();
+  if (secName) secName = secName.toUpperCase();
+
+  const hasAny =
+    surname || name || secName || idnp || birth || id;
+
+  if (!hasAny) {
+    return res.status(400).json({
+      success: false,
+      error: "Introduceți cel puțin un criteriu de căutare."
+    });
+  }
+
+  if (birth) {
+    // Very light validation for DD.MM.YYYY
+    if (!/^\d{2}\.\d{2}\.\d{4}$/.test(birth)) {
+      return res.status(400).json({
+        success: false,
+        error: "Data nașterii trebuie să fie în formatul ZZ.LL.AAAA."
+      });
+    }
+  } else {
+    birth = null;
+  }
+
+  const maxRows = 200; // hard cap for performance
+
+  const binds = {
+    surname: surname ? surname + "%" : null,
+    name:    name    ? name    + "%" : null,
+    secName: secName ? secName + "%" : null,
+    idnp:    idnp    ? idnp    + "%" : null,
+    id:      id      ? id      + "%" : null,
+    birth,
+    maxRows
+  };
+
+  const sql = `
+    SELECT *
+    FROM (
+      SELECT
+        v.ID,
+        v.IDNP,
+        v.SURNAME,
+        v.NAME,
+        v.SEC_NAME,
+        TO_CHAR(v.BIRDTH, 'DD.MM.YYYY') AS BIRDTH_STR,
+        v.STATUT,
+        lm.id_penetenciar AS LAST_PEN,
+        lm.id_type_miscari AS LAST_TYPE,
+        ROW_NUMBER() OVER (ORDER BY v.SURNAME, v.NAME, v.IDNP) AS RN
+      FROM PRISON.V_DETINUTI_STATUT v
+      LEFT JOIN (
+        SELECT idnp, id_penetenciar, id_type_miscari
+        FROM (
+          SELECT
+            idnp,
+            id_penetenciar,
+            id_type_miscari,
+            adate,
+            id,
+            ROW_NUMBER() OVER (PARTITION BY idnp ORDER BY adate DESC, id DESC) AS rn
+          FROM PRISON.MISCARI
+        )
+        WHERE rn = 1
+      ) lm ON lm.idnp = v.idnp
+      WHERE 1=1
+        AND (:surname IS NULL OR v.SURNAME  LIKE :surname)
+        AND (:name    IS NULL OR v.NAME     LIKE :name)
+        AND (:secName IS NULL OR v.SEC_NAME LIKE :secName)
+        AND (:idnp    IS NULL OR v.IDNP     LIKE :idnp)
+        AND (:id      IS NULL OR TO_CHAR(v.ID) LIKE :id)
+        AND (:birth   IS NULL OR v.BIRDTH = TO_DATE(:birth, 'DD.MM.YYYY'))
+    )
+    WHERE RN <= :maxRows
+  `;
+
+  const typeMap = {
+    1: "SOSIT",
+    2: "PLECAT",
+    3: "TRANZIT",
+    4: "ELIBERAT",
+    7: "TRANSFER ALT STAT",
+    8: "EXTRADAT",
+    9: "IN CAUTARE",
+    5: "DECES",
+    6: "EVADAT"
+  };
+
+  try {
+    const result = await db.execute(sql, binds, {});
+    const rows = result.rows || [];
+
+    const items = rows.map((row) => {
+      const lastTypeId = row.LAST_TYPE != null ? Number(row.LAST_TYPE) : null;
+      const lastTypeLabel = lastTypeId != null && typeMap[lastTypeId]
+        ? typeMap[lastTypeId]
+        : "NECUNOSCUT";
+
+      const pen = row.LAST_PEN != null ? String(row.LAST_PEN) : "";
+      const miscareText = pen
+        ? `Penitenciar: ${pen} - ${lastTypeLabel}`
+        : lastTypeLabel;
+
+      return {
+        id: Number(row.ID),
+        idnp: String(row.IDNP || ""),
+        surname: String(row.SURNAME || ""),
+        name: String(row.NAME || ""),
+        secName: String(row.SEC_NAME || ""),
+        birth: String(row.BIRDTH_STR || ""),
+        statut: String(row.STATUT || ""),
+        lastPen: pen,
+        lastTypeId: lastTypeId,
+        lastTypeLabel,
+        miscareText
+      };
+    });
+
+    return res.json({
+      success: true,
+      maxRows,
+      count: items.length,
+      results: items
+    });
+  } catch (err) {
+    console.error("Error in /api/search/detinuti:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Eroare internă la căutare."
+    });
+  }
+});
+
+module.exports = router;
+</file>
+
+<file path="src/server.js">
+// src/server.js
+const express = require("express");
+const path = require("path");
+const config = require("./config");
+
+const authRoutes = require("./routes/auth");
+const navRoutes = require("./routes/nav");
+const profileRoutes = require("./routes/profile");
+const searchRoutes = require("./routes/search");
+const healthRoutes = require("./routes/health");
+const adminRoutes = require("./routes/admin");
+const interogariRoutes = require("./routes/interogari"); // <--- Import
+
+const app = express();
+
+app.use(express.json());
+const publicDir = path.join(__dirname, "..", "public");
+app.use(express.static(publicDir));
+
+app.use("/api", authRoutes);
+app.use("/api", navRoutes);
+app.use("/api", profileRoutes);
+app.use("/api", searchRoutes);
+app.use("/api", healthRoutes);
+app.use("/api", adminRoutes);
+app.use("/api", interogariRoutes); // <--- Register
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(publicDir, "login.html"));
+});
+
+function start() {
+  app.listen(config.port, () => {
+    console.log(`Server listening on http://localhost:${config.port}`);
+  });
+}
+
+start();
+</file>
+
+</files>

@@ -2,6 +2,7 @@
 (function () {
   const api = window.prisonApi;
 
+  // --- Helper Functions ---
   function qs(root, sel) {
     return root.querySelector(sel);
   }
@@ -24,7 +25,7 @@
       o.textContent = placeholder;
       sel.appendChild(o);
     }
-    items.forEach(it => {
+    items.forEach((it) => {
       const o = document.createElement("option");
       o.value = it.id;
       o.textContent = it.name;
@@ -38,7 +39,7 @@
     return data;
   }
 
-  // ----- RIGHTS -----
+  // --- Rights Management ---
   async function loadRights(container, userId) {
     container.textContent = "Se încarcă drepturile...";
     const data = await api.get(`/admin/user/${userId}/rights`);
@@ -52,18 +53,26 @@
       return;
     }
 
-    const rows = mods.map(m => {
-      const id = m.moduleId;
-      const drept = (m.drept || "N").toUpperCase();
-      return `
+    const rows = mods
+      .map((m) => {
+        const id = m.moduleId;
+        const drept = (m.drept || "N").toUpperCase();
+        return `
         <tr data-module-id="${id}" data-access-id="${m.accessId || ""}">
           <td>${m.moduleName}</td>
-          <td class="c"><input type="radio" name="mod-${id}" value="N"${drept === "N" ? " checked" : ""}></td>
-          <td class="c"><input type="radio" name="mod-${id}" value="R"${drept === "R" ? " checked" : ""}></td>
-          <td class="c"><input type="radio" name="mod-${id}" value="W"${drept === "W" ? " checked" : ""}></td>
+          <td class="c"><input type="radio" name="mod-${id}" value="N"${
+          drept === "N" ? " checked" : ""
+        }></td>
+          <td class="c"><input type="radio" name="mod-${id}" value="R"${
+          drept === "R" ? " checked" : ""
+        }></td>
+          <td class="c"><input type="radio" name="mod-${id}" value="W"${
+          drept === "W" ? " checked" : ""
+        }></td>
         </tr>
       `;
-    }).join("");
+      })
+      .join("");
 
     container.innerHTML = `
       <div class="rights-wrap">
@@ -100,17 +109,19 @@
     if (filter && tbody) {
       filter.addEventListener("input", () => {
         const q = filter.value.toLowerCase();
-        qsa(tbody, "tr").forEach(tr => {
+        qsa(tbody, "tr").forEach((tr) => {
           const name = (tr.cells[0].textContent || "").toLowerCase();
           tr.style.display = name.indexOf(q) !== -1 ? "" : "none";
         });
       });
     }
 
-    qsa(container, "[data-bulk]").forEach(btn => {
+    qsa(container, "[data-bulk]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const v = btn.getAttribute("data-bulk");
-        qsa(tbody, `input[type=radio][value=${v}]`).forEach(r => r.checked = true);
+        qsa(tbody, `input[type=radio][value=${v}]`).forEach(
+          (r) => (r.checked = true)
+        );
       });
     });
 
@@ -119,7 +130,7 @@
       saveBtn.addEventListener("click", async () => {
         setMsg(msg, "", "");
         const rights = [];
-        qsa(tbody, "tr").forEach(tr => {
+        qsa(tbody, "tr").forEach((tr) => {
           const moduleId = Number(tr.getAttribute("data-module-id"));
           const accessId = tr.getAttribute("data-access-id");
           const checked = qs(tr, "input[type=radio]:checked");
@@ -127,11 +138,13 @@
           rights.push({
             moduleId,
             accessId: accessId ? Number(accessId) : null,
-            drept: checked.value
+            drept: checked.value,
           });
         });
         try {
-          const resp = await api.post(`/admin/user/${userId}/rights`, { rights });
+          const resp = await api.post(`/admin/user/${userId}/rights`, {
+            rights,
+          });
           if (!resp.success) throw new Error(resp.error || "Eroare salvare.");
           setMsg(msg, "Drepturi salvate.", "success");
         } catch (e) {
@@ -141,98 +154,116 @@
     }
   }
 
-  // ----- USER SEARCH RESULTS -----
+  // --- User Cards & Actions ---
   function renderUserCard(user, meta) {
     const div = document.createElement("div");
     div.className = "admin-user-card";
-    const lastLogin = user.lastLogin || "N/A";
+    
+    // FIX: Format the date to be short and readable (DD.MM.YYYY HH:MM)
+    let lastLogin = "N/A";
+    if (user.lastLogin) {
+      try {
+        const d = new Date(user.lastLogin);
+        // Check if date is valid
+        if (!isNaN(d.getTime())) {
+          lastLogin = d.toLocaleString('ro-RO', { 
+            day: '2-digit', month: '2-digit', year: 'numeric', 
+            hour: '2-digit', minute: '2-digit' 
+          });
+        } else {
+            lastLogin = user.lastLogin; // Fallback
+        }
+      } catch(e) { lastLogin = user.lastLogin; }
+    }
 
     div.innerHTML = `
-      <h3 class="admin-user-title">Utilizator: ${user.username} (ID: ${user.id})</h3>
+      <h3 class="admin-user-title">
+        ${user.username} <span style="font-weight:400; color:#64748b; font-size:0.9em;">(ID: ${user.id})</span>
+      </h3>
+      
       <div class="admin-grid-2">
         <div class="f">
-          <label>ID</label>
-          <input type="text" value="${user.id}" readonly>
+           <label>Ultima autentificare</label>
+           <input type="text" value="${lastLogin}" readonly style="background:#f8fafc; color:#64748b;">
         </div>
+
         <div class="f">
-          <label>Ultima autentificare</label>
-          <input type="text" value="${lastLogin}" readonly>
-        </div>
-        <div class="f">
-          <label>Username (lowercase)</label>
+          <label>Username (Login)</label>
           <input type="text" name="username" value="${user.username}">
         </div>
+
         <div class="f">
-          <label>Parolă</label>
-          <input type="text" name="password" value="${user.password || ""}">
+          <label>Resetare Parolă</label>
+          <input type="text" name="password" value="" placeholder="(Lasă gol pt. a păstra)">
         </div>
+
         <div class="f">
-          <label>Rol</label>
+          <label>Rol Acces</label>
           <select name="roleId"></select>
         </div>
+
         <div class="f">
           <label>Penitenciar</label>
           <select name="penitenciarId"></select>
         </div>
       </div>
-      <div class="form-buttons">
+
+      <div class="admin-card-actions">
         <button type="button" class="btn-primary btn-save">Salvează schimbări</button>
         <button type="button" class="btn-danger btn-deactivate">Dezactivează utilizator</button>
       </div>
+      
       <div class="admin-msg user-msg"></div>
-      <div class="admin-rights"></div>
     `;
 
+    // ... (Rest of the logic remains identical: filling selects and event listeners) ...
     const roleSel = qs(div, "select[name=roleId]");
     const penSel = qs(div, "select[name=penitenciarId]");
+    
     fillSelect(roleSel, meta.roles, null);
     fillSelect(penSel, meta.penitenciars, null);
     if (user.roleId) roleSel.value = String(user.roleId);
     if (user.penitenciarId) penSel.value = String(user.penitenciarId);
 
     const msg = qs(div, ".user-msg");
-    const rightsContainer = qs(div, ".admin-rights");
-
+    
     const btnSave = qs(div, ".btn-save");
     btnSave.addEventListener("click", async () => {
-      setMsg(msg, "", "");
+      setMsg(msg, "Se salvează...", "");
       const payload = {
         username: qs(div, "input[name=username]").value.trim(),
         password: qs(div, "input[name=password]").value.trim(),
         roleId: roleSel.value,
-        penitenciarId: penSel.value
+        penitenciarId: penSel.value,
       };
       try {
         const resp = await api.post(`/admin/user/${user.id}/update`, payload);
-        if (!resp.success) throw new Error(resp.error || "Eroare la actualizare.");
-        setMsg(msg, "Utilizator actualizat.", "success");
+        if (!resp.success) throw new Error(resp.error || "Eroare actualizare.");
+        setMsg(msg, "Salvat cu succes.", "success");
+        qs(div, "input[name=password]").value = "";
       } catch (e) {
-        setMsg(msg, e.message || "Eroare la actualizare.", "error");
+        setMsg(msg, e.message, "error");
       }
     });
 
     const btnDeact = qs(div, ".btn-deactivate");
     btnDeact.addEventListener("click", async () => {
       if (!confirm("Sigur dezactivați acest utilizator?")) return;
-      setMsg(msg, "", "");
       try {
         const resp = await api.post(`/admin/user/${user.id}/deactivate`, {});
-        if (!resp.success) throw new Error(resp.error || "Eroare la dezactivare.");
+        if (!resp.success) throw new Error(resp.error || "Eroare dezactivare.");
         setMsg(msg, "Utilizator dezactivat.", "success");
+        div.style.opacity = "0.5";
+        div.style.pointerEvents = "none";
       } catch (e) {
-        setMsg(msg, e.message || "Eroare la dezactivare.", "error");
+        setMsg(msg, e.message, "error");
       }
-    });
-
-    // load rights lazily
-    loadRights(rightsContainer, user.id).catch(err => {
-      rightsContainer.textContent = err.message || "Eroare la drepturi.";
     });
 
     return div;
   }
 
-  // ----- ANNOUNCEMENTS -----
+  // --- Announcements ---
   async function initAnnouncements(root) {
     const listEl = qs(root, "#adminAnnList");
     const form = qs(root, "#adminAnnForm");
@@ -250,7 +281,7 @@
           return;
         }
         listEl.innerHTML = "";
-        items.forEach(it => {
+        items.forEach((it) => {
           const row = document.createElement("div");
           row.className = "ann-item";
           row.innerHTML = `
@@ -263,7 +294,8 @@
             if (!confirm(`Ștergi anunțul #${it.id}?`)) return;
             try {
               const resp = await api.del(`/admin/ann/${it.id}`);
-              if (!resp.success) throw new Error(resp.error || "Eroare ștergere.");
+              if (!resp.success)
+                throw new Error(resp.error || "Eroare ștergere.");
               refresh();
             } catch (e) {
               setMsg(msg, e.message || "Eroare ștergere.", "error");
@@ -315,14 +347,18 @@
     refresh();
   }
 
-  // ----- BULK / CREATE / SEARCH INIT -----
+  // --- Panels Initialization ---
   async function initCreatePanel(root, meta) {
     const form = qs(root, "#adminCreateForm");
     const msg = qs(root, "#adminCreateMsg");
     if (!form) return;
 
     fillSelect(qs(form, "select[name=roleId]"), meta.roles, "-- Rol --");
-    fillSelect(qs(form, "select[name=penitenciarId]"), meta.penitenciars, "-- Penitenciar --");
+    fillSelect(
+      qs(form, "select[name=penitenciarId]"),
+      meta.penitenciars,
+      "-- Penitenciar --"
+    );
 
     form.addEventListener("submit", async (ev) => {
       ev.preventDefault();
@@ -333,7 +369,7 @@
         password: fd.get("password"),
         autoPassword: fd.get("autoPassword") === "on",
         roleId: fd.get("roleId"),
-        penitenciarId: fd.get("penitenciarId")
+        penitenciarId: fd.get("penitenciarId"),
       };
       try {
         const data = await api.post("/admin/user/create", payload);
@@ -355,7 +391,11 @@
     if (!form) return;
 
     fillSelect(qs(form, "select[name=roleId]"), meta.roles, "-- Rol --");
-    fillSelect(qs(form, "select[name=penitenciarId]"), meta.penitenciars, "-- Penitenciar --");
+    fillSelect(
+      qs(form, "select[name=penitenciarId]"),
+      meta.penitenciars,
+      "-- Penitenciar --"
+    );
 
     form.addEventListener("submit", async (ev) => {
       ev.preventDefault();
@@ -367,7 +407,7 @@
         roleId: fd.get("roleId"),
         penitenciarId: fd.get("penitenciarId"),
         autoPassword: fd.get("autoPassword") === "on",
-        samePassword: fd.get("samePassword")
+        samePassword: fd.get("samePassword"),
       };
       try {
         const data = await api.post("/admin/user/bulk", payload);
@@ -398,7 +438,9 @@
       }
       results.textContent = "Se caută...";
       try {
-        const data = await api.get(`/admin/user/search?q=${encodeURIComponent(q)}`);
+        const data = await api.get(
+          `/admin/user/search?q=${encodeURIComponent(q)}`
+        );
         if (!data.success) throw new Error(data.error || "Eroare căutare.");
         const users = data.users || [];
         if (!users.length) {
@@ -406,7 +448,7 @@
           return;
         }
         results.innerHTML = "";
-        users.forEach(u => results.appendChild(renderUserCard(u, meta)));
+        users.forEach((u) => results.appendChild(renderUserCard(u, meta)));
       } catch (e) {
         results.textContent = e.message || "Eroare căutare.";
       }
@@ -417,24 +459,27 @@
     const buttons = qsa(root, "[data-admin-tab]");
     const panels = qsa(root, "[data-admin-panel]");
     function show(name) {
-      panels.forEach(p => {
-        p.style.display = p.getAttribute("data-admin-panel") === name ? "" : "none";
+      panels.forEach((p) => {
+        p.style.display =
+          p.getAttribute("data-admin-panel") === name ? "" : "none";
       });
-      buttons.forEach(b => {
+      buttons.forEach((b) => {
+        // Reset all classes to base state
+        b.className = "admin-tab-btn"; 
+        // Add active class if matched
         if (b.getAttribute("data-admin-tab") === name) {
-          b.classList.add("btn-primary");
-          b.classList.remove("btn-secondary");
-        } else {
-          b.classList.remove("btn-primary");
-          b.classList.add("btn-secondary");
+          b.classList.add("active");
         }
       });
     }
-    buttons.forEach(b => b.addEventListener("click", () => show(b.getAttribute("data-admin-tab"))));
-    show("create");
+    buttons.forEach((b) =>
+      b.addEventListener("click", () => show(b.getAttribute("data-admin-tab")))
+    );
+    show("create"); // Default tab
   }
 
-  // ---- main entry ----
+  // --- Main Render Function ---
+  // --- Main Render Function ---
   async function renderAdminPage(mainEl) {
     if (!mainEl) return;
     mainEl.innerHTML = `<div class="admin-msg">Se încarcă administrarea...</div>`;
@@ -443,57 +488,30 @@
 
       mainEl.innerHTML = `
         <div class="admin-page">
-          <h1 class="admin-title">Administrare utilizatori</h1>
+          <header class="admin-header-main">
+            <h1 class="admin-title">Administrare</h1>
+            <p class="app-subtitle">Gestionează utilizatori, drepturi și anunțuri.</p>
+          </header>
+
           <div class="admin-tabs">
-            <button type="button" class="btn-secondary" data-admin-tab="bulk">Adaugă în masă</button>
-            <button type="button" class="btn-secondary" data-admin-tab="create">Adaugă user</button>
-            <button type="button" class="btn-secondary" data-admin-tab="search">Caută user</button>
-            <button type="button" class="btn-secondary" data-admin-tab="ann">Anunț</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="create">Adaugă User</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="bulk">Import Masiv</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="search">Caută & Editează</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="ann">Anunțuri</button>
           </div>
 
-          <section class="admin-panel" data-admin-panel="bulk">
-            <h2>📥 Adaugă utilizatori în masă</h2>
-            <form id="adminBulkForm" class="admin-form">
-              <label>Usernames (virgulă / ; / linii noi)</label>
-              <textarea name="usernamesText" rows="5"></textarea>
-
-              <div class="admin-grid-2">
-                <div class="f">
-                  <label>Rol</label>
-                  <select name="roleId"></select>
-                </div>
-                <div class="f">
-                  <label>Penitenciar</label>
-                  <select name="penitenciarId"></select>
-                </div>
-              </div>
-
-              <label>
-                <input type="checkbox" name="autoPassword"> Generează parolă pentru fiecare
-              </label>
-              <label>…sau aceeași parolă pentru toți</label>
-              <input type="text" name="samePassword">
-
-              <div class="form-buttons right">
-                <button type="submit" class="btn-primary">Creează în masă</button>
-              </div>
-              <pre id="adminBulkReport" class="admin-report"></pre>
-              <div id="adminBulkMsg" class="admin-msg"></div>
-            </form>
-          </section>
-
           <section class="admin-panel" data-admin-panel="create">
-            <h2>➕ Adaugă utilizator</h2>
+            <h2>👤 Adaugă utilizator nou</h2>
             <form id="adminCreateForm" class="admin-form">
               <div class="admin-grid-2">
                 <div class="f">
                   <label>Username (lowercase)</label>
-                  <input type="text" name="username" autocomplete="off">
+                  <input type="text" name="username" autocomplete="off" placeholder="ex: popescu.ion">
                 </div>
                 <div class="f">
                   <label>Parolă</label>
-                  <input type="text" name="password" autocomplete="off">
-                  <label>
+                  <input type="text" name="password" autocomplete="off" placeholder="Parolă inițială">
+                  <label style="margin-top:6px; font-weight:400; font-size:0.8rem; color:#666;">
                     <input type="checkbox" name="autoPassword"> Generează automat
                   </label>
                 </div>
@@ -513,28 +531,72 @@
             </form>
           </section>
 
-          <section class="admin-panel" data-admin-panel="search">
-            <h2>🔎 Caută utilizator</h2>
-            <form id="adminSearchForm" class="admin-form admin-form-inline">
-              <label>Username (lowercase) sau ID</label>
-              <div class="row">
-                <input type="text" name="q" autocomplete="off">
-                <button type="submit" class="btn-primary">Caută</button>
+          <section class="admin-panel" data-admin-panel="bulk">
+            <h2>📥 Adaugă utilizatori în masă</h2>
+            <p style="font-size:0.85rem; color:#6b7280; margin-bottom:12px;">
+              Introduceți o listă de utilizatori (unul pe linie sau separați prin virgulă).
+            </p>
+            <form id="adminBulkForm" class="admin-form">
+              <textarea name="usernamesText" rows="6" placeholder="popescu.ion&#10;vasile.george&#10;..." style="font-family:monospace;"></textarea>
+
+              <div class="admin-grid-2">
+                <div class="f">
+                  <label>Rol (pentru toți)</label>
+                  <select name="roleId"></select>
+                </div>
+                <div class="f">
+                  <label>Penitenciar (pentru toți)</label>
+                  <select name="penitenciarId"></select>
+                </div>
               </div>
+
+              <div style="background:#f3f4f6; padding:10px; border-radius:8px;">
+                <label style="margin-bottom:8px; display:block;">Setări Parolă</label>
+                <div class="admin-grid-2">
+                  <label style="font-weight:400;">
+                    <input type="checkbox" name="autoPassword"> Generare aleatorie unică
+                  </label>
+                  <div>
+                    <input type="text" name="samePassword" placeholder="Sau o parolă comună..." style="margin-top:0;">
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-buttons right">
+                <button type="submit" class="btn-primary">Procesează lista</button>
+              </div>
+              <pre id="adminBulkReport" class="admin-report"></pre>
+              <div id="adminBulkMsg" class="admin-msg"></div>
+            </form>
+          </section>
+
+          <section class="admin-panel" data-admin-panel="search">
+            <h2>🔎 Caută și gestionează</h2>
+            <form id="adminSearchForm" class="admin-form">
+               <div style="display:flex; gap:10px;">
+                 <div style="flex:1;">
+                    <input type="text" name="q" autocomplete="off" placeholder="Caută după nume sau ID..." style="width:100%;">
+                 </div>
+                 <button type="submit" class="btn-primary">Caută</button>
+               </div>
             </form>
             <div id="adminSearchResults" class="admin-results"></div>
           </section>
 
           <section class="admin-panel" data-admin-panel="ann">
-            <h2>📢 Anunțuri</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+               <h2>📢 Anunțuri sistem</h2>
+               <button type="button" id="adminAnnDelAll" class="btn-danger btn-small" style="padding:4px 8px; font-size:0.75rem;">Șterge Tot</button>
+            </div>
+            
             <form id="adminAnnForm" class="admin-form">
-              <label>Text anunț</label>
-              <textarea name="message" rows="3"></textarea>
-              <div class="form-buttons right">
-                <button type="submit" class="btn-primary">Publică</button>
+              <label>Mesaj nou</label>
+              <div style="display:flex; gap:10px; align-items:flex-start;">
+                <textarea name="message" rows="2" style="flex:1;" placeholder="Scrie un mesaj pentru toți utilizatorii..."></textarea>
+                <button type="submit" class="btn-primary" style="margin-top:4px;">Publică</button>
               </div>
             </form>
-            <button type="button" id="adminAnnDelAll" class="btn-danger btn-small">Șterge toate anunțurile</button>
+            
             <div id="adminAnnMsg" class="admin-msg"></div>
             <div id="adminAnnList" class="ann-list"></div>
           </section>
@@ -548,9 +610,43 @@
       await initSearchPanel(root, meta);
       await initAnnouncements(root);
     } catch (err) {
-      mainEl.innerHTML = `<div class="admin-msg error">${err.message || "Eroare la încărcare."}</div>`;
+      mainEl.innerHTML = `<div class="admin-msg error">${
+        err.message || "Eroare la încărcare."
+      }</div>`;
     }
   }
 
-  window.renderAdminPage = renderAdminPage;
+  // --- Also update setupTabs to use the new class name ---
+  function setupTabs(root) {
+    const buttons = qsa(root, "[data-admin-tab]");
+    const panels = qsa(root, "[data-admin-panel]");
+    function show(name) {
+      panels.forEach((p) => {
+        p.style.display =
+          p.getAttribute("data-admin-panel") === name ? "" : "none";
+      });
+      buttons.forEach((b) => {
+        // Reset all classes to base state
+        b.className = "admin-tab-btn"; 
+        // Add active class if matched
+        if (b.getAttribute("data-admin-tab") === name) {
+          b.classList.add("active");
+        }
+      });
+    }
+    buttons.forEach((b) =>
+      b.addEventListener("click", () => show(b.getAttribute("data-admin-tab")))
+    );
+    show("create"); // Default tab
+  }
+
+  // --- MODULE REGISTRATION ---
+  // This is the part that was missing/broken in the previous version.
+  // We now register "admin" so shell.js knows how to call it.
+  window.prisonModules = window.prisonModules || {};
+  window.prisonModules.admin = {
+    init({ userId, container }) {
+      renderAdminPage(container);
+    },
+  };
 })();
