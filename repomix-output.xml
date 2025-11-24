@@ -52,6 +52,9 @@ public/js/admin.js
 public/js/api.js
 public/js/app.js
 public/js/cautare.js
+public/js/detinut-generale.js
+public/js/detinut-medicina.js
+public/js/detinut.js
 public/js/interogari.js
 public/js/login.js
 public/js/profil.js
@@ -62,6 +65,7 @@ src/db.js
 src/modulesConfig.js
 src/routes/admin.js
 src/routes/auth.js
+src/routes/detinut.js
 src/routes/health.js
 src/routes/interogari.js
 src/routes/nav.js
@@ -92,7 +96,9 @@ npm-debug.log
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "express": "^4.19.2",
-    "oracledb": "^6.5.0"
+    "multer": "^2.0.2",
+    "oracledb": "^6.5.0",
+    "sharp": "^0.34.5"
   }
 }
 </file>
@@ -131,17 +137,22 @@ npm-debug.log
   </main>
 
   <!-- Common API helper -->
-  <script src="../js/api.js" defer></script>
+  <!-- ... inside <body>, after api.js ... -->
+<script src="../js/api.js" defer></script>
 
-  <!-- Per-module scripts -->
-  <script src="../js/cautare.js" defer></script>
-  <script src="../js/interogari.js" defer></script> <!-- ADDED -->
-  <script src="../js/profil.js" defer></script>
-  <script src="../js/admin.js" defer></script>
-  
+<!-- Base Modules -->
+<script src="../js/cautare.js" defer></script>
+<script src="../js/interogari.js" defer></script>
+<script src="../js/profil.js" defer></script>
+<script src="../js/admin.js" defer></script>
 
-  <!-- Shell / router (must be last) -->
-  <script src="../js/shell.js" defer></script>
+<!-- PROFILE SKELETON & MODULES -->
+<script src="../js/detinut.js" defer></script>          <!-- The Skeleton -->
+<script src="../js/detinut-medicina.js" defer></script> <!-- The Medical Plugin -->
+<script src="../js/detinut-generale.js" defer></script> <script src="../js/detinut-medicina.js" defer></script>
+
+<!-- Router -->
+<script src="../js/shell.js" defer></script>
 </body>
 </html>
 </file>
@@ -1026,6 +1037,18 @@ body {
    APP CONTENT
    ========================= */
 
+   .profile-mode .app-main {
+  max-width: 1400px;
+  transition: max-width 0.3s ease;
+}
+
+/* NEW: Wide Mode for Reports/Interogari (1600px) */
+.wide-mode .app-main {
+  max-width: 1600px;
+  transition: max-width 0.3s ease;
+}
+
+
 .app-main {
   max-width: 960px;
   margin: 18px auto 24px;
@@ -1388,6 +1411,420 @@ body {
 
 .btn-small { padding: 2px 8px; font-size: 0.75rem; background: #e0f2fe; color: #0369a1; border: none; border-radius: 4px; cursor: pointer; }
 .btn-small:hover { background: #bae6fd; }
+
+
+/* ... (Existing styles) ... */
+
+/* PROFILE DETINUT STYLES */
+.profile-header-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.profile-avatar .avatar-placeholder {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  font-size: 32px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.profile-info h1 {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  color: #1e293b;
+}
+
+.badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge-tag {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+}
+
+.badge-tag.status-active {
+  background: #dbeafe;
+  color: #1e40af;
+  border-color: #bfdbfe;
+}
+
+/* Sub-module Layout (Left Nav, Right Content) */
+.sub-module-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 24px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 400px;
+}
+
+.sub-nav {
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sub-nav-btn {
+  background: transparent;
+  border: none;
+  text-align: left;
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  color: #64748b;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+}
+
+.sub-nav-btn:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.sub-nav-btn.active {
+  background: #fff;
+  color: #2563eb;
+  border-left-color: #2563eb;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.sub-content {
+  padding: 24px;
+}
+
+.error-box {
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #991b1b;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .sub-module-layout {
+    grid-template-columns: 1fr;
+  }
+  .sub-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .sub-nav-btn {
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+  }
+  .sub-nav-btn.active {
+    border-left: none;
+    border-bottom-color: #2563eb;
+  }
+}
+
+.profile-mode .app-main {
+  max-width: 1400px; /* Much wider than standard 960px */
+}
+
+.profile-mode .sub-module-layout {
+  min-height: 600px; /* Taller */
+}
+
+/* --- MODAL STYLES --- */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-card {
+  background: #fff;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  transform: translateY(20px);
+  transition: transform 0.2s;
+}
+
+.modal-overlay.open .modal-card {
+  transform: translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.modal-body {
+  margin-bottom: 20px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.profile-mode .app-main {
+  max-width: 1400px;
+  transition: max-width 0.3s ease;
+}
+
+/* 1. PROFILE HEADER (The "Hero" Card) */
+.profile-hero {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 24px;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Left colored bar based on status/regime (Static blue for now) */
+.profile-hero::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 6px;
+  background: linear-gradient(to bottom, #2563eb, #1e40af);
+}
+
+.profile-hero-content {
+  display: flex;
+  padding: 24px 24px 24px 30px; /* Extra left pad for the bar */
+  gap: 24px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.hero-avatar {
+  flex-shrink: 0;
+}
+
+.avatar-placeholder {
+  width: 90px;
+  height: 90px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 2.2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+}
+
+.hero-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hero-name {
+  margin: 0;
+  font-size: 1.6rem;
+  color: #0f172a;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: #475569;
+  margin-top: 4px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.meta-label { font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; }
+.meta-val { font-weight: 600; color: #334155; }
+
+/* 2. MAIN TABS (Top Navigation) */
+.profile-tabs-nav {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  padding-bottom: 1px; /* fix border overlap */
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.tab-btn:hover {
+  color: #1e293b;
+  background: #f8fafc;
+}
+
+.tab-btn.active {
+  color: #2563eb;
+  background: #fff;
+  font-weight: 600;
+}
+
+.tab-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: -2px; left: 0; right: 0;
+  height: 2px;
+  background: #2563eb;
+}
+
+/* 3. SUB-MODULE LAYOUT (Medical, etc.) */
+.module-container {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 0;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  min-height: 500px;
+  overflow: hidden; /* For rounded corners */
+}
+
+.module-sidebar {
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+  padding: 20px 0;
+}
+
+.module-sidebar h4 {
+  margin: 0 0 12px 20px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+
+.side-nav-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  font-size: 0.9rem;
+  color: #475569;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.side-nav-btn:hover {
+  background: #eef2ff;
+  color: #1e40af;
+}
+
+.side-nav-btn.active {
+  background: #fff;
+  border-left-color: #2563eb;
+  color: #2563eb;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.module-content {
+  padding: 30px;
+  background: #fff;
+}
+
+/* Loading/Error States */
+.loader-box { padding: 40px; text-align: center; color: #64748b; }
+.error-box { padding: 20px; background: #fef2f2; color: #b91c1c; border-radius: 8px; border: 1px solid #fecaca; }
+
+/* Responsive */
+@media (max-width: 800px) {
+  .module-container { grid-template-columns: 1fr; }
+  .module-sidebar { border-right: none; border-bottom: 1px solid #e2e8f0; display: flex; overflow-x: auto; padding: 0; }
+  .module-sidebar h4 { display: none; }
+  .side-nav-btn { border-left: none; border-bottom: 3px solid transparent; white-space: nowrap; width: auto; }
+  .side-nav-btn.active { border-left: none; border-bottom-color: #2563eb; }
+  .profile-hero-content { flex-direction: column; align-items: center; text-align: center; padding: 20px; }
+  .hero-meta { justify-content: center; }
+}
 </file>
 
 <file path="public/ghid.html">
@@ -2236,10 +2673,22 @@ async function apiPost(path, body) {
   return data;
 }
 
+
+
 // Expose globally (no bundler)
 window.prisonApi = {
   get: apiGet,
-  post: apiPost
+  post: apiPost,
+  // Add to window.prisonApi
+  del: async (path) => {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      method: "DELETE",
+      headers: getAuthHeaders()
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Delete failed");
+    return data;
+}
 };
 </file>
 
@@ -2467,7 +2916,7 @@ window.prisonApi = {
               )}</span></div>
             </div>
             <div class="result-footer">
-              <button type="button" class="btn-ghost btn-small" disabled title="Detalii încă nu sunt implementate">
+              <button type="button" class="btn-ghost btn-small" onclick="window.location.href='/app/index.html?module=detinut&id=${item.id}'">
                 Detalii
               </button>
             </div>
@@ -2561,6 +3010,597 @@ window.prisonApi = {
 })();
 </file>
 
+<file path="public/js/detinut-generale.js">
+// public/js/detinut-generale.js
+(function() {
+    window.DetinutTabs = window.DetinutTabs || {};
+
+    let meta = null;
+    let currentData = null;
+
+    async function fetchMeta() {
+        if(meta) return;
+        const res = await window.prisonApi.get('/detinut/meta/general');
+        if(res.success) meta = res;
+    }
+
+    function renderField(label, value, isEdit, name, type='text', options=[]) {
+        if (!isEdit) {
+            return `<div class="detail-row"><span class="detail-label">${label}:</span> <span class="detail-value">${value || '-'}</span></div>`;
+        }
+        if (type === 'select') {
+            const opts = options.map(o => `<option value="${o.ID}" ${String(o.ID) === String(value) ? 'selected' : ''}>${o.NAME}</option>`).join('');
+            return `<div class="f"><label>${label}</label><select name="${name}" class="full-width">${opts}</select></div>`;
+        }
+        return `<div class="f"><label>${label}</label><input type="${type}" name="${name}" value="${value||''}" class="full-width"></div>`;
+    }
+
+    // --- PHOTO GALLERY ---
+    function renderGallery(container, images, canEdit, detId) {
+        const grid = document.createElement('div');
+        grid.className = 'gallery-grid';
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
+        grid.style.gap = '10px';
+        grid.style.marginTop = '15px';
+
+        images.forEach(img => {
+            const card = document.createElement('div');
+            card.className = 'photo-card';
+            card.style.border = '1px solid #ddd';
+            card.style.borderRadius = '8px';
+            card.style.overflow = 'hidden';
+            card.style.position = 'relative';
+
+            const label = img.type == 1 ? 'Frontal' : (img.type == 2 ? 'Lateral' : 'Altul');
+            const badgeColor = img.type == 1 ? '#2563eb' : '#64748b';
+
+            card.innerHTML = `
+                <img src="${img.url}" style="width:100%; height:140px; object-fit:cover; display:block;">
+                <span style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.6); color:#fff; font-size:10px; padding:2px 4px; text-align:center;">${label}</span>
+                ${canEdit ? `<button class="btn-del-photo" data-id="${img.id}" style="position:absolute; top:2px; right:2px; background:red; color:white; border:none; border-radius:4px; cursor:pointer;">&times;</button>` : ''}
+            `;
+            grid.appendChild(card);
+        });
+
+        if(canEdit) {
+            const uploadBox = document.createElement('div');
+            uploadBox.style.border = '2px dashed #ccc';
+            uploadBox.style.borderRadius = '8px';
+            uploadBox.style.display = 'flex';
+            uploadBox.style.alignItems = 'center';
+            uploadBox.style.justifyContent = 'center';
+            uploadBox.style.cursor = 'pointer';
+            uploadBox.style.minHeight = '140px';
+            uploadBox.innerHTML = `<div style="text-align:center; color:#888;">Is + <br>Adaugă Foto</div>`;
+            
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+            
+            uploadBox.onclick = () => {
+                const type = prompt("Tip fotografie: 1=Frontal, 2=Lateral, 3=Altul", "1");
+                if(['1','2','3'].includes(type)) {
+                    fileInput.dataset.type = type;
+                    fileInput.click();
+                }
+            };
+
+            fileInput.onchange = async () => {
+                if(!fileInput.files.length) return;
+                const fd = new FormData();
+                fd.append('image', fileInput.files[0]);
+                fd.append('type', fileInput.dataset.type);
+                
+                uploadBox.innerHTML = 'Se încarcă...';
+                try {
+                    await window.prisonApi.post(`/detinut/${detId}/photos`, fd); // Note: custom handling for FormData needed or use standard fetch
+                    // Since api.js wrapper uses JSON, we use raw fetch here for FormData
+                    await fetch(`/api/detinut/${detId}/photos`, {
+                        method: 'POST',
+                        headers: { "x-user-id": sessionStorage.getItem("prison.userId") },
+                        body: fd
+                    });
+                    // Refresh tab
+                    document.querySelector('.tab-btn[data-tab="generale"]').click();
+                } catch(e) {
+                    alert("Eroare upload: " + e.message);
+                    uploadBox.innerHTML = 'Eroare';
+                }
+            };
+
+            grid.appendChild(uploadBox);
+            
+            // Delete Logic
+            grid.addEventListener('click', async (e) => {
+                if(e.target.classList.contains('btn-del-photo')) {
+                    if(!confirm("Ștergeți fotografia?")) return;
+                    const pid = e.target.dataset.id;
+                    await window.prisonApi.del(`/detinut/${detId}/photos/${pid}`); // Assuming api.del exists or use raw fetch
+                     document.querySelector('.tab-btn[data-tab="generale"]').click();
+                }
+            });
+        }
+
+        container.appendChild(grid);
+    }
+
+
+    window.DetinutTabs['generale'] = {
+        render: async (container, detinutId) => {
+            container.innerHTML = '<div class="loader-box">Se încarcă profilul complet...</div>';
+            
+            try {
+                await fetchMeta();
+                const res = await window.prisonApi.get(`/detinut/${detinutId}/general_full`);
+                if(!res.success) throw new Error(res.error);
+                
+                const { detinut, canEdit, images, address } = res;
+                currentData = detinut; // Store for form usage
+
+                // Update Main Header Avatar with the front photo if available
+                const frontImg = images.find(i => i.type == 1);
+                if(frontImg) {
+                    const avatarEl = document.querySelector('.hero-avatar');
+                    if(avatarEl) avatarEl.innerHTML = `<img src="${frontImg.url}" style="width:90px; height:90px; border-radius:12px; object-fit:cover; border:2px solid #fff;">`;
+                }
+
+                container.innerHTML = `
+                  <div class="module-container">
+                     <div class="module-content" style="grid-column: 1 / -1;">
+                        
+                        <div class="admin-grid-2">
+                            <div class="card-action">
+                                <div class="flex-between">
+                                    <h3>Date Personale</h3>
+                                    ${canEdit ? '<button id="btnEditMain" class="btn-small">✏️ Editează</button>' : ''}
+                                </div>
+                                <div id="viewMain" class="profile-details">
+                                    ${renderField('Nume', detinut.SURNAME)}
+                                    ${renderField('Prenume', detinut.NAME)}
+                                    ${renderField('Patronimic', detinut.SEC_NAME)}
+                                    ${renderField('IDNP', detinut.IDNP)}
+                                    ${renderField('Data Nașterii', detinut.BIRDTH_STR)}
+                                    ${renderField('Sex', detinut.SEX)}
+                                </div>
+                                <form id="formMain" class="hidden admin-form">
+                                    ${renderField('Nume', detinut.SURNAME, true, 'surname')}
+                                    ${renderField('Prenume', detinut.NAME, true, 'name')}
+                                    ${renderField('Patronimic', detinut.SEC_NAME, true, 'sec_name')}
+                                    ${renderField('IDNP', detinut.IDNP, true, 'idnp')}
+                                    ${renderField('Data Nașterii', detinut.BIRDTH_STR, true, 'birth')}
+                                    <div class="f"><label>Sex</label><select name="sex" class="full-width"><option value="M">M</option><option value="F">F</option></select></div>
+                                    <div class="search-actions">
+                                        <button type="button" class="btn-ghost" onclick="cancelEdit('Main')">Anulează</button>
+                                        <button type="submit" class="btn-primary">Salvează</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="card-action">
+                                <h3>Galerie Foto</h3>
+                                <div id="galleryContainer"></div>
+                            </div>
+                        </div>
+
+                        <div class="admin-grid-2 mt-4">
+                             <div class="card-action">
+                                <h3>Alte Detalii</h3>
+                                <div class="profile-details">
+                                    <div class="detail-row"><span class="detail-label">Religie:</span> 
+                                        <span class="detail-value">${detinut.RELIGION_NAME || '-'}</span>
+                                        ${canEdit ? '<button class="btn-small" style="float:right" id="btnEditRel">✏️</button>' : ''}
+                                    </div>
+                                    <div class="detail-row"><span class="detail-label">Statut Curent:</span> <span class="badge badge-status">${detinut.STATUT_NAME || 'Indefinit'}</span></div>
+                                </div>
+                                <div id="editRelBox" class="hidden mt-2">
+                                     <select id="selReligion" class="full-width mb-2">${meta.religion.map(r=>`<option value="${r.ID}">${r.NAME}</option>`).join('')}</select>
+                                     <button onclick="saveReligion(${detinut.ID})" class="btn-primary btn-small">Ok</button>
+                                </div>
+                             </div>
+
+                             <div class="card-action">
+                                <h3>Domiciliu</h3>
+                                <p>${address ? `${address.CITY}, ${address.ADDRESS}` : 'Nu există date.'}</p>
+                             </div>
+                        </div>
+
+                     </div>
+                  </div>
+                `;
+
+                // Init Gallery
+                renderGallery(document.getElementById('galleryContainer'), images, canEdit, detinut.ID);
+
+                // Event Bindings
+                if(canEdit) {
+                    document.getElementById('btnEditMain').onclick = () => {
+                        document.getElementById('viewMain').classList.add('hidden');
+                        document.getElementById('formMain').classList.remove('hidden');
+                        document.getElementById('btnEditMain').classList.add('hidden');
+                    };
+                    window.cancelEdit = (section) => {
+                        document.getElementById(`viewMain`).classList.remove('hidden');
+                        document.getElementById(`formMain`).classList.add('hidden');
+                        document.getElementById(`btnEditMain`).classList.remove('hidden');
+                    };
+                    document.getElementById('formMain').onsubmit = async (e) => {
+                        e.preventDefault();
+                        const fd = new FormData(e.target);
+                        const payload = Object.fromEntries(fd.entries());
+                        try {
+                            await window.prisonApi.post(`/detinut/${detinut.ID}/update_main`, payload);
+                            // Refresh
+                            window.DetinutTabs['generale'].render(container, detinutId);
+                        } catch(err) { alert(err.message); }
+                    };
+
+                    document.getElementById('btnEditRel').onclick = () => document.getElementById('editRelBox').classList.toggle('hidden');
+                    window.saveReligion = async (id) => {
+                         const rid = document.getElementById('selReligion').value;
+                         await window.prisonApi.post(`/detinut/${id}/update_religion`, {religionId: rid});
+                         window.DetinutTabs['generale'].render(container, detinutId);
+                    };
+                }
+
+            } catch(e) {
+                container.innerHTML = `<div class="error-box">${e.message}</div>`;
+            }
+        }
+    };
+})();
+</file>
+
+<file path="public/js/detinut-medicina.js">
+// public/js/detinut-medicina.js
+(function() {
+    window.DetinutTabs = window.DetinutTabs || {};
+
+    const SUB_TABS = [
+        { key: 'greva', label: 'Greva Foamei' },
+        { key: 'diagnoza', label: 'Diagnoză Medicală' },
+        { key: 'radiografie', label: 'Radiografie' },
+        { key: 'consultare', label: 'Consultare Externă' }
+    ];
+
+    let metaData = null;
+
+    // --- HTML TEMPLATES ---
+    // (Modal HTML remains same as previous, injected into DOM if not exists)
+    // We append it to body once to avoid duplication or keep it inside render.
+    
+    function injectModal() {
+        if(document.getElementById('medModal')) return;
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <div class="modal-overlay" id="medModal">
+            <div class="modal-card">
+              <div class="modal-header">
+                <h3 class="modal-title" id="medModalTitle">Înregistrare Medicală</h3>
+                <button class="btn-close" onclick="closeMedModal()">&times;</button>
+              </div>
+              <div class="modal-body">
+                <form id="medForm" class="admin-form"></form>
+              </div>
+              <div class="modal-footer">
+                <button class="btn-ghost" onclick="closeMedModal()">Anulează</button>
+                <button class="btn-primary" onclick="submitMedForm()">Salvează</button>
+              </div>
+            </div>
+          </div>`;
+        document.body.appendChild(div);
+    }
+
+    // --- RENDER MAIN LAYOUT ---
+    function renderLayout(container) {
+        injectModal();
+        container.innerHTML = `
+          <div class="module-container">
+            <div class="module-sidebar">
+               <h4>Dosar Medical</h4>
+               <nav id="medNav">
+                 ${SUB_TABS.map(t => `<button class="side-nav-btn" data-sub="${t.key}">${t.label}</button>`).join('')}
+               </nav>
+            </div>
+            <div class="module-content" id="medContent">
+               <div class="loader-box">Selectați o categorie din stânga.</div>
+            </div>
+          </div>
+        `;
+
+        window.closeMedModal = () => document.getElementById('medModal').classList.remove('open');
+    }
+
+    async function fetchMeta() {
+        if(metaData) return;
+        try { metaData = await window.prisonApi.get('/detinut/meta/medical'); } catch(e){}
+    }
+
+    async function loadSubModule(key, idnp, container) {
+        container.innerHTML = '<div class="loader-box">Se încarcă datele...</div>';
+        try {
+            await fetchMeta();
+            const res = await window.prisonApi.get(`/detinut/${idnp}/medical/${key}`);
+            if(!res.success) throw new Error(res.error);
+            renderTable(container, key, res.rows, res.canWrite, idnp);
+        } catch(e) {
+            container.innerHTML = `<div class="error-box">${e.message}</div>`;
+        }
+    }
+
+    function renderTable(container, key, rows, canWrite, idnp) {
+        // (Table definitions same as before, simplified for brevity in thought process)
+        const defs = {
+            greva: { 
+                title: "Greva Foamei", cols: ["Data Start", "Data Stop", "Motiv"], 
+                map: r => `<td>${r.BDATE}</td><td>${r.EDATE||'-'}</td><td>${r.MOTIV||'-'}</td>` 
+            },
+            diagnoza: { 
+                title: "Diagnoze", cols: ["Data", "Cod", "Nume", "Note"], 
+                map: r => `<td>${r.ADATE}</td><td><span class="badge badge-none">${r.DIAGNOZ_COD||''}</span></td><td>${r.DIAGNOZ_NAME||''}</td><td>${r.NOTE||''}</td>` 
+            },
+            radiografie: { 
+                title: "Radiografii", cols: ["Data", "Rezultat", "Locație"], 
+                map: r => `<td>${r.ADATE}</td><td>${r.REZULTAT||''}</td><td>${r.PENITENCIAR||''}</td>` 
+            },
+            consultare: { 
+                title: "Consultări", cols: ["Data", "Doctor", "Spital", "Tip"], 
+                map: r => `<td>${r.ADATE}</td><td>${r.NPP_DOCTOR||''}</td><td>${r.HOSPITAL||''}</td><td>${r.INVESTIGATIE||''}</td>` 
+            }
+        };
+
+        const def = defs[key];
+        const btnHtml = canWrite 
+            ? `<button class="btn-primary btn-small" id="btnAddMed">+ Adaugă</button>` 
+            : ``;
+
+        // Render
+        let html = `
+            <div class="flex-between" style="border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:15px;">
+                <h2 style="margin:0; font-size:1.2rem;">${def.title}</h2>
+                ${btnHtml}
+            </div>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead><tr>${def.cols.map(c => `<th>${c}</th>`).join('')}${canWrite?'<th>Acțiuni</th>':''}</tr></thead>
+                    <tbody>
+        `;
+        
+        if(rows.length) {
+            html += rows.map(r => {
+                let row = `<tr>${def.map(r)}`;
+                if(canWrite) {
+                    const json = JSON.stringify(r).replace(/"/g, '&quot;');
+                    row += `<td class="center">
+                        <button class="btn-ghost btn-small" onclick="window.editMed('${key}', ${json})">✏️</button>
+                        <button class="btn-danger btn-small" onclick="window.deleteMed('${key}', ${r.ID})">🗑️</button>
+                    </td>`;
+                }
+                return row + `</tr>`;
+            }).join('');
+        } else {
+            html += `<tr><td colspan="${def.cols.length + (canWrite?1:0)}" class="text-center p-4">Nu există date înregistrate.</td></tr>`;
+        }
+        
+        html += `</tbody></table></div>`;
+        container.innerHTML = html;
+
+        if(canWrite) {
+            document.getElementById('btnAddMed').addEventListener('click', () => window.openMedModal(key, null, idnp));
+        }
+    }
+
+    // --- FORM LOGIC (Global helpers) ---
+    // Note: I'm attaching these to window so buttons can access them easily.
+    window.openMedModal = (key, data, idnp) => {
+        // Logic similar to previous step, but using the global metaData variable
+        const modal = document.getElementById('medModal');
+        const form = document.getElementById('medForm');
+        // ... build form fields ...
+        // (Re-using buildFormFields logic from previous interaction)
+        form.innerHTML = buildFormFields(key, data); 
+        
+        // Store context in form dataset for submit handler
+        form.dataset.key = key;
+        form.dataset.id = data ? data.ID : '';
+        form.dataset.idnp = idnp || '';
+        
+        modal.classList.add('open');
+    };
+
+    window.editMed = (key, data) => window.openMedModal(key, data, null);
+    
+    // (Re-paste the buildFormFields and submitMedForm functions from previous step here, 
+    // ensuring they use the form.dataset.key etc)
+
+    // --- MAIN MODULE EXPORT ---
+    window.DetinutTabs['medicina'] = {
+        render: (container, detinutId) => {
+             const idnp = window.currentDetinutData ? window.currentDetinutData.IDNP : null;
+             if (!idnp) { container.innerHTML = '<div class="error-box">Lipsă IDNP.</div>'; return; }
+             
+             renderLayout(container);
+             
+             const btns = container.querySelectorAll('.side-nav-btn');
+             const content = container.querySelector('#medContent');
+             
+             btns.forEach(btn => {
+                 btn.addEventListener('click', () => {
+                     btns.forEach(b => b.classList.remove('active'));
+                     btn.classList.add('active');
+                     loadSubModule(btn.dataset.sub, idnp, content);
+                 });
+             });
+             
+             // Auto-click first
+             if(btns.length) btns[0].click();
+        }
+    };
+
+    // Helper to keep code short in this display:
+    function buildFormFields(key, d) {
+        d = d || {}; 
+        const opts = (arr, selId) => (arr||[]).map(i => `<option value="${i.ID}" ${i.ID == selId ? 'selected' : ''}>${i.NAME}</option>`).join('');
+        
+        if(key === 'greva') return `<div class="f"><label>Start</label><input type="text" name="bdate" value="${d.BDATE||''}"></div><div class="f"><label>Motiv</label><select name="id_motiv">${opts(metaData.motives, d.ID_MOTIV)}</select></div>`;
+        if(key === 'diagnoza') return `<div class="f"><label>Data</label><input type="text" name="adate" value="${d.ADATE||''}"></div><div class="f"><label>Diag</label><select name="id_diagnoz">${opts(metaData.diagnoz, d.ID_DIAGNOZ)}</select></div><div class="f"><label>Note</label><input type="text" name="note" value="${d.NOTE||''}"></div>`;
+        // ... others ...
+        return `<div>Formular pentru ${key}</div>`;
+    }
+})();
+</file>
+
+<file path="public/js/detinut.js">
+// public/js/detinut.js
+(function () {
+  // 1. Global Registry: Modules will register themselves here.
+  // Example: window.DetinutTabs['medicina'] = { render: (container, id) => { ... } }
+  window.DetinutTabs = window.DetinutTabs || {};
+
+  // 2. State
+  let currentId = null;
+  const TABS_CONFIG = [
+    { key: 'generale', label: 'Detalii Generale' },
+    { key: 'medicina', label: 'Medicină' },
+    { key: 'educatie', label: 'Educație' },
+    { key: 'psihologie', label: 'Psihologie' },
+    { key: 'social', label: 'Asistență Socială' },
+    { key: 'securitate', label: 'Securitate' },
+    { key: 'regim', label: 'Regim' },
+    { key: 'vizite', label: 'Vizite & Colete' }
+  ];
+
+  // 3. Render The Skeleton
+  function renderSkeleton(container) {
+    // Add class for wide layout
+    document.body.classList.add('profile-mode');
+
+    container.innerHTML = `
+      <div id="detinutHeader" class="profile-hero">
+        <div class="loader-box">Se încarcă datele deținutului...</div>
+      </div>
+
+      <nav class="profile-tabs-nav" id="mainTabs">
+        ${TABS_CONFIG.map(t => 
+            `<button class="tab-btn" data-tab="${t.key}">${t.label}</button>`
+        ).join('')}
+      </nav>
+
+      <div id="profileContent" class="profile-content-area">
+         <div class="loader-box">Selectați un modul.</div>
+      </div>
+    `;
+
+    // Bind Tab Clicks
+    const contentArea = container.querySelector('#profileContent');
+    const buttons = container.querySelectorAll('.tab-btn');
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // UI Active State
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const tabKey = btn.dataset.tab;
+        loadModule(tabKey, contentArea);
+      });
+    });
+  }
+
+  // 4. Load Specific Module
+  function loadModule(key, container) {
+    const module = window.DetinutTabs[key];
+
+    if (module && typeof module.render === 'function') {
+      // Delegate rendering to the module
+      module.render(container, currentId);
+    } else {
+      container.innerHTML = `
+        <div class="text-center p-4">
+          <h3>Modul în lucru: ${key.toUpperCase()}</h3>
+          <p class="text-muted">Acest modul nu a fost încă implementat.</p>
+        </div>
+      `;
+    }
+  }
+
+  // 5. Load Header Data
+  async function loadHeader(id) {
+    const el = document.getElementById('detinutHeader');
+    if (!el) return;
+
+    try {
+      const res = await window.prisonApi.get(`/detinut/${id}/general`);
+      if (!res.success) throw new Error(res.error);
+      
+      const d = res.data;
+      // Store globally for sub-modules to access (e.g. IDNP)
+      window.currentDetinutData = d;
+
+      el.innerHTML = `
+        <div class="profile-hero-content">
+          <div class="hero-avatar">
+            <div class="avatar-placeholder">
+              ${d.SURNAME ? d.SURNAME[0] : '?'}${d.NAME ? d.NAME[0] : '?'}
+            </div>
+          </div>
+          <div class="hero-info">
+            <h1 class="hero-name">${d.SURNAME} ${d.NAME} ${d.SEC_NAME || ''}</h1>
+            <div class="hero-meta">
+              <div class="meta-item">
+                <span class="meta-label">ID SISTEM</span>
+                <span class="meta-val">${d.ID}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">IDNP</span>
+                <span class="meta-val">${d.IDNP}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">DATA NAȘTERII</span>
+                <span class="meta-val">${d.BIRDTH}</span>
+              </div>
+               <div class="meta-item">
+                <span class="meta-label">LOCAȚIE</span>
+                <span class="meta-val" style="color:#2563eb">${d.PENITENCIAR_NAME || 'Necunoscut'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    } catch (e) {
+      el.innerHTML = `<div class="error-box">Eroare header: ${e.message}</div>`;
+    }
+  }
+
+  // 6. Main Init
+  window.prisonModules = window.prisonModules || {};
+  window.prisonModules.detinut = {
+    init({ userId, container }) {
+      const urlParams = new URLSearchParams(window.location.search);
+      currentId = urlParams.get('id');
+
+      if (!currentId) {
+        container.innerHTML = '<div class="error-box">Lipsă ID Deținut în URL.</div>';
+        return;
+      }
+
+      renderSkeleton(container);
+      loadHeader(currentId);
+
+      // Auto-select first tab
+      const firstTab = container.querySelector('.tab-btn[data-tab="generale"]');
+      if (firstTab) firstTab.click();
+    },
+    
+    // Cleanup when leaving module (optional but good practice)
+    destroy() {
+      document.body.classList.remove('profile-mode');
+    }
+  };
+})();
+</file>
+
 <file path="public/js/interogari.js">
 // public/js/interogari.js
 (function () {
@@ -2588,7 +3628,6 @@ window.prisonApi = {
             <button class="admin-tab-btn" data-tab="straini">🌍 Străini</button>
          </div>
 
-         <!-- TAB: DETINUTI -->
          <div class="admin-panel" data-panel="detinuti">
             <h2>Rapoarte Deținuți</h2>
             <div class="admin-grid-2">
@@ -2619,7 +3658,6 @@ window.prisonApi = {
             </div>
          </div>
 
-         <!-- TAB: COLETE -->
          <div class="admin-panel hidden" data-panel="colete">
             <h2>Colete și Vizite</h2>
             <div class="admin-grid-2">
@@ -2644,7 +3682,6 @@ window.prisonApi = {
             </div>
          </div>
 
-         <!-- TAB: TRANSFER -->
          <div class="admin-panel hidden" data-panel="transfer">
              <h2>Transferuri și Escortări</h2>
              <div class="admin-grid-2">
@@ -2679,7 +3716,6 @@ window.prisonApi = {
              </div>
          </div>
 
-         <!-- TAB: EVIDENTA -->
          <div class="admin-panel hidden" data-panel="evidenta">
              <h2>Evidență și Acte</h2>
              <div class="admin-grid-2">
@@ -2712,7 +3748,6 @@ window.prisonApi = {
              </div>
          </div>
          
-         <!-- TAB: STRAINI -->
          <div class="admin-panel hidden" data-panel="straini">
             <h2>Evidență Străini</h2>
              <div class="admin-grid-2">
@@ -2729,7 +3764,6 @@ window.prisonApi = {
              </div>
          </div>
 
-         <!-- RESULTS SECTION -->
          <div id="queryResultsArea" class="mt-4 hidden">
             <div class="flex-between">
                <h2 id="resTitle">Rezultate</h2>
@@ -2781,19 +3815,23 @@ window.prisonApi = {
         lastResult = data; // Store for printing
         titleEl.textContent = data.title;
         
-        // CHANGED: Updated <th>Acțiuni</th> to <th>Detalii</th>
-        tHead.innerHTML = `<tr>${data.headers.map(h => `<th>${h}</th>`).join('')}<th>Detalii</th></tr>`;
+        // Render Header
+        tHead.innerHTML = `<tr>${data.headers.map(h => `<th>${h}</th>`).join('')}<th>Dosar</th></tr>`;
         
         // Render Rows
         if(data.rows.length === 0) {
            tBody.innerHTML = `<tr><td colspan="${data.headers.length + 1}" class="text-center p-4">Nu au fost găsite rezultate.</td></tr>`;
         } else {
            tBody.innerHTML = data.rows.map(r => {
-              // We ignore the first column 'ID' usually used for links, but let's grab it if exists
-              const id = r.ID || r.IDDETINUT || 0; 
+              // Priority: Explicit DETINUT_ID (from joins) -> PROFIL_DET -> Standard ID -> Default 0
+              // This fixes "Colete" reports where 'ID' is the package ID, not the person.
+              const id = r.DETINUT_ID || r.PROFIL_DET || r.ID || r.IDDETINUT || 0; 
+
               const cells = Object.values(r).map(v => `<td>${v === null ? '' : v}</td>`).join('');
-              // Simple link logic
-              const btn = id ? `<button class="btn-small" onclick="window.location.href='/app/index.html?module=profile&id=${id}'">Detalii</button>` : '';
+              
+              // FIX: Redirect to 'detinut' module, NOT 'profile'
+              const btn = id ? `<button class="btn-small" onclick="window.location.href='/app/index.html?module=detinut&id=${id}'">Dosar</button>` : '';
+              
               return `<tr>${cells}<td>${btn}</td></tr>`;
            }).join('');
         }
@@ -2804,20 +3842,6 @@ window.prisonApi = {
 
   window.printCurrentResults = async () => {
      if(!lastResult) return;
-     
-     // Send data to backend to render HTML page
-     // We use a trick: create a hidden form and submit it to new tab
-     const form = document.createElement('form');
-     form.method = 'POST';
-     form.action = '/api/interogari/print';
-     form.target = '_blank';
-     
-     // Add auth token if needed (cookies usually handle this, but let's see. 
-     // Since it's a form post to new tab, custom headers are hard.
-     // We will rely on IP or if needed, pass token in hidden input, though less secure)
-     
-     // Actually, the fetch approach is cleaner but requires blob handling for new tab.
-     // Let's stick to fetch -> blob -> URL
      
      try {
        const resp = await fetch('/api/interogari/print', {
@@ -2840,6 +3864,9 @@ window.prisonApi = {
   window.prisonModules = window.prisonModules || {};
   window.prisonModules.interogari = {
     async init({ userId, container }) {
+      // 1. ACTIVATE WIDE MODE
+      document.body.classList.add('wide-mode'); 
+      
       await loadInstitutions();
       renderTabs(container);
     }
@@ -3159,7 +4186,6 @@ window.prisonApi = {
       window.location.href = "/";
       return null;
     }
-
     userInfoEl.textContent = username;
     return userId;
   }
@@ -3168,8 +4194,11 @@ window.prisonApi = {
     navContainer.innerHTML = "";
 
     modules.forEach((mod) => {
+      // CHANGED: Check visibility flag before rendering
+      if (mod.visible === false) return; 
+
       const link = document.createElement("a");
-      link.href = mod.path;
+      link.href = mod.path || '#';
       link.textContent = mod.label;
       link.className = "nav-link";
       if (mod.key === activeKey) {
@@ -3184,7 +4213,7 @@ window.prisonApi = {
     let subtitle = "Selectează un modul din meniul de sus.";
 
     if (activeKey) {
-      subtitle = `Modulul "${activeKey}" nu are încă o implementare dedicată.`;
+      subtitle = `Modulul "${activeKey}" nu are încă o implementare dedicată sau nu a fost găsit.`;
     }
 
     appContent.innerHTML = `
@@ -3204,8 +4233,6 @@ window.prisonApi = {
     }
   }
 
-  
-
   async function initApp() {
     const userId = ensureLoggedIn();
     if (!userId) return;
@@ -3213,8 +4240,6 @@ window.prisonApi = {
     let activeKey = getCurrentModuleKey();
 
     try {
-
-      // Meanwhile, load the nav.
       const navData = await window.prisonApi.get(
         `/nav?userId=${encodeURIComponent(userId)}`
       );
@@ -3225,21 +4250,26 @@ window.prisonApi = {
 
       const modules = Array.isArray(navData.modules) ? navData.modules : [];
 
-      // default active module
+      // If no module in URL, pick first visible one
       if (!activeKey && modules.length > 0) {
-        activeKey = modules[0].key;
+        // Find first visible module
+        const first = modules.find(m => m.visible !== false) || modules[0];
+        activeKey = first.key;
         const url = new URL(window.location.href);
         url.searchParams.set("module", activeKey);
         window.history.replaceState({}, "", url.toString());
       }
 
-      // if URL module not allowed, fallback
+      // Security Check: Is the requested module in the allowed list?
+      // (Even hidden modules like 'detinut' should be in this list now)
       if (
         activeKey &&
         !modules.some((m) => m.key === activeKey) &&
         modules.length > 0
       ) {
-        activeKey = modules[0].key;
+        console.warn(`Module ${activeKey} not allowed or not found. Redirecting.`);
+        const first = modules.find(m => m.visible !== false) || modules[0];
+        activeKey = first.key;
         const url = new URL(window.location.href);
         url.searchParams.set("module", activeKey);
         window.history.replaceState({}, "", url.toString());
@@ -3248,12 +4278,11 @@ window.prisonApi = {
       renderNav(modules, activeKey);
       runModule(activeKey, userId);
 
-
     } catch (err) {
-      console.error("Eroare la încărcarea aplicației:", err);
+      console.error("App Init Error:", err);
       appContent.innerHTML = `
         <h1 class="app-title">Eroare</h1>
-        <p class="app-subtitle">${(err && err.message) || "Nu s-a putut încărca meniul sau modulul."}</p>
+        <p class="app-subtitle">${err.message || "Eroare la inițializare."}</p>
       `;
     }
   }
@@ -3261,15 +4290,13 @@ window.prisonApi = {
   document.addEventListener("DOMContentLoaded", () => {
     initApp().catch(() => {});
 
-    logoutBtn.addEventListener("click", () => {
-      try {
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
         sessionStorage.removeItem("prison.userId");
         sessionStorage.removeItem("prison.username");
-      } catch (e) {
-        // ignore
-      }
-      window.location.href = "/";
-    });
+        window.location.href = "/";
+      });
+    }
   });
 })();
 </file>
@@ -3426,38 +4453,51 @@ module.exports = {
 // src/modulesConfig.js
 
 const modules = [
+  // --- VISIBLE IN NAV ---
   {
     key: "cautare",
     label: "Căutare",
     path: "/app/index.html?module=cautare",
-    oracleModuleId: null,
-    requiredRoles: null,
-    minPermission: null
+    visible: true,
+    oracleModuleId: null
   },
   {
     key: "interogari",
     label: "Rapoarte & Interogări",
     path: "/app/index.html?module=interogari",
+    visible: true,
     oracleModuleId: null, 
-    requiredRoles: [7],
-    minPermission: null
+    requiredRoles: [7]
   },
   {
     key: "profil",
     label: "Profil utilizator",
     path: "/app/index.html?module=profil",
-    oracleModuleId: null,
-    requiredRoles: null,
-    minPermission: null
+    visible: true,
+    oracleModuleId: null
   },
   {
     key: "admin",
     label: "Pagina admin",
     path: "/app/index.html?module=admin",
+    visible: true,
     oracleModuleId: null,
-    requiredRoles: [7],
-    minPermission: "W"
-  }
+    requiredRoles: [7]
+  },
+
+  // --- HIDDEN (PROFILE / SUB-MODULES) ---
+  {
+    key: "detinut",
+    label: "Dosar Deținut",
+    path: null,
+    visible: false, // Hidden from Top Nav
+    oracleModuleId: null
+  },
+  // Medical Modules (Permission Check Only)
+  { key: "med_greva",   label: "Greva Foamei", visible: false, oracleModuleId: 7,  minPermission: "R" },
+  { key: "med_diag",    label: "Diagnoza",     visible: false, oracleModuleId: 8,  minPermission: "R" },
+  { key: "med_radio",   label: "Radiografie",  visible: false, oracleModuleId: 10, minPermission: "R" },
+  { key: "med_consult", label: "Consultare",   visible: false, oracleModuleId: 11, minPermission: "R" }
 ];
 
 module.exports = modules;
@@ -4131,6 +5171,533 @@ router.post("/login", async (req, res) => {
 module.exports = router;
 </file>
 
+<file path="src/routes/detinut.js">
+// src/routes/detinut.js
+const express = require("express");
+const db = require("../db");
+const router = express.Router();
+const multer = require("multer");
+const sharp = require("sharp");
+const fs = require("fs");
+const path = require("path");
+
+// --- CONFIGURATION ---
+// Map legacy logic: public/photos/{first_digit_idnp}/{idnp}/...
+const PHOTOS_BASE_DIR = path.join(__dirname, "../../public/photos");
+
+// Multer setup (Temp storage)
+const upload = multer({ dest: "temp_uploads/" });
+
+// --- HELPERS ---
+
+function getUid(req) {
+  return Number(req.header("x-user-id") || 0);
+}
+
+// Check if user has one of the allowed roles (1, 7, 99) for editing
+async function canEditGeneral(userId) {
+  if (!userId) return false;
+  try {
+    const res = await db.execute("SELECT ID_ROLE FROM USERS WHERE ID = :id", { id: userId });
+    if (!res.rows.length) return false;
+    const role = Number(res.rows[0].ID_ROLE);
+    return [1, 7, 99].includes(role);
+  } catch (e) {
+    console.error("Role check failed", e);
+    return false;
+  }
+}
+
+// Ensure directory exists
+function ensureDir(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+}
+
+// Convert legacy JPGs to WebP for a specific detainee
+async function autoConvertImages(idnp, dbImages) {
+  if (!idnp) return;
+  const dir1 = idnp.substring(0, 1);
+  const targetDir = path.join(PHOTOS_BASE_DIR, dir1, idnp);
+  
+  if (!fs.existsSync(targetDir)) return;
+
+  for (const img of dbImages) {
+    const legacyName = `${img.ID}_${img.IMAGE_TYPE}.jpg`;
+    const newName = `${img.ID}_${img.IMAGE_TYPE}.webp`;
+    const legacyPath = path.join(targetDir, legacyName);
+    const newPath = path.join(targetDir, newName);
+
+    // If JPG exists but WebP doesn't
+    if (fs.existsSync(legacyPath) && !fs.existsSync(newPath)) {
+      try {
+        await sharp(legacyPath)
+          .webp({ quality: 80 })
+          .toFile(newPath);
+        
+        // Remove old file after successful conversion
+        fs.unlinkSync(legacyPath);
+        console.log(`Converted ${legacyName} to WebP`);
+      } catch (e) {
+        console.error(`Failed to convert ${legacyName}:`, e);
+      }
+    }
+  }
+}
+
+// --- DROPDOWN METADATA ---
+router.get("/detinut/meta/general", async (req, res) => {
+  try {
+    const [statut, categ, edu, mar, nat, rel, loc] = await Promise.all([
+      db.execute("SELECT ID, NAME FROM PRISON.SPR_STATUT ORDER BY NAME"),
+      db.execute("SELECT ID, NAME FROM PRISON.SPR_CATEG_SOCIAL ORDER BY NAME"),
+      db.execute("SELECT ID, NAME FROM PRISON.SPR_EDU_LEVEL ORDER BY ID"),
+      db.execute("SELECT ID, NAME FROM PRISON.SPR_MAR_STATUS ORDER BY NAME"),
+      db.execute("SELECT ID, NAME FROM PRISON.SPR_NATIONALITY ORDER BY NAME"),
+      db.execute("SELECT ID, NAME FROM PRISON.SPR_RELIGION ORDER BY NAME"),
+      db.execute("SELECT ID, NAME FROM PRISON.SPR_LOCALITY ORDER BY NAME") // Simplified
+    ]);
+    res.json({
+      success: true,
+      statut: statut.rows,
+      social: categ.rows,
+      edu: edu.rows,
+      marital: mar.rows,
+      nationality: nat.rows,
+      religion: rel.rows,
+      locality: loc.rows
+    });
+  } catch(e) { res.status(500).json({success:false, error:e.message}); }
+});
+
+// --- GET FULL GENERAL DATA ---
+router.get("/detinut/:id/general_full", async (req, res) => {
+  try {
+    const uid = getUid(req);
+    const canEdit = await canEditGeneral(uid);
+    const id = req.params.id;
+
+    // 1. Main Detainee Data
+    const dRes = await db.execute(`
+      SELECT D.*, 
+             TO_CHAR(D.BIRDTH, 'DD.MM.YYYY') as BIRDTH_STR,
+             S.NAME as STATUT_NAME,
+             REL.NAME as RELIGION_NAME,
+             NAT.NAME as NATIONALITY_NAME
+      FROM PRISON.DETINUTI D
+      LEFT JOIN PRISON.STATUT_HISTORY SH ON (SH.IDNP = D.IDNP AND SH.B_DATE = (SELECT MAX(B_DATE) FROM PRISON.STATUT_HISTORY WHERE IDNP = D.IDNP))
+      LEFT JOIN PRISON.SPR_STATUT S ON S.ID = SH.ID_STATUT
+      LEFT JOIN PRISON.SPR_RELIGION REL ON REL.ID = D.ID_SPR_RELIGION
+      LEFT JOIN PRISON.SPR_NATIONALITY NAT ON NAT.ID = D.ID_SPR_NATIONALITY
+      WHERE D.ID = :id
+    `, { id });
+
+    if (!dRes.rows.length) return res.status(404).json({success:false, error:"Not found"});
+    const detinut = dRes.rows[0];
+    const idnp = detinut.IDNP;
+
+    // 2. Fetch Photos (and trigger conversion)
+    const imgRes = await db.execute("SELECT ID, IMAGE_TYPE FROM PRISON.IMAGES WHERE DETINUT_ID = :id ORDER BY IMAGE_TYPE ASC", { id });
+    const images = imgRes.rows || [];
+    
+    // Background conversion (non-blocking)
+    autoConvertImages(idnp, images).catch(console.error);
+
+    // 3. Citizenship
+    const citRes = await db.execute(`
+      SELECT C.ID, C.ID_SITIZEN, S.NAME, TO_CHAR(C.BDATE, 'DD.MM.YYYY') as BDATE 
+      FROM PRISON.SITIZEN C
+      JOIN PRISON.SPR_SITIZEN S ON S.ID = C.ID_SITIZEN
+      WHERE C.IDNP = :idnp
+    `, { idnp });
+
+    // 4. Address (L_LOCATION)
+    const locRes = await db.execute(`
+      SELECT L.ID, L.ADDRESS, LOC.NAME as CITY
+      FROM PRISON.L_LOCATION L
+      LEFT JOIN PRISON.SPR_LOCALITY LOC ON LOC.ID = L.LOCALITY_ID
+      WHERE L.IDNP = :idnp ORDER BY L.START_DATE DESC FETCH FIRST 1 ROWS ONLY
+    `, { idnp });
+
+    res.json({
+      success: true,
+      canEdit,
+      detinut,
+      images: images.map(i => ({ 
+        id: i.ID, 
+        type: i.IMAGE_TYPE, 
+        url: `/photos/${idnp.substring(0,1)}/${idnp}/${i.ID}_${i.IMAGE_TYPE}.webp?v=${Date.now()}` // Cache buster
+      })),
+      citizenships: citRes.rows,
+      address: locRes.rows[0] || null
+    });
+
+  } catch(e) {
+    console.error(e);
+    res.status(500).json({success:false, error: e.message});
+  }
+});
+
+// --- UPDATE MAIN INFO ---
+router.post("/detinut/:id/update_main", async (req, res) => {
+  const uid = getUid(req);
+  if (!(await canEditGeneral(uid))) return res.status(403).json({success:false, error:"Acces interzis"});
+  
+  const { name, surname, sec_name, birth, sex, idnp } = req.body;
+  
+  try {
+    await db.execute(`
+      UPDATE PRISON.DETINUTI 
+      SET NAME = :n, SURNAME = :s, SEC_NAME = :sn, SEX = :sex, BIRDTH = TO_DATE(:b, 'DD.MM.YYYY')
+      WHERE ID = :id
+    `, { n:name, s:surname, sn:sec_name, sex, b:birth, id:req.params.id }, { autoCommit: true });
+    
+    res.json({success:true});
+  } catch(e) { res.status(500).json({success:false, error:e.message}); }
+});
+
+// --- UPDATE RELIGION ---
+router.post("/detinut/:id/update_religion", async (req, res) => {
+  const uid = getUid(req);
+  if (!(await canEditGeneral(uid))) return res.status(403).json({success:false});
+  
+  try {
+    await db.execute("UPDATE PRISON.DETINUTI SET ID_SPR_RELIGION = :r WHERE ID = :id", 
+      { r: req.body.religionId, id: req.params.id }, { autoCommit: true });
+    res.json({success:true});
+  } catch(e) { res.status(500).json({success:false, error:e.message}); }
+});
+
+// --- PHOTOS: UPLOAD ---
+router.post("/detinut/:id/photos", upload.single("image"), async (req, res) => {
+  const uid = getUid(req);
+  if (!(await canEditGeneral(uid))) return res.status(403).json({success:false, error:"Acces interzis"});
+
+  if (!req.file) return res.status(400).json({success:false, error:"No file"});
+
+  const detId = req.params.id;
+  const type = req.body.type || "3"; // Default to 'Other'
+
+  try {
+    // 1. Get IDNP
+    const dRes = await db.execute("SELECT IDNP FROM PRISON.DETINUTI WHERE ID = :id", {id: detId});
+    if(!dRes.rows.length) throw new Error("Detinut not found");
+    const idnp = dRes.rows[0].IDNP;
+
+    // 2. Insert DB
+    // Need to get the ID back. Oracle RETURNING INTO syntax or Sequence then Insert.
+    // Assuming Sequence PRISON.IMAGES_SEQ
+    const seqRes = await db.execute("SELECT PRISON.IMAGES_SEQ.NEXTVAL AS NEXTID FROM DUAL");
+    const newId = seqRes.rows[0].NEXTID;
+
+    await db.execute(
+      "INSERT INTO PRISON.IMAGES (ID, DETINUT_ID, IMAGE_TYPE) VALUES (:id, :did, :type)",
+      { id: newId, did: detId, type }, 
+      { autoCommit: true }
+    );
+
+    // 3. Process & Save Image
+    const dir1 = idnp.substring(0, 1);
+    const targetDir = path.join(PHOTOS_BASE_DIR, dir1, idnp);
+    ensureDir(targetDir);
+
+    const targetFile = path.join(targetDir, `${newId}_${type}.webp`);
+
+    await sharp(req.file.path)
+      .webp({ quality: 80 })
+      .toFile(targetFile);
+
+    // Cleanup temp
+    fs.unlinkSync(req.file.path);
+
+    res.json({success:true});
+  } catch(e) {
+    if(req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    console.error(e);
+    res.status(500).json({success:false, error:e.message});
+  }
+});
+
+// --- PHOTOS: DELETE ---
+router.delete("/detinut/:id/photos/:photoId", async (req, res) => {
+  const uid = getUid(req);
+  if (!(await canEditGeneral(uid))) return res.status(403).json({success:false});
+
+  const photoId = req.params.photoId;
+  const detId = req.params.id;
+
+  try {
+    // Check ownership
+    const chk = await db.execute("SELECT IMAGE_TYPE, DETINUT_ID FROM PRISON.IMAGES WHERE ID = :id", {id: photoId});
+    if (!chk.rows.length || String(chk.rows[0].DETINUT_ID) !== String(detId)) {
+      return res.status(400).json({success:false, error:"Invalid photo"});
+    }
+    const type = chk.rows[0].IMAGE_TYPE;
+
+    // Get IDNP for path
+    const dRes = await db.execute("SELECT IDNP FROM PRISON.DETINUTI WHERE ID = :id", {id: detId});
+    const idnp = dRes.rows[0].IDNP;
+
+    // DB Delete
+    await db.execute("DELETE FROM PRISON.IMAGES WHERE ID = :id", {id: photoId}, {autoCommit: true});
+
+    // File Delete
+    const dir1 = idnp.substring(0, 1);
+    const filePath = path.join(PHOTOS_BASE_DIR, dir1, idnp, `${photoId}_${type}.webp`);
+    if(fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    res.json({success:true});
+  } catch(e) { res.status(500).json({success:false, error:e.message}); }
+});
+
+
+// =========================================================================
+// 1. GREVA FOAMEI (Module 7)
+// =========================================================================
+
+// READ
+router.get("/detinut/:idnp/medical/greva", async (req, res) => {
+  const uid = getUid(req);
+  if (!await checkPermission(uid, 7, 'R')) return res.status(403).json({ success: false, error: "Acces interzis." });
+  
+  const canWrite = await checkPermission(uid, 7, 'W');
+  const sql = `
+    SELECT G.ID, TO_CHAR(G.BDATE, 'DD.MM.YYYY') as BDATE, TO_CHAR(G.EDATE, 'DD.MM.YYYY') as EDATE, 
+           G.ID_MOTIV, S.NAME as MOTIV
+    FROM PRISON.GREVA_FOAMEI G
+    LEFT JOIN PRISON.SPR_MOTIV_GREVA_FOAMEI S ON S.ID = G.ID_MOTIV
+    WHERE G.IDNP = :idnp ORDER BY G.BDATE DESC
+  `;
+  const result = await db.execute(sql, { idnp: req.params.idnp });
+  res.json({ success: true, rows: result.rows, canWrite });
+});
+
+// CREATE
+router.post("/detinut/:idnp/medical/greva", async (req, res) => {
+  const uid = getUid(req);
+  if (!await checkPermission(uid, 7, 'W')) return res.status(403).json({ success: false, error: "Acces interzis (Write)." });
+
+  const { bdate, edate, id_motiv } = req.body;
+  const sql = `
+    INSERT INTO PRISON.GREVA_FOAMEI (ID, IDNP, BDATE, EDATE, ID_MOTIV)
+    VALUES (PRISON.GREVA_FOAMEI_SEQ.NEXTVAL, :idnp, TO_DATE(:b,'DD.MM.YYYY'), TO_DATE(:e,'DD.MM.YYYY'), :m)
+  `;
+  try {
+    await db.execute(sql, { idnp: req.params.idnp, b: bdate, e: edate || null, m: id_motiv }, { autoCommit: true });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// UPDATE
+router.put("/detinut/medical/greva/:id", async (req, res) => {
+  const uid = getUid(req);
+  if (!await checkPermission(uid, 7, 'W')) return res.status(403).json({ success: false, error: "Acces interzis." });
+
+  const { bdate, edate, id_motiv } = req.body;
+  const sql = `
+    UPDATE PRISON.GREVA_FOAMEI
+    SET BDATE = TO_DATE(:b,'DD.MM.YYYY'), EDATE = TO_DATE(:e,'DD.MM.YYYY'), ID_MOTIV = :m
+    WHERE ID = :id
+  `;
+  try {
+    await db.execute(sql, { b: bdate, e: edate || null, m: id_motiv, id: req.params.id }, { autoCommit: true });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// DELETE
+router.delete("/detinut/medical/greva/:id", async (req, res) => {
+  const uid = getUid(req);
+  if (!await checkPermission(uid, 7, 'W')) return res.status(403).json({ success: false, error: "Acces interzis." });
+  
+  try {
+    await db.execute("DELETE FROM PRISON.GREVA_FOAMEI WHERE ID = :id", { id: req.params.id }, { autoCommit: true });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+
+// =========================================================================
+// 2. DIAGNOZA (Module 8)
+// =========================================================================
+
+// READ
+router.get("/detinut/:idnp/medical/diagnoza", async (req, res) => {
+  const uid = getUid(req);
+  if (!await checkPermission(uid, 8, 'R')) return res.status(403).json({ success: false, error: "Acces interzis." });
+  const canWrite = await checkPermission(uid, 8, 'W');
+  const sql = `
+    SELECT D.ID, TO_CHAR(D.ADATE, 'DD.MM.YYYY') as ADATE, D.NOTE,
+           D.ID_DIAGNOZ, S.NAME as DIAGNOZ_NAME, S.ID as DIAGNOZ_COD
+    FROM PRISON.DIAGNOZ D
+    LEFT JOIN PRISON.SPR_DIAGNOZ S ON S.ID = D.ID_DIAGNOZ
+    WHERE D.IDNP = :idnp ORDER BY D.ADATE DESC
+  `;
+  const result = await db.execute(sql, { idnp: req.params.idnp });
+  res.json({ success: true, rows: result.rows, canWrite });
+});
+
+// CREATE
+router.post("/detinut/:idnp/medical/diagnoza", async (req, res) => {
+  const uid = getUid(req);
+  if (!await checkPermission(uid, 8, 'W')) return res.status(403).json({ success: false, error: "Acces interzis." });
+  const { adate, id_diagnoz, note } = req.body;
+  const sql = `
+    INSERT INTO PRISON.DIAGNOZ (ID, IDNP, ADATE, ID_DIAGNOZ, NOTE)
+    VALUES (PRISON.DIAGNOZ_SEQ.NEXTVAL, :idnp, TO_DATE(:d,'DD.MM.YYYY'), :diag, :note)
+  `;
+  try {
+    await db.execute(sql, { idnp: req.params.idnp, d: adate, diag: id_diagnoz, note: note }, { autoCommit: true });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// UPDATE
+router.put("/detinut/medical/diagnoza/:id", async (req, res) => {
+  const uid = getUid(req);
+  if (!await checkPermission(uid, 8, 'W')) return res.status(403).json({ success: false, error: "Acces interzis." });
+  const { adate, id_diagnoz, note } = req.body;
+  const sql = `UPDATE PRISON.DIAGNOZ SET ADATE=TO_DATE(:d,'DD.MM.YYYY'), ID_DIAGNOZ=:diag, NOTE=:note WHERE ID=:id`;
+  try {
+    await db.execute(sql, { d: adate, diag: id_diagnoz, note, id: req.params.id }, { autoCommit: true });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// DELETE
+router.delete("/detinut/medical/diagnoza/:id", async (req, res) => {
+  const uid = getUid(req);
+  if (!await checkPermission(uid, 8, 'W')) return res.status(403).json({ success: false, error: "Acces interzis." });
+  try {
+    await db.execute("DELETE FROM PRISON.DIAGNOZ WHERE ID=:id", {id: req.params.id}, {autoCommit:true});
+    res.json({success:true});
+  } catch(e) { res.status(500).json({success:false, error:e.message}); }
+});
+
+
+// =========================================================================
+// 3. RADIOGRAFIE (Module 10)
+// =========================================================================
+
+// READ
+router.get("/detinut/:idnp/medical/radiografie", async (req, res) => {
+  const uid = getUid(req);
+  if(!await checkPermission(uid, 10, 'R')) return res.status(403).json({success:false, error:"Acces interzis"});
+  const canWrite = await checkPermission(uid, 10, 'W');
+  const sql = `
+    SELECT R.ID, TO_CHAR(R.ADATE, 'DD.MM.YYYY') as ADATE, R.COMMENTS,
+           R.ID_PENETENTIAR, R.ID_RESULTAT,
+           P.NAME as PENITENCIAR, RES.NAME as REZULTAT
+    FROM PRISON.RADIOGRAFIE R
+    LEFT JOIN PRISON.SPR_PENITENCIAR P ON P.ID = R.ID_PENETENTIAR
+    LEFT JOIN PRISON.SPR_RADIOGRAFIE_RESULTAT RES ON RES.ID = R.ID_RESULTAT
+    WHERE R.IDNP = :idnp ORDER BY R.ADATE DESC
+  `;
+  const result = await db.execute(sql, { idnp: req.params.idnp });
+  res.json({ success: true, rows: result.rows, canWrite });
+});
+
+// CREATE
+router.post("/detinut/:idnp/medical/radiografie", async (req, res) => {
+  const uid = getUid(req);
+  if(!await checkPermission(uid, 10, 'W')) return res.status(403).json({success:false});
+  const { adate, id_resultat, id_penitenciar, comments } = req.body;
+  const sql = `
+    INSERT INTO PRISON.RADIOGRAFIE (ID, IDNP, ADATE, ID_RESULTAT, ID_PENETENTIAR, COMMENTS)
+    VALUES (PRISON.RADIOGRAFIE_SEQ.NEXTVAL, :idnp, TO_DATE(:d,'DD.MM.YYYY'), :res, :pen, :comm)
+  `;
+  try {
+    await db.execute(sql, { idnp: req.params.idnp, d:adate, res:id_resultat, pen:id_penitenciar, comm:comments }, {autoCommit:true});
+    res.json({success:true});
+  } catch(e) { res.status(500).json({success:false, error:e.message}); }
+});
+
+// UPDATE
+router.put("/detinut/medical/radiografie/:id", async (req, res) => {
+  const uid = getUid(req);
+  if(!await checkPermission(uid, 10, 'W')) return res.status(403).json({success:false});
+  const { adate, id_resultat, id_penitenciar, comments } = req.body;
+  const sql = `UPDATE PRISON.RADIOGRAFIE SET ADATE=TO_DATE(:d,'DD.MM.YYYY'), ID_RESULTAT=:res, ID_PENETENTIAR=:pen, COMMENTS=:comm WHERE ID=:id`;
+  try {
+    await db.execute(sql, {d:adate, res:id_resultat, pen:id_penitenciar, comm:comments, id:req.params.id}, {autoCommit:true});
+    res.json({success:true});
+  } catch(e) { res.status(500).json({success:false, error:e.message}); }
+});
+
+// DELETE
+router.delete("/detinut/medical/radiografie/:id", async (req, res) => {
+  const uid = getUid(req);
+  if(!await checkPermission(uid, 10, 'W')) return res.status(403).json({success:false});
+  try {
+    await db.execute("DELETE FROM PRISON.RADIOGRAFIE WHERE ID=:id", {id:req.params.id}, {autoCommit:true});
+    res.json({success:true});
+  } catch(e) { res.status(500).json({success:false, error:e.message}); }
+});
+
+
+// =========================================================================
+// 4. CONSULTARE (Module 11)
+// =========================================================================
+
+// READ
+router.get("/detinut/:idnp/medical/consultare", async (req, res) => {
+  const uid = getUid(req);
+  if(!await checkPermission(uid, 11, 'R')) return res.status(403).json({success:false, error:"Acces interzis"});
+  const canWrite = await checkPermission(uid, 11, 'W');
+  const sql = `
+    SELECT C.ID, TO_CHAR(C.ADATE, 'DD.MM.YYYY') as ADATE, C.NPP_DOCTOR,
+           C.ID_HOSPITAL, C.ID_INVESTIGATII,
+           H.NAME as HOSPITAL, I.NAME as INVESTIGATIE
+    FROM PRISON.CONSULTARE_MIN C
+    LEFT JOIN PRISON.SPR_HOSPITALS H ON H.ID = C.ID_HOSPITAL
+    LEFT JOIN PRISON.SPR_INVESTIGATII I ON I.ID = C.ID_INVESTIGATII
+    WHERE C.IDNP = :idnp ORDER BY C.ADATE DESC
+  `;
+  const result = await db.execute(sql, { idnp: req.params.idnp });
+  res.json({ success: true, rows: result.rows, canWrite });
+});
+
+// CREATE
+router.post("/detinut/:idnp/medical/consultare", async (req, res) => {
+  const uid = getUid(req);
+  if(!await checkPermission(uid, 11, 'W')) return res.status(403).json({success:false});
+  const { adate, npp_doctor, id_hospital, id_investigatii } = req.body;
+  const sql = `
+    INSERT INTO PRISON.CONSULTARE_MIN (ID, IDNP, ADATE, NPP_DOCTOR, ID_HOSPITAL, ID_INVESTIGATII)
+    VALUES (PRISON.CONSULTARE_MIN_SEQ.NEXTVAL, :idnp, TO_DATE(:d,'DD.MM.YYYY'), :doc, :hosp, :inv)
+  `;
+  try {
+    await db.execute(sql, { idnp:req.params.idnp, d:adate, doc:npp_doctor, hosp:id_hospital, inv:id_investigatii }, {autoCommit:true});
+    res.json({success:true});
+  } catch(e) { res.status(500).json({success:false, error:e.message}); }
+});
+
+// UPDATE
+router.put("/detinut/medical/consultare/:id", async (req, res) => {
+  const uid = getUid(req);
+  if(!await checkPermission(uid, 11, 'W')) return res.status(403).json({success:false});
+  const { adate, npp_doctor, id_hospital, id_investigatii } = req.body;
+  const sql = `UPDATE PRISON.CONSULTARE_MIN SET ADATE=TO_DATE(:d,'DD.MM.YYYY'), NPP_DOCTOR=:doc, ID_HOSPITAL=:hosp, ID_INVESTIGATII=:inv WHERE ID=:id`;
+  try {
+    await db.execute(sql, {d:adate, doc:npp_doctor, hosp:id_hospital, inv:id_investigatii, id:req.params.id}, {autoCommit:true});
+    res.json({success:true});
+  } catch(e) { res.status(500).json({success:false, error:e.message}); }
+});
+
+// DELETE
+router.delete("/detinut/medical/consultare/:id", async (req, res) => {
+  const uid = getUid(req);
+  if(!await checkPermission(uid, 11, 'W')) return res.status(403).json({success:false});
+  try {
+    await db.execute("DELETE FROM PRISON.CONSULTARE_MIN WHERE ID=:id", {id:req.params.id}, {autoCommit:true});
+    res.json({success:true});
+  } catch(e) { res.status(500).json({success:false, error:e.message}); }
+});
+
+module.exports = router;
+</file>
+
 <file path="src/routes/health.js">
 // src/routes/health.js
 const express = require("express");
@@ -4245,8 +5812,7 @@ router.post("/interogari/exec", async (req, res) => {
         // Requires params.institution_id
         sql = `
           SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
-                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PM.ID_PENETENCIAR AS PENITENCIAR,
-                 pen.NAME as PEN_NAME
+                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PM.ID_PENETENCIAR AS PENITENCIAR
           FROM PRISON.DETINUTI pd
           INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp)
           INNER JOIN PRISON.SPR_PENITENCIAR pen ON (pm.ID_PENETENCIAR = pen.ID)
@@ -4278,7 +5844,7 @@ router.post("/interogari/exec", async (req, res) => {
           ORDER BY NUME, PRENUME
         `;
         binds = { idpen: params.institution_id, minage: params.min_age, maxage: params.max_age };
-        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Vârsta", "Penitenciar"];
+        headers = ["ID","IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Vârsta", "Penitenciar"];
         title = `Căutare Vârstă (${params.min_age}-${params.max_age} ani)`;
         break;
 
@@ -4453,7 +6019,7 @@ router.post("/interogari/exec", async (req, res) => {
           ORDER BY NUME, PRENUME
         `;
         binds = { s: `%${(params.sursa || '').toUpperCase()}%` };
-        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar", "Sursa", "Data Intrare"];
+        headers = ["ID", "IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar", "Sursa", "Data Intrare"];
         title = `Colete (Sursa: ${params.sursa})`;
         break;
 
@@ -4467,7 +6033,7 @@ router.post("/interogari/exec", async (req, res) => {
           ORDER BY c.DATE_IN DESC
         `;
         binds = { b: params.start_date, e: params.end_date };
-        headers = ["IDNP", "Deținut", "Persoană Predare", "Data", "Conținut", "Sursă"];
+        headers = ["ID", "IDNP", "Deținut", "Persoană Predare", "Data", "Conținut", "Sursă"];
         title = `Colete (${params.start_date} - ${params.end_date})`;
         break;
         
@@ -4688,98 +6254,69 @@ const modulesConfig = require("../modulesConfig");
 
 const router = express.Router();
 
-/**
- * GET /api/nav?userId=123
- */
 router.get("/nav", async (req, res) => {
   const userId = Number(req.query.userId || 0);
 
   if (!userId) {
-    return res.status(400).json({
-      success: false,
-      error: "Parametrul userId este obligatoriu."
-    });
+    return res.status(400).json({ success: false, error: "UserId lipsă." });
   }
 
   try {
-    // 1) Load user (ID_ROLE)
-    const userSql =
-      "SELECT ID, USERNAME, ID_ROLE " +
-      "FROM USERS " +
-      "WHERE ID = :id";
-    const userResult = await db.execute(userSql, { id: userId }, {});
-    const userRows = userResult.rows || [];
-
-    if (!userRows.length) {
-      return res.status(401).json({
-        success: false,
-        error: "Utilizator inexistent sau invalid."
-      });
+    // 1) Load user role
+    const userSql = "SELECT ID, USERNAME, ID_ROLE FROM USERS WHERE ID = :id";
+    const userResult = await db.execute(userSql, { id: userId });
+    
+    if (!userResult.rows || !userResult.rows.length) {
+      return res.status(401).json({ success: false, error: "Utilizator invalid." });
     }
 
-    const userRow = userRows[0];
-    const roleId =
-      userRow.ID_ROLE !== null && userRow.ID_ROLE !== undefined
-        ? Number(userRow.ID_ROLE)
-        : null;
+    const userRow = userResult.rows[0];
+    const roleId = userRow.ID_ROLE != null ? Number(userRow.ID_ROLE) : null;
 
-    // 2) Prepare list of module IDs that need SPR_ACCESS check
+    // 2) Load permissions
     const moduleIds = modulesConfig
-      .map((m) => m.oracleModuleId)
-      .filter((id) => id !== null && id !== undefined);
+      .map(m => m.oracleModuleId)
+      .filter(id => id != null);
 
     let accessMap = {};
 
     if (moduleIds.length > 0) {
-      const bindParams = { userId: userId };
-      const placeholders = moduleIds
-        .map((id, idx) => {
-          const name = `m${idx}`;
-          bindParams[name] = id;
-          return `:${name}`;
-        })
-        .join(",");
+      // Build IN clause
+      const bindParams = { userId };
+      const placeholders = moduleIds.map((id, idx) => {
+         bindParams[`m${idx}`] = id;
+         return `:m${idx}`;
+      }).join(",");
 
-      const accessSql =
-        "SELECT ID_MODUL, DREPT " +
-        "FROM SPR_ACCESS " +
-        "WHERE ID_USER = :userId " +
-        `  AND ID_MODUL IN (${placeholders})`;
-
-      const accessResult = await db.execute(accessSql, bindParams, {});
-      const accessRows = accessResult.rows || [];
-
-      accessRows.forEach((row) => {
-        const modId = Number(row.ID_MODUL);
-        const drept = String(row.DREPT || "").toUpperCase();
-        accessMap[modId] = drept; // 'R' or 'W'
+      const accessSql = `SELECT ID_MODUL, DREPT FROM SPR_ACCESS WHERE ID_USER = :userId AND ID_MODUL IN (${placeholders})`;
+      const accessRes = await db.execute(accessSql, bindParams);
+      
+      (accessRes.rows || []).forEach(row => {
+        accessMap[Number(row.ID_MODUL)] = (row.DREPT || "").toUpperCase();
       });
     }
 
-    function hasMinPermission(minPermission, drept) {
-      if (!drept) return false;
-      drept = drept.toUpperCase();
-      if (minPermission === "W") {
-        return drept === "W";
-      }
-      // minPermission === "R"
-      return drept === "R" || drept === "W";
+    function hasMinPermission(min, actual) {
+      if (!actual) return false;
+      if (min === "W") return actual === "W";
+      return actual === "R" || actual === "W";
     }
 
+    // 3) Filter allowed modules
     const allowedModules = modulesConfig
       .filter((mod) => {
-        // Check role requirement first
+        // CHANGED: We DO NOT return false here for invisible modules.
+        // We only filter if the User lacks the Role or Permission.
+
+        // Role check
         if (Array.isArray(mod.requiredRoles) && mod.requiredRoles.length > 0) {
           if (roleId === null || !mod.requiredRoles.includes(roleId)) {
             return false;
           }
         }
-
-        // If no oracleModuleId, rely only on role
-        if (mod.oracleModuleId === null) {
-          return true;
-        }
-
+        
+        // Permission check
+        if (mod.oracleModuleId === null) return true;
         const drept = accessMap[mod.oracleModuleId];
         return hasMinPermission(mod.minPermission || "R", drept);
       })
@@ -4787,8 +6324,7 @@ router.get("/nav", async (req, res) => {
         key: mod.key,
         label: mod.label,
         path: mod.path,
-        minPermission: mod.minPermission,
-        oracleModuleId: mod.oracleModuleId
+        visible: mod.visible !== false // Pass visibility to frontend
       }));
 
     return res.json({
@@ -4800,12 +6336,10 @@ router.get("/nav", async (req, res) => {
       },
       modules: allowedModules
     });
+
   } catch (err) {
-    console.error("Error in /api/nav:", err);
-    return res.status(500).json({
-      success: false,
-      error: "Eroare internă la generarea meniului."
-    });
+    console.error("Nav Error:", err);
+    return res.status(500).json({ success: false, error: "Eroare meniu." });
   }
 });
 
@@ -5135,6 +6669,7 @@ const searchRoutes = require("./routes/search");
 const healthRoutes = require("./routes/health");
 const adminRoutes = require("./routes/admin");
 const interogariRoutes = require("./routes/interogari"); // <--- Import
+const detinutRoutes = require("./routes/detinut"); // <--- ADD THIS
 
 const app = express();
 
@@ -5149,6 +6684,7 @@ app.use("/api", searchRoutes);
 app.use("/api", healthRoutes);
 app.use("/api", adminRoutes);
 app.use("/api", interogariRoutes); // <--- Register
+app.use("/api", detinutRoutes); // <--- ADD THIS
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(publicDir, "login.html"));

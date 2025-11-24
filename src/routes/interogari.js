@@ -284,7 +284,7 @@ router.post("/interogari/exec", async (req, res) => {
           ORDER BY NUME, PRENUME
         `;
         binds = { s: `%${(params.sursa || '').toUpperCase()}%` };
-        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar", "Sursa", "Data Intrare"];
+        headers = ["ID", "IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar", "Sursa", "Data Intrare"];
         title = `Colete (Sursa: ${params.sursa})`;
         break;
 
@@ -298,7 +298,7 @@ router.post("/interogari/exec", async (req, res) => {
           ORDER BY c.DATE_IN DESC
         `;
         binds = { b: params.start_date, e: params.end_date };
-        headers = ["IDNP", "Deținut", "Persoană Predare", "Data", "Conținut", "Sursă"];
+        headers = ["ID", "IDNP", "Deținut", "Persoană Predare", "Data", "Conținut", "Sursă"];
         title = `Colete (${params.start_date} - ${params.end_date})`;
         break;
         

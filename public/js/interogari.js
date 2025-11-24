@@ -24,7 +24,6 @@
             <button class="admin-tab-btn" data-tab="straini">🌍 Străini</button>
          </div>
 
-         <!-- TAB: DETINUTI -->
          <div class="admin-panel" data-panel="detinuti">
             <h2>Rapoarte Deținuți</h2>
             <div class="admin-grid-2">
@@ -55,7 +54,6 @@
             </div>
          </div>
 
-         <!-- TAB: COLETE -->
          <div class="admin-panel hidden" data-panel="colete">
             <h2>Colete și Vizite</h2>
             <div class="admin-grid-2">
@@ -80,7 +78,6 @@
             </div>
          </div>
 
-         <!-- TAB: TRANSFER -->
          <div class="admin-panel hidden" data-panel="transfer">
              <h2>Transferuri și Escortări</h2>
              <div class="admin-grid-2">
@@ -115,7 +112,6 @@
              </div>
          </div>
 
-         <!-- TAB: EVIDENTA -->
          <div class="admin-panel hidden" data-panel="evidenta">
              <h2>Evidență și Acte</h2>
              <div class="admin-grid-2">
@@ -148,7 +144,6 @@
              </div>
          </div>
          
-         <!-- TAB: STRAINI -->
          <div class="admin-panel hidden" data-panel="straini">
             <h2>Evidență Străini</h2>
              <div class="admin-grid-2">
@@ -165,7 +160,6 @@
              </div>
          </div>
 
-         <!-- RESULTS SECTION -->
          <div id="queryResultsArea" class="mt-4 hidden">
             <div class="flex-between">
                <h2 id="resTitle">Rezultate</h2>
@@ -217,19 +211,23 @@
         lastResult = data; // Store for printing
         titleEl.textContent = data.title;
         
-        // CHANGED: Updated <th>Acțiuni</th> to <th>Profil</th>
-        tHead.innerHTML = `<tr>${data.headers.map(h => `<th>${h}</th>`).join('')}<th>Profil</th></tr>`;
+        // Render Header
+        tHead.innerHTML = `<tr>${data.headers.map(h => `<th>${h}</th>`).join('')}<th>Dosar</th></tr>`;
         
         // Render Rows
         if(data.rows.length === 0) {
            tBody.innerHTML = `<tr><td colspan="${data.headers.length + 1}" class="text-center p-4">Nu au fost găsite rezultate.</td></tr>`;
         } else {
            tBody.innerHTML = data.rows.map(r => {
-              // We ignore the first column 'ID' usually used for links, but let's grab it if exists
-              const id = r.ID || r.IDDETINUT || 0; 
+              // Priority: Explicit DETINUT_ID (from joins) -> PROFIL_DET -> Standard ID -> Default 0
+              // This fixes "Colete" reports where 'ID' is the package ID, not the person.
+              const id = r.DETINUT_ID || r.PROFIL_DET || r.ID || r.IDDETINUT || 0; 
+
               const cells = Object.values(r).map(v => `<td>${v === null ? '' : v}</td>`).join('');
-              // Simple link logic
-              const btn = id ? `<button class="btn-small" onclick="window.location.href='/app/index.html?module=profile&id=${id}'">Profil</button>` : '';
+              
+              // FIX: Redirect to 'detinut' module, NOT 'profile'
+              const btn = id ? `<button class="btn-small" onclick="window.location.href='/app/index.html?module=detinut&id=${id}'">Dosar</button>` : '';
+              
               return `<tr>${cells}<td>${btn}</td></tr>`;
            }).join('');
         }
@@ -240,20 +238,6 @@
 
   window.printCurrentResults = async () => {
      if(!lastResult) return;
-     
-     // Send data to backend to render HTML page
-     // We use a trick: create a hidden form and submit it to new tab
-     const form = document.createElement('form');
-     form.method = 'POST';
-     form.action = '/api/interogari/print';
-     form.target = '_blank';
-     
-     // Add auth token if needed (cookies usually handle this, but let's see. 
-     // Since it's a form post to new tab, custom headers are hard.
-     // We will rely on IP or if needed, pass token in hidden input, though less secure)
-     
-     // Actually, the fetch approach is cleaner but requires blob handling for new tab.
-     // Let's stick to fetch -> blob -> URL
      
      try {
        const resp = await fetch('/api/interogari/print', {
@@ -276,6 +260,9 @@
   window.prisonModules = window.prisonModules || {};
   window.prisonModules.interogari = {
     async init({ userId, container }) {
+      // 1. ACTIVATE WIDE MODE
+      document.body.classList.add('wide-mode'); 
+      
       await loadInstitutions();
       renderTabs(container);
     }

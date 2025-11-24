@@ -115,7 +115,7 @@
               )}</span></div>
             </div>
             <div class="result-footer">
-              <button type="button" class="btn-ghost btn-small" disabled title="Detalii încă nu sunt implementate">
+              <button type="button" class="btn-ghost btn-small" onclick="window.location.href='/app/index.html?module=detinut&id=${item.id}'">
                 Detalii
               </button>
             </div>

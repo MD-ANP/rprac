@@ -18,7 +18,6 @@
       window.location.href = "/";
       return null;
     }
-
     userInfoEl.textContent = username;
     return userId;
   }
@@ -27,8 +26,11 @@
     navContainer.innerHTML = "";
 
     modules.forEach((mod) => {
+      // CHANGED: Check visibility flag before rendering
+      if (mod.visible === false) return; 
+
       const link = document.createElement("a");
-      link.href = mod.path;
+      link.href = mod.path || '#';
       link.textContent = mod.label;
       link.className = "nav-link";
       if (mod.key === activeKey) {
@@ -43,7 +45,7 @@
     let subtitle = "Selectează un modul din meniul de sus.";
 
     if (activeKey) {
-      subtitle = `Modulul "${activeKey}" nu are încă o implementare dedicată.`;
+      subtitle = `Modulul "${activeKey}" nu are încă o implementare dedicată sau nu a fost găsit.`;
     }
 
     appContent.innerHTML = `
@@ -63,8 +65,6 @@
     }
   }
 
-  
-
   async function initApp() {
     const userId = ensureLoggedIn();
     if (!userId) return;
@@ -72,8 +72,6 @@
     let activeKey = getCurrentModuleKey();
 
     try {
-
-      // Meanwhile, load the nav.
       const navData = await window.prisonApi.get(
         `/nav?userId=${encodeURIComponent(userId)}`
       );
@@ -84,21 +82,26 @@
 
       const modules = Array.isArray(navData.modules) ? navData.modules : [];
 
-      // default active module
+      // If no module in URL, pick first visible one
       if (!activeKey && modules.length > 0) {
-        activeKey = modules[0].key;
+        // Find first visible module
+        const first = modules.find(m => m.visible !== false) || modules[0];
+        activeKey = first.key;
         const url = new URL(window.location.href);
         url.searchParams.set("module", activeKey);
         window.history.replaceState({}, "", url.toString());
       }
 
-      // if URL module not allowed, fallback
+      // Security Check: Is the requested module in the allowed list?
+      // (Even hidden modules like 'detinut' should be in this list now)
       if (
         activeKey &&
         !modules.some((m) => m.key === activeKey) &&
         modules.length > 0
       ) {
-        activeKey = modules[0].key;
+        console.warn(`Module ${activeKey} not allowed or not found. Redirecting.`);
+        const first = modules.find(m => m.visible !== false) || modules[0];
+        activeKey = first.key;
         const url = new URL(window.location.href);
         url.searchParams.set("module", activeKey);
         window.history.replaceState({}, "", url.toString());
@@ -107,12 +110,11 @@
       renderNav(modules, activeKey);
       runModule(activeKey, userId);
 
-
     } catch (err) {
-      console.error("Eroare la încărcarea aplicației:", err);
+      console.error("App Init Error:", err);
       appContent.innerHTML = `
         <h1 class="app-title">Eroare</h1>
-        <p class="app-subtitle">${(err && err.message) || "Nu s-a putut încărca meniul sau modulul."}</p>
+        <p class="app-subtitle">${err.message || "Eroare la inițializare."}</p>
       `;
     }
   }
@@ -120,14 +122,12 @@
   document.addEventListener("DOMContentLoaded", () => {
     initApp().catch(() => {});
 
-    logoutBtn.addEventListener("click", () => {
-      try {
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
         sessionStorage.removeItem("prison.userId");
         sessionStorage.removeItem("prison.username");
-      } catch (e) {
-        // ignore
-      }
-      window.location.href = "/";
-    });
+        window.location.href = "/";
+      });
+    }
   });
 })();

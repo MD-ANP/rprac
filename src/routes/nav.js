@@ -5,98 +5,69 @@ const modulesConfig = require("../modulesConfig");
 
 const router = express.Router();
 
-/**
- * GET /api/nav?userId=123
- */
 router.get("/nav", async (req, res) => {
   const userId = Number(req.query.userId || 0);
 
   if (!userId) {
-    return res.status(400).json({
-      success: false,
-      error: "Parametrul userId este obligatoriu."
-    });
+    return res.status(400).json({ success: false, error: "UserId lipsă." });
   }
 
   try {
-    // 1) Load user (ID_ROLE)
-    const userSql =
-      "SELECT ID, USERNAME, ID_ROLE " +
-      "FROM USERS " +
-      "WHERE ID = :id";
-    const userResult = await db.execute(userSql, { id: userId }, {});
-    const userRows = userResult.rows || [];
-
-    if (!userRows.length) {
-      return res.status(401).json({
-        success: false,
-        error: "Utilizator inexistent sau invalid."
-      });
+    // 1) Load user role
+    const userSql = "SELECT ID, USERNAME, ID_ROLE FROM USERS WHERE ID = :id";
+    const userResult = await db.execute(userSql, { id: userId });
+    
+    if (!userResult.rows || !userResult.rows.length) {
+      return res.status(401).json({ success: false, error: "Utilizator invalid." });
     }
 
-    const userRow = userRows[0];
-    const roleId =
-      userRow.ID_ROLE !== null && userRow.ID_ROLE !== undefined
-        ? Number(userRow.ID_ROLE)
-        : null;
+    const userRow = userResult.rows[0];
+    const roleId = userRow.ID_ROLE != null ? Number(userRow.ID_ROLE) : null;
 
-    // 2) Prepare list of module IDs that need SPR_ACCESS check
+    // 2) Load permissions
     const moduleIds = modulesConfig
-      .map((m) => m.oracleModuleId)
-      .filter((id) => id !== null && id !== undefined);
+      .map(m => m.oracleModuleId)
+      .filter(id => id != null);
 
     let accessMap = {};
 
     if (moduleIds.length > 0) {
-      const bindParams = { userId: userId };
-      const placeholders = moduleIds
-        .map((id, idx) => {
-          const name = `m${idx}`;
-          bindParams[name] = id;
-          return `:${name}`;
-        })
-        .join(",");
+      // Build IN clause
+      const bindParams = { userId };
+      const placeholders = moduleIds.map((id, idx) => {
+         bindParams[`m${idx}`] = id;
+         return `:m${idx}`;
+      }).join(",");
 
-      const accessSql =
-        "SELECT ID_MODUL, DREPT " +
-        "FROM SPR_ACCESS " +
-        "WHERE ID_USER = :userId " +
-        `  AND ID_MODUL IN (${placeholders})`;
-
-      const accessResult = await db.execute(accessSql, bindParams, {});
-      const accessRows = accessResult.rows || [];
-
-      accessRows.forEach((row) => {
-        const modId = Number(row.ID_MODUL);
-        const drept = String(row.DREPT || "").toUpperCase();
-        accessMap[modId] = drept; // 'R' or 'W'
+      const accessSql = `SELECT ID_MODUL, DREPT FROM SPR_ACCESS WHERE ID_USER = :userId AND ID_MODUL IN (${placeholders})`;
+      const accessRes = await db.execute(accessSql, bindParams);
+      
+      (accessRes.rows || []).forEach(row => {
+        accessMap[Number(row.ID_MODUL)] = (row.DREPT || "").toUpperCase();
       });
     }
 
-    function hasMinPermission(minPermission, drept) {
-      if (!drept) return false;
-      drept = drept.toUpperCase();
-      if (minPermission === "W") {
-        return drept === "W";
-      }
-      // minPermission === "R"
-      return drept === "R" || drept === "W";
+    function hasMinPermission(min, actual) {
+      if (!actual) return false;
+      if (min === "W") return actual === "W";
+      return actual === "R" || actual === "W";
     }
 
+    // 3) Filter allowed modules
     const allowedModules = modulesConfig
       .filter((mod) => {
-        // Check role requirement first
+        // CHANGED: We DO NOT return false here for invisible modules.
+        // We only filter if the User lacks the Role or Permission.
+
+        // Role check
         if (Array.isArray(mod.requiredRoles) && mod.requiredRoles.length > 0) {
           if (roleId === null || !mod.requiredRoles.includes(roleId)) {
             return false;
           }
         }
-
-        // If no oracleModuleId, rely only on role
-        if (mod.oracleModuleId === null) {
-          return true;
-        }
-
+        
+        // Permission check
+        if (mod.oracleModuleId === null) return true;
         const drept = accessMap[mod.oracleModuleId];
         return hasMinPermission(mod.minPermission || "R", drept);
       })
@@ -104,8 +75,7 @@ router.get("/nav", async (req, res) => {
         key: mod.key,
         label: mod.label,
         path: mod.path,
-        minPermission: mod.minPermission,
-        oracleModuleId: mod.oracleModuleId
+        visible: mod.visible !== false // Pass visibility to frontend
       }));
 
     return res.json({
@@ -117,12 +87,10 @@ router.get("/nav", async (req, res) => {
       },
       modules: allowedModules
     });
+
   } catch (err) {
-    console.error("Error in /api/nav:", err);
-    return res.status(500).json({
-      success: false,
-      error: "Eroare internă la generarea meniului."
-    });
+    console.error("Nav Error:", err);
+    return res.status(500).json({ success: false, error: "Eroare meniu." });
   }
 });
 

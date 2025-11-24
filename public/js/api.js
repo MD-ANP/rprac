@@ -54,8 +54,20 @@ async function apiPost(path, body) {
   return data;
 }
 
+
+
 // Expose globally (no bundler)
 window.prisonApi = {
   get: apiGet,
-  post: apiPost
+  post: apiPost,
+  // Add to window.prisonApi
+  del: async (path) => {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      method: "DELETE",
+      headers: getAuthHeaders()
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Delete failed");
+    return data;
+}
 };

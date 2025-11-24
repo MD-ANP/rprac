@@ -31,16 +31,21 @@
   </main>
 
   <!-- Common API helper -->
-  <script src="../js/api.js" defer></script>
+  <!-- ... inside <body>, after api.js ... -->
+<script src="../js/api.js" defer></script>
 
-  <!-- Per-module scripts -->
-  <script src="../js/cautare.js" defer></script>
-  <script src="../js/interogari.js" defer></script> <!-- ADDED -->
-  <script src="../js/profil.js" defer></script>
-  <script src="../js/admin.js" defer></script>
-  
+<!-- Base Modules -->
+<script src="../js/cautare.js" defer></script>
+<script src="../js/interogari.js" defer></script>
+<script src="../js/profil.js" defer></script>
+<script src="../js/admin.js" defer></script>
 
-  <!-- Shell / router (must be last) -->
-  <script src="../js/shell.js" defer></script>
+<!-- PROFILE SKELETON & MODULES -->
+<script src="../js/detinut.js" defer></script>          <!-- The Skeleton -->
+<script src="../js/detinut-medicina.js" defer></script> <!-- The Medical Plugin -->
+<script src="../js/detinut-generale.js" defer></script> <script src="../js/detinut-medicina.js" defer></script>
+
+<!-- Router -->
+<script src="../js/shell.js" defer></script>
 </body>
 </html>

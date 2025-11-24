@@ -10,6 +10,7 @@ const searchRoutes = require("./routes/search");
 const healthRoutes = require("./routes/health");
 const adminRoutes = require("./routes/admin");
 const interogariRoutes = require("./routes/interogari"); // <--- Import
+const detinutRoutes = require("./routes/detinut"); // <--- ADD THIS
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use("/api", searchRoutes);
 app.use("/api", healthRoutes);
 app.use("/api", adminRoutes);
 app.use("/api", interogariRoutes); // <--- Register
+app.use("/api", detinutRoutes); // <--- ADD THIS
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(publicDir, "login.html"));
