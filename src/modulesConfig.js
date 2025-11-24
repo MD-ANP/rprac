@@ -15,7 +15,7 @@ const modules = [
     path: "/app/index.html?module=interogari",
     visible: true,
     oracleModuleId: null, 
-    requiredRoles: [7]
+    requiredRoles: [7] // Only Role 7 sees this top-level item
   },
   {
     key: "profil",
@@ -38,8 +38,11 @@ const modules = [
     key: "detinut",
     label: "Dosar Deținut",
     path: null,
-    visible: false, // Hidden from Top Nav
-    oracleModuleId: null
+    visible: false, 
+    // IMPORTANT: Ensure no specific role is required to VIEW the base module.
+    // The specific 'Edit' permissions are handled inside the module routes.
+    oracleModuleId: null,
+    requiredRoles: [] 
   },
   // Medical Modules (Permission Check Only)
   { key: "med_greva",   label: "Greva Foamei", visible: false, oracleModuleId: 7,  minPermission: "R" },

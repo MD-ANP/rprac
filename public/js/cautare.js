@@ -87,34 +87,37 @@
 
     const cardsHtml = results
       .map((item) => {
+        // Updated URL construction for photo (No Photo ID, just Type 1)
+        let imgHtml = `<div style="width:70px; height:85px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; border-radius:4px; border:1px solid #e2e8f0; color:#cbd5e1; font-weight:bold; font-size:1.5rem;">?</div>`;
+        
+        if (item.hasPhoto && item.idnp) {
+            const dir1 = item.idnp.charAt(0);
+            // Default to type 1 (frontal) for search result thumbnails
+            const url = `/photos/${dir1}/${item.idnp}/1.webp`;
+            imgHtml = `<img src="${url}" onerror="this.style.display='none'" style="width:70px; height:85px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1;">`;
+        }
+
         return `
           <article class="search-result-card">
-            <div class="result-header">
-              <span class="badge badge-status">${escapeHtml(
-                (item.statut || "").toUpperCase()
-              )}</span>
-            </div>
-            <div class="result-body">
-              <div class="row"><span class="k">IDNP</span><span class="v">${escapeHtml(
-                item.idnp
-              )}</span></div>
-              <div class="row"><span class="k">Nume</span><span class="v">${escapeHtml(
-                item.surname
-              )}</span></div>
-              <div class="row"><span class="k">Prenume</span><span class="v">${escapeHtml(
-                item.name
-              )}</span></div>
-              <div class="row"><span class="k">Patronimic</span><span class="v">${escapeHtml(
-                item.secName
-              )}</span></div>
-              <div class="row"><span class="k">Naștere</span><span class="v">${escapeHtml(
-                item.birth
-              )}</span></div>
-              <div class="row"><span class="k">Mișcare</span><span class="v">${escapeHtml(
-                item.miscareText
-              )}</span></div>
+            <div style="display:flex; gap:12px;">
+                <div style="flex-shrink:0;">
+                   ${imgHtml}
+                </div>
+                
+                <div style="flex:1;">
+                    <div class="result-header">
+                      <span class="badge badge-status">${escapeHtml((item.statut || "").toUpperCase())}</span>
+                    </div>
+                    <div class="result-body">
+                      <div class="row"><span class="k">IDNP</span><span class="v">${escapeHtml(item.idnp)}</span></div>
+                      <div class="row"><span class="k">Nume</span><span class="v" style="font-weight:700">${escapeHtml(item.surname)}</span></div>
+                      <div class="row"><span class="k">Prenume</span><span class="v">${escapeHtml(item.name)}</span></div>
+                      <div class="row"><span class="k">Naștere</span><span class="v">${escapeHtml(item.birth)}</span></div>
+                    </div>
+                </div>
             </div>
             <div class="result-footer">
+              <span style="font-size:0.75rem; color:#64748b; margin-right:auto; align-self:center;">${escapeHtml(item.miscareText)}</span>
               <button type="button" class="btn-ghost btn-small" onclick="window.location.href='/app/index.html?module=detinut&id=${item.id}'">
                 Detalii
               </button>

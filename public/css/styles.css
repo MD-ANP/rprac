@@ -1445,3 +1445,109 @@ body {
   .profile-hero-content { flex-direction: column; align-items: center; text-align: center; padding: 20px; }
   .hero-meta { justify-content: center; }
 }
+
+/* --- FILE UPLOAD / DRAG & DROP --- */
+.upload-area {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 30px;
+  text-align: center;
+  background-color: #f8fafc;
+  transition: all 0.2s;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+.upload-area:hover, .upload-area.dragover {
+  border-color: #2563eb;
+  background-color: #eff6ff;
+}
+.upload-icon {
+  font-size: 2rem;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+.upload-text {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+.upload-preview {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+.preview-img {
+  max-width: 150px;
+  max-height: 150px;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+
+/* --- SECTIONS & GRIDS --- */
+.gen-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.profile-section-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  font-weight: 700;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 6px;
+}
+
+/* --- COMPACT TABLES FOR ACTS/JOBS --- */
+.compact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.compact-table th {
+  text-align: left;
+  color: #64748b;
+  font-weight: 600;
+  padding: 6px 4px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.compact-table td {
+  padding: 8px 4px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+}
+.compact-table tr:last-child td { border-bottom: none; }
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .gen-grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+  .gen-grid-3 { grid-template-columns: 1fr; }
+}
+
+/* --- NEW MODAL & UI STYLES --- */
+.detail-stack { display: flex; flex-direction: column; gap: 6px; }
+.detail-label.block { display: block; font-size: 0.8rem; color: #64748b; font-weight: 700; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.badge-read { background: #f1f5f9; color: #334155; padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; border: 1px solid #e2e8f0; }
+.del-x { color: #ef4444; margin-left: 6px; cursor: pointer; font-weight: bold; }
+.del-x:hover { color: #dc2626; }
+.btn-tiny { padding: 2px 6px; font-size: 0.75rem; background: #e2e8f0; border-radius: 4px; border: none; cursor: pointer; }
+.btn-tiny:hover { background: #cbd5e1; }
+.addr-list { list-style: none; padding: 0; margin: 0; max-height: 120px; overflow-y: auto; font-size: 0.85rem; }
+.addr-list li { border-bottom: 1px solid #f1f5f9; padding: 6px 0; }
+.gallery-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.gallery-item img { height: 100px; width: auto; border-radius: 6px; border: 1px solid #e2e8f0; transition: transform 0.2s; }
+.gallery-item img:hover { transform: scale(1.05); }
+
+/* --- Search Select Shim --- */
+.search-select {
+    appearance: none; 
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1em;
+}
