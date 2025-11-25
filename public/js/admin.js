@@ -33,6 +33,18 @@
     });
   }
 
+  // Ensure Chart.js is loaded
+  function ensureChartJS() {
+    return new Promise((resolve, reject) => {
+      if (window.Chart) return resolve();
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
   async function loadMeta() {
     const data = await api.get("/admin/meta");
     if (!data.success) throw new Error(data.error || "Eroare meta.");
@@ -159,19 +171,17 @@
     const div = document.createElement("div");
     div.className = "admin-user-card";
     
-    // FIX: Format the date to be short and readable (DD.MM.YYYY HH:MM)
     let lastLogin = "N/A";
     if (user.lastLogin) {
       try {
         const d = new Date(user.lastLogin);
-        // Check if date is valid
         if (!isNaN(d.getTime())) {
           lastLogin = d.toLocaleString('ro-RO', { 
             day: '2-digit', month: '2-digit', year: 'numeric', 
             hour: '2-digit', minute: '2-digit' 
           });
         } else {
-            lastLogin = user.lastLogin; // Fallback
+            lastLogin = user.lastLogin; 
         }
       } catch(e) { lastLogin = user.lastLogin; }
     }
@@ -216,26 +226,43 @@
       <div class="admin-msg user-msg"></div>
     `;
 
-    // ... (Rest of the logic remains identical: filling selects and event listeners) ...
     const roleSel = qs(div, "select[name=roleId]");
     const penSel = qs(div, "select[name=penitenciarId]");
     
-    fillSelect(roleSel, meta.roles, null);
-    fillSelect(penSel, meta.penitenciars, null);
-    if (user.roleId) roleSel.value = String(user.roleId);
-    if (user.penitenciarId) penSel.value = String(user.penitenciarId);
+    // Add placeholders to handle null values correctly
+    fillSelect(roleSel, meta.roles, "-- Selectează --");
+    fillSelect(penSel, meta.penitenciars, "-- Selectează --");
+    
+    // Set value or empty string for null
+    if (user.roleId !== null && user.roleId !== undefined) {
+        roleSel.value = String(user.roleId);
+    } else {
+        roleSel.value = "";
+    }
+
+    if (user.penitenciarId !== null && user.penitenciarId !== undefined) {
+        penSel.value = String(user.penitenciarId);
+    } else {
+        penSel.value = "";
+    }
 
     const msg = qs(div, ".user-msg");
     
     const btnSave = qs(div, ".btn-save");
     btnSave.addEventListener("click", async () => {
       setMsg(msg, "Se salvează...", "");
+      
+      const rVal = roleSel.value;
+      const pVal = penSel.value;
+
       const payload = {
         username: qs(div, "input[name=username]").value.trim(),
         password: qs(div, "input[name=password]").value.trim(),
-        roleId: roleSel.value,
-        penitenciarId: penSel.value,
+        // Convert to Number, default to 0 for constraints
+        roleId: rVal === "" ? 0 : Number(rVal),
+        penitenciarId: pVal === "" ? 0 : Number(pVal),
       };
+
       try {
         const resp = await api.post(`/admin/user/${user.id}/update`, payload);
         if (!resp.success) throw new Error(resp.error || "Eroare actualizare.");
@@ -263,12 +290,11 @@
     return div;
   }
 
-  // --- Announcements ---
+  // --- Announcements (Simplified: Only One allowed) ---
   async function initAnnouncements(root) {
     const listEl = qs(root, "#adminAnnList");
     const form = qs(root, "#adminAnnForm");
     const msg = qs(root, "#adminAnnMsg");
-    const delAll = qs(root, "#adminAnnDelAll");
 
     async function refresh() {
       listEl.textContent = "Se încarcă...";
@@ -276,33 +302,41 @@
         const data = await api.get("/admin/ann");
         if (!data.success) throw new Error(data.error || "Eroare anunțuri.");
         const items = data.items || [];
+        
+        listEl.innerHTML = "";
+        
         if (!items.length) {
-          listEl.textContent = "Niciun anunț.";
+          listEl.innerHTML = '<div style="padding:10px; color:#6b7280; font-style:italic;">Nu există niciun anunț activ.</div>';
           return;
         }
-        listEl.innerHTML = "";
-        items.forEach((it) => {
-          const row = document.createElement("div");
-          row.className = "ann-item";
-          row.innerHTML = `
-            <span class="ann-id">#${it.id}</span>
-            <span class="ann-text">${it.message}</span>
-            <button type="button" data-id="${it.id}">Șterge</button>
-          `;
-          const btn = qs(row, "button");
-          btn.addEventListener("click", async () => {
-            if (!confirm(`Ștergi anunțul #${it.id}?`)) return;
+
+        // Show only the latest one
+        const latest = items[0]; // Assuming order DESC from backend
+        const row = document.createElement("div");
+        row.className = "ann-item";
+        row.style.background = "#fff";
+        row.innerHTML = `
+            <div style="flex:1;">
+                <strong style="display:block; font-size:0.75rem; color:#2563eb; text-transform:uppercase; margin-bottom:4px;">Anunț Activ</strong>
+                <span class="ann-text" style="font-size:1rem;">${latest.message}</span>
+            </div>
+            <button type="button" class="btn-danger btn-small">Șterge</button>
+        `;
+        
+        const btn = qs(row, "button");
+        btn.addEventListener("click", async () => {
+            if (!confirm(`Ștergi anunțul?`)) return;
             try {
-              const resp = await api.del(`/admin/ann/${it.id}`);
-              if (!resp.success)
-                throw new Error(resp.error || "Eroare ștergere.");
+              // Delete specific ID or all - safer to delete all if we enforce single
+              const resp = await api.del(`/admin/ann`); 
+              if (!resp.success) throw new Error(resp.error || "Eroare ștergere.");
               refresh();
             } catch (e) {
               setMsg(msg, e.message || "Eroare ștergere.", "error");
             }
-          });
-          listEl.appendChild(row);
         });
+        listEl.appendChild(row);
+
       } catch (e) {
         listEl.textContent = e.message || "Eroare anunțuri.";
       }
@@ -318,8 +352,12 @@
           return;
         }
         try {
+          // Enforce Singleton: Delete all existing before adding new
+          await api.del("/admin/ann");
+
           const resp = await api.post("/admin/ann", { message: text });
           if (!resp.success) throw new Error(resp.error || "Eroare salvare.");
+          
           qs(form, "textarea[name=message]").value = "";
           setMsg(msg, "Anunț publicat.", "success");
           refresh();
@@ -329,22 +367,76 @@
       });
     }
 
-    if (delAll) {
-      delAll.addEventListener("click", async () => {
-        if (!confirm("Ștergi TOATE anunțurile?")) return;
-        setMsg(msg, "", "");
-        try {
-          const resp = await api.del("/admin/ann");
-          if (!resp.success) throw new Error(resp.error || "Eroare ștergere.");
-          setMsg(msg, "Toate anunțurile au fost șterse.", "success");
-          refresh();
-        } catch (e) {
-          setMsg(msg, e.message || "Eroare ștergere.", "error");
+    refresh();
+  }
+
+  // --- Statistics Panel ---
+  async function initStatsPanel(root) {
+    const activeVal = qs(root, "#statActive");
+    const deactVal = qs(root, "#statDeact");
+    const inactVal = qs(root, "#statInact");
+    const canvas = qs(root, "#usersByPrisonChart");
+    const container = qs(root, "[data-admin-panel=stats]");
+
+    if (!container || !canvas) return;
+
+    // Load Data and ChartJS
+    try {
+      await ensureChartJS();
+      const res = await api.get("/admin/stats/users");
+      if (!res.success) throw new Error(res.error || "Eroare date statistici");
+
+      // Set Counters
+      if(activeVal) activeVal.textContent = res.counters.active;
+      if(deactVal) deactVal.textContent = res.counters.deactivated;
+      if(inactVal) inactVal.textContent = res.counters.inactive;
+
+      // --- FIX: Check for and destroy existing chart instance ---
+      // Chart.js 4.x attaches the instance to the canvas using Chart.getChart(canvas)
+      if (window.Chart) {
+          const existingChart = window.Chart.getChart(canvas);
+          if (existingChart) {
+            existingChart.destroy();
+          }
+      }
+
+      // Render Chart
+      const dist = res.distribution || [];
+      const labels = dist.map(d => d.label);
+      const data = dist.map(d => d.count);
+
+      new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Număr Useri',
+            data: data,
+            backgroundColor: '#2563eb',
+            barPercentage: 0.7
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: labels.length > 8 ? 'y' : 'x', // Horizontal if many items
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: { beginAtZero: true, ticks: { precision: 0 } },
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          }
         }
       });
-    }
 
-    refresh();
+    } catch (e) {
+      console.error("Stats Error:", e);
+      // Don't append error if one already exists to avoid clutter
+      if(!container.querySelector('.admin-msg.error')) {
+          container.innerHTML += `<div class="admin-msg error">Eroare încărcare statistici: ${e.message}</div>`;
+      }
+    }
   }
 
   // --- Panels Initialization ---
@@ -364,12 +456,17 @@
       ev.preventDefault();
       setMsg(msg, "", "");
       const fd = new FormData(form);
+      
+      const rVal = fd.get("roleId");
+      const pVal = fd.get("penitenciarId");
+
       const payload = {
         username: fd.get("username"),
         password: fd.get("password"),
         autoPassword: fd.get("autoPassword") === "on",
-        roleId: fd.get("roleId"),
-        penitenciarId: fd.get("penitenciarId"),
+        // Ensure values are Numbers, defaulting to 0
+        roleId: rVal === "" ? 0 : Number(rVal),
+        penitenciarId: pVal === "" ? 0 : Number(pVal),
       };
       try {
         const data = await api.post("/admin/user/create", payload);
@@ -402,10 +499,15 @@
       setMsg(msg, "", "");
       report.textContent = "";
       const fd = new FormData(form);
+      
+      const rVal = fd.get("roleId");
+      const pVal = fd.get("penitenciarId");
+
       const payload = {
         usernamesText: fd.get("usernamesText"),
-        roleId: fd.get("roleId"),
-        penitenciarId: fd.get("penitenciarId"),
+        // Ensure values are Numbers, defaulting to 0
+        roleId: rVal === "" ? 0 : Number(rVal),
+        penitenciarId: pVal === "" ? 0 : Number(pVal),
         autoPassword: fd.get("autoPassword") === "on",
         samePassword: fd.get("samePassword"),
       };
@@ -464,13 +566,18 @@
           p.getAttribute("data-admin-panel") === name ? "" : "none";
       });
       buttons.forEach((b) => {
-        // Reset all classes to base state
         b.className = "admin-tab-btn"; 
-        // Add active class if matched
         if (b.getAttribute("data-admin-tab") === name) {
           b.classList.add("active");
         }
       });
+      // Lazy load stats when tab is clicked
+      if (name === "stats") {
+        const container = qs(root, "[data-admin-panel=stats]");
+        // Simple check to prevent double init if we wanted, 
+        // but re-init refreshes data which is good.
+        initStatsPanel(root);
+      }
     }
     buttons.forEach((b) =>
       b.addEventListener("click", () => show(b.getAttribute("data-admin-tab")))
@@ -478,7 +585,6 @@
     show("create"); // Default tab
   }
 
-  // --- Main Render Function ---
   // --- Main Render Function ---
   async function renderAdminPage(mainEl) {
     if (!mainEl) return;
@@ -498,8 +604,10 @@
             <button type="button" class="admin-tab-btn" data-admin-tab="bulk">Import Masiv</button>
             <button type="button" class="admin-tab-btn" data-admin-tab="search">Caută & Editează</button>
             <button type="button" class="admin-tab-btn" data-admin-tab="ann">Anunțuri</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="stats">Statistici</button>
           </div>
 
+          <!-- CREATE PANEL -->
           <section class="admin-panel" data-admin-panel="create">
             <h2>👤 Adaugă utilizator nou</h2>
             <form id="adminCreateForm" class="admin-form">
@@ -531,6 +639,7 @@
             </form>
           </section>
 
+          <!-- BULK PANEL -->
           <section class="admin-panel" data-admin-panel="bulk">
             <h2>📥 Adaugă utilizatori în masă</h2>
             <p style="font-size:0.85rem; color:#6b7280; margin-bottom:12px;">
@@ -570,6 +679,7 @@
             </form>
           </section>
 
+          <!-- SEARCH PANEL -->
           <section class="admin-panel" data-admin-panel="search">
             <h2>🔎 Caută și gestionează</h2>
             <form id="adminSearchForm" class="admin-form">
@@ -583,24 +693,61 @@
             <div id="adminSearchResults" class="admin-results"></div>
           </section>
 
+          <!-- ANNOUNCEMENTS PANEL -->
           <section class="admin-panel" data-admin-panel="ann">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                <h2>📢 Anunțuri sistem</h2>
-               <button type="button" id="adminAnnDelAll" class="btn-danger btn-small" style="padding:4px 8px; font-size:0.75rem;">Șterge Tot</button>
             </div>
-            
-            <form id="adminAnnForm" class="admin-form">
-              <label>Mesaj nou</label>
+            <form id="adminAnnForm" class="admin-form" style="margin-bottom:20px;">
+              <label>Setează mesaj nou (înlocuiește orice anunț existent)</label>
               <div style="display:flex; gap:10px; align-items:flex-start;">
                 <textarea name="message" rows="2" style="flex:1;" placeholder="Scrie un mesaj pentru toți utilizatorii..."></textarea>
                 <button type="submit" class="btn-primary" style="margin-top:4px;">Publică</button>
               </div>
             </form>
-            
             <div id="adminAnnMsg" class="admin-msg"></div>
-            <div id="adminAnnList" class="ann-list"></div>
+            <div id="adminAnnList" class="ann-list" style="margin-top:20px;"></div>
           </section>
+
+          <!-- STATS PANEL (New) -->
+          <section class="admin-panel" data-admin-panel="stats">
+             <h2>📊 Statistici Utilizatori</h2>
+             
+             <!-- KPI Cards -->
+             <div class="admin-grid-3" style="margin-bottom: 24px;">
+               <div class="stat-card">
+                 <div class="stat-label">Useri Activi (< 3 luni)</div>
+                 <div class="stat-val" id="statActive">...</div>
+               </div>
+               <div class="stat-card">
+                 <div class="stat-label">Dezactivați ("INACTIV")</div>
+                 <div class="stat-val" id="statDeact">...</div>
+               </div>
+               <div class="stat-card">
+                 <div class="stat-label">Inactivi (> 3 luni)</div>
+                 <div class="stat-val" id="statInact">...</div>
+               </div>
+             </div>
+
+             <!-- Chart Container -->
+             <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:16px;">
+                <h3 style="margin-top:0; font-size:1rem; color:#475569; margin-bottom:12px;">Repartiție useri după penitenciar</h3>
+                <div style="height: 400px; position: relative;">
+                  <canvas id="usersByPrisonChart"></canvas>
+                </div>
+             </div>
+          </section>
+
         </div>
+        
+        <!-- Extra Style for Stats -->
+        <style>
+          .admin-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+          .stat-card { background: #fff; padding: 16px; border: 1px solid #cbd5e1; border-radius: 8px; text-align: center; }
+          .stat-label { font-size: 0.85rem; color: #64748b; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
+          .stat-val { font-size: 1.8rem; font-weight: 700; color: #2563eb; }
+          @media(max-width: 700px) { .admin-grid-3 { grid-template-columns: 1fr; } }
+        </style>
       `;
 
       const root = mainEl.firstElementChild;
@@ -609,6 +756,7 @@
       await initBulkPanel(root, meta);
       await initSearchPanel(root, meta);
       await initAnnouncements(root);
+      // initStatsPanel is called via tab click
     } catch (err) {
       mainEl.innerHTML = `<div class="admin-msg error">${
         err.message || "Eroare la încărcare."
@@ -616,33 +764,6 @@
     }
   }
 
-  // --- Also update setupTabs to use the new class name ---
-  function setupTabs(root) {
-    const buttons = qsa(root, "[data-admin-tab]");
-    const panels = qsa(root, "[data-admin-panel]");
-    function show(name) {
-      panels.forEach((p) => {
-        p.style.display =
-          p.getAttribute("data-admin-panel") === name ? "" : "none";
-      });
-      buttons.forEach((b) => {
-        // Reset all classes to base state
-        b.className = "admin-tab-btn"; 
-        // Add active class if matched
-        if (b.getAttribute("data-admin-tab") === name) {
-          b.classList.add("active");
-        }
-      });
-    }
-    buttons.forEach((b) =>
-      b.addEventListener("click", () => show(b.getAttribute("data-admin-tab")))
-    );
-    show("create"); // Default tab
-  }
-
-  // --- MODULE REGISTRATION ---
-  // This is the part that was missing/broken in the previous version.
-  // We now register "admin" so shell.js knows how to call it.
   window.prisonModules = window.prisonModules || {};
   window.prisonModules.admin = {
     init({ userId, container }) {

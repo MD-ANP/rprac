@@ -175,7 +175,6 @@
       </div>
     `;
 
-    // Helper logic for tabs
     container.querySelectorAll('.admin-tab-btn').forEach(btn => {
        btn.addEventListener('click', () => {
           container.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
@@ -186,7 +185,6 @@
     });
   }
 
-  // Global helpers exposed to inline onclicks
   window.getValue = (id) => {
      const el = document.getElementById(id);
      return el ? el.value.trim() : '';
@@ -200,7 +198,6 @@
      const tBody = document.querySelector('#resTable tbody');
      const titleEl = document.getElementById('resTitle');
 
-     // Clear previous
      resArea.classList.remove('hidden');
      tBody.innerHTML = '<tr><td colspan="10" class="text-center">Se încarcă...</td></tr>';
      
@@ -208,7 +205,7 @@
         const data = await window.prisonApi.post('/interogari/exec', { type, params });
         if(!data.success) throw new Error(data.error);
 
-        lastResult = data; // Store for printing
+        lastResult = data;
         titleEl.textContent = data.title;
         
         // Render Header
@@ -219,13 +216,23 @@
            tBody.innerHTML = `<tr><td colspan="${data.headers.length + 1}" class="text-center p-4">Nu au fost găsite rezultate.</td></tr>`;
         } else {
            tBody.innerHTML = data.rows.map(r => {
-              // Priority: Explicit DETINUT_ID (from joins) -> PROFIL_DET -> Standard ID -> Default 0
-              // This fixes "Colete" reports where 'ID' is the package ID, not the person.
-              const id = r.DETINUT_ID || r.PROFIL_DET || r.ID || r.IDDETINUT || 0; 
-
-              const cells = Object.values(r).map(v => `<td>${v === null ? '' : v}</td>`).join('');
+              // Extract logic: All columns except REF_ID are rendered.
+              // REF_ID is used solely for the button.
+              // Note: The backend ensures REF_ID (or equivalent) is sent, usually as 'REF_ID'.
               
-              // FIX: Redirect to 'detinut' module, NOT 'profile'
+              const entries = Object.entries(r);
+              // Find ID for the button (looking for common ID keys)
+              const idKeys = ['REF_ID', 'DETINUT_ID', 'IDDETINUT'];
+              const idEntry = entries.find(([k]) => idKeys.includes(k.toUpperCase()));
+              const id = idEntry ? idEntry[1] : 0;
+
+              // Generate Cells (Skip ID keys)
+              const cells = entries.map(([k, v]) => {
+                  if (idKeys.includes(k.toUpperCase())) return ''; // Don't render ID column
+                  return `<td>${v === null ? '' : v}</td>`;
+              }).join('');
+              
+              // Only show button if we found a valid ID
               const btn = id ? `<button class="btn-small" onclick="window.location.href='/app/index.html?module=detinut&id=${id}'">Dosar</button>` : '';
               
               return `<tr>${cells}<td>${btn}</td></tr>`;
@@ -248,21 +255,20 @@
           },
           body: JSON.stringify(lastResult)
        });
-       const blob = await resp.blob();
-       const url = URL.createObjectURL(blob);
-       window.open(url, '_blank');
+       const text = await resp.text();
+       // Open new window and write HTML
+       const win = window.open('', '_blank');
+       win.document.write(text);
+       win.document.close();
      } catch(e) {
         alert("Eroare la generarea printului.");
      }
   };
 
-  // Register Module
   window.prisonModules = window.prisonModules || {};
   window.prisonModules.interogari = {
     async init({ userId, container }) {
-      // 1. ACTIVATE WIDE MODE
       document.body.classList.add('wide-mode'); 
-      
       await loadInstitutions();
       renderTabs(container);
     }

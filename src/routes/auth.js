@@ -116,6 +116,41 @@ router.get("/motives", async (req, res) => {
 });
 
 /**
+ * GET /api/ann
+ * Public endpoint to get the latest system announcement.
+ */
+router.get("/ann", async (req, res) => {
+  try {
+    // Robust query: Order by ID descending, grab first row
+    // Using ROWNUM wrapping for Oracle 11g compatibility
+    const sql = `
+      SELECT MESAJ 
+      FROM (
+        SELECT MESAJ 
+        FROM PRISON.ANUNT 
+        ORDER BY ID DESC
+      ) 
+      WHERE ROWNUM <= 1
+    `;
+    
+    const result = await db.execute(sql, {}, {});
+    const rows = result.rows || [];
+    
+    // Check if we have data
+    if (rows.length > 0) {
+      // NOTE: node-oracledb usually returns keys in UPPERCASE ('MESAJ')
+      const msg = rows[0].MESAJ; 
+      res.json({ success: true, message: msg });
+    } else {
+      res.json({ success: true, message: null });
+    }
+  } catch (err) {
+    console.error("Public Ann error:", err);
+    res.json({ success: false, error: "Eroare la incarcarea anuntului." });
+  }
+});
+
+/**
  * POST /api/login
  * Body: { username, password, motivId }
  */

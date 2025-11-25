@@ -1,4 +1,3 @@
-// src/routes/admin.js
 const express = require("express");
 const db = require("../db");
 
@@ -52,6 +51,52 @@ router.get("/admin/meta", async (req, res) => {
   }
 });
 
+/** GET /api/admin/stats/users -> Statistics for the new tab */
+router.get("/admin/stats/users", async (req, res) => {
+  try {
+    // 1. User Counters
+    // Active: Login < 3 months
+    // Deactivated: Name contains 'INACTIV'
+    // Inactive: Not deactivated, but login > 3 months or never
+    const sqlCounters = `
+      SELECT
+        SUM(CASE WHEN LAST_LOGIN >= ADD_MONTHS(SYSDATE,-3) THEN 1 ELSE 0 END) AS ACTIVE_CNT,
+        SUM(CASE WHEN INSTR(UPPER(NVL(USERNAME,'')),'INACTIV')>0 THEN 1 ELSE 0 END) AS DEACTIVATED_CNT,
+        SUM(CASE WHEN INSTR(UPPER(NVL(USERNAME,'')),'INACTIV')=0
+                 AND (LAST_LOGIN IS NULL OR LAST_LOGIN < ADD_MONTHS(SYSDATE,-3))
+                THEN 1 ELSE 0 END) AS INACTIVE_CNT
+      FROM USERS
+    `;
+    const r1 = await db.execute(sqlCounters);
+    const row1 = r1.rows && r1.rows[0] ? r1.rows[0] : {};
+
+    // 2. Users by Penitentiary (checking non-zero counts)
+    const sqlDist = `
+      SELECT sp.NAME AS PENITENCIAR, COUNT(u.ID) AS CNT
+      FROM SPR_PENITENCIAR sp
+      LEFT JOIN USERS u ON u.ID_PENITENTIAR = sp.ID
+      GROUP BY sp.NAME
+      HAVING COUNT(u.ID) > 0
+      ORDER BY sp.NAME
+    `;
+    const r2 = await db.execute(sqlDist);
+    const dist = (r2.rows || []).map(r => ({ label: r.PENITENCIAR, count: Number(r.CNT) }));
+
+    res.json({
+      success: true,
+      counters: {
+        active: Number(row1.ACTIVE_CNT || 0),
+        deactivated: Number(row1.DEACTIVATED_CNT || 0),
+        inactive: Number(row1.INACTIVE_CNT || 0)
+      },
+      distribution: dist
+    });
+  } catch (err) {
+    console.error("/admin/stats/users:", err);
+    res.status(500).json({ success: false, error: "Eroare statistici." });
+  }
+});
+
 function genPassword(len = 10) {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$%";
   let out = "";
@@ -69,7 +114,8 @@ router.post("/admin/user/create", async (req, res) => {
     const role = Number(roleId);
     const pen = Number(penitenciarId);
 
-    if (!username || (!password && !autoPass) || !role || !pen) {
+    // FIX: Check isNaN to allow 0 (ANP)
+    if (!username || (!password && !autoPass) || isNaN(role) || isNaN(pen)) {
       return res.status(400).json({
         success: false,
         error: "Username, rol, penitenciar și parolă / auto-parolă obligatorii."
@@ -106,7 +152,8 @@ router.post("/admin/user/bulk", async (req, res) => {
     const autoPass = !!autoPassword;
     const onePass = (samePassword || "").trim();
 
-    if (!blob || !role || !pen) {
+    // FIX: Check isNaN to allow 0
+    if (!blob || isNaN(role) || isNaN(pen)) {
       return res.status(400).json({
         success: false,
         error: "Lista utilizatori, rol și penitenciar obligatorii."
@@ -215,7 +262,9 @@ router.post("/admin/user/:id/update", async (req, res) => {
     password = (password || "").trim();
     const role = Number(roleId);
     const pen = Number(penitenciarId);
-    if (!username || !role || !pen) {
+    
+    // FIX: Check isNaN to allow 0
+    if (!username || isNaN(role) || isNaN(pen)) {
       return res.status(400).json({ success: false, error: "Câmpuri obligatorii lipsă." });
     }
 
@@ -223,14 +272,14 @@ router.post("/admin/user/:id/update", async (req, res) => {
     if (password) {
       sql = `
         UPDATE USERS
-        SET USERNAME = :u, PASSWD = :p, ID_ROLE = :r, ID_PENITENCIAR = :pen
+        SET USERNAME = :u, PASSWD = :p, ID_ROLE = :r, ID_PENITENTIAR = :pen
         WHERE ID = :id
       `;
       binds = { u: username, p: password, r: role, pen, id };
     } else {
       sql = `
         UPDATE USERS
-        SET USERNAME = :u, ID_ROLE = :r, ID_PENITENCIAR = :pen
+        SET USERNAME = :u, ID_ROLE = :r, ID_PENITENTIAR = :pen
         WHERE ID = :id
       `;
       binds = { u: username, r: role, pen, id };
@@ -285,7 +334,7 @@ router.get("/admin/user/:id/rights", async (req, res) => {
       FROM SPR_MODULES m
       LEFT JOIN SPR_ACCESS a
         ON a.ID_MODUL = m.ID
-       AND a.ID_USER  = :uid
+        AND a.ID_USER  = :uid
       ORDER BY m.NAME
       `,
       { uid: id }

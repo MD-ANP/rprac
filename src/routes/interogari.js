@@ -1,24 +1,11 @@
-// src/routes/interogari.js
 const express = require("express");
 const db = require("../db");
 const router = express.Router();
 
-/* HELPER: Standardize DB responses 
-*/
-function formatRows(rows) {
-  return (rows || []).map(r => {
-    // Normalize Oracle keys to lowercase for easier frontend handling? 
-    // Or keep them as is. Let's keep standard object structure.
-    return r;
-  });
-}
-
-/* HELPER: Get User Info for Print Headers
-*/
+/* HELPER: Get User Info for Print Headers */
 async function getUserInfo(req) {
   const uid = Number(req.header("x-user-id") || 0);
   if (!uid) return { username: "Unknown", role: 0 };
-  
   try {
     const r = await db.execute("SELECT USERNAME, ID_ROLE FROM USERS WHERE ID = :id", { id: uid });
     if (r.rows && r.rows.length) {
@@ -28,22 +15,13 @@ async function getUserInfo(req) {
   return { username: "Unknown", role: 0 };
 }
 
-/*
-  ===========================================================================
-  ENDPOINT: /api/interogari/exec
-  BODY: { type: 'LISTA', params: { ... } }
-  ===========================================================================
-*/
 router.post("/interogari/exec", async (req, res) => {
   const { type, params } = req.body;
   const uid = Number(req.header("x-user-id"));
   
-  // Security check (basic role check can be expanded here based on the PHP array logic)
-  // For now, we assume the frontend handles visibility, and we rely on DB binding security.
-  
   let sql = "";
   let binds = {};
-  let headers = []; // For print feature
+  let headers = []; 
   let title = "";
 
   try {
@@ -52,14 +30,14 @@ router.post("/interogari/exec", async (req, res) => {
       // GROUP: DETINUTI
       // ========================================================================
       
-      case 'LISTA': // Lista Deținuți (Instituția Curentă a Userului)
-        // Need user's penitentiary. Fetch it first.
+      case 'LISTA': 
         const uRes = await db.execute("SELECT ID_PENITENTIAR FROM USERS WHERE ID = :id", { id: uid });
         const userPen = uRes.rows[0]?.ID_PENITENTIAR;
         
         sql = `
-          SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
-                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PM.ID_PENETENCIAR AS PENITENCIAR
+          SELECT PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PM.ID_PENETENCIAR AS PENITENCIAR,
+                 PD.ID AS REF_ID
           FROM PRISON.DETINUTI pd 
           INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp) 
           INNER JOIN (SELECT pm2.idnp AS idnp, MAX(pm2.adate) AS dt FROM PRISON.MISCARI pm2 GROUP BY pm2.idnp) md
@@ -69,15 +47,15 @@ router.post("/interogari/exec", async (req, res) => {
           ORDER BY NUME, PRENUME
         `;
         binds = { pid: userPen || 0 };
-        headers = ["Nr.", "IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar"];
+        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar"];
         title = "Lista Deținuți (Instituția Curentă)";
         break;
 
-      case 'LISTAP': // Lista pe Instituție (Selectată)
-        // Requires params.institution_id
+      case 'LISTAP': 
         sql = `
-          SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
-                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PM.ID_PENETENCIAR AS PENITENCIAR
+          SELECT PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, pen.NAME AS PENITENCIAR,
+                 PD.ID AS REF_ID
           FROM PRISON.DETINUTI pd
           INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp)
           INNER JOIN PRISON.SPR_PENITENCIAR pen ON (pm.ID_PENETENCIAR = pen.ID)
@@ -88,16 +66,17 @@ router.post("/interogari/exec", async (req, res) => {
           ORDER BY NUME, PRENUME
         `;
         binds = { pid: params.institution_id };
-        headers = ["Nr.", "IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar"];
+        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar"];
         title = "Lista Deținuți pe Instituție";
         break;
 
       case 'SEARCH_BY_AGE':
         sql = `
-          SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+          SELECT PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
                  TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, 
                  TRUNC(MONTHS_BETWEEN(SYSDATE, PD.BIRDTH)/12) AS VARSTA,
-                 PEN.NAME AS PENITENCIAR
+                 PEN.NAME AS PENITENCIAR,
+                 PD.ID AS REF_ID
           FROM PRISON.DETINUTI PD
           INNER JOIN PRISON.MISCARI PM ON PD.IDNP = PM.IDNP
           INNER JOIN PRISON.SPR_PENITENCIAR PEN ON PEN.ID = PM.ID_PENETENCIAR
@@ -109,7 +88,7 @@ router.post("/interogari/exec", async (req, res) => {
           ORDER BY NUME, PRENUME
         `;
         binds = { idpen: params.institution_id, minage: params.min_age, maxage: params.max_age };
-        headers = ["ID","IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Vârsta", "Penitenciar"];
+        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Vârsta", "Penitenciar"];
         title = `Căutare Vârstă (${params.min_age}-${params.max_age} ani)`;
         break;
 
@@ -117,10 +96,6 @@ router.post("/interogari/exec", async (req, res) => {
       // GROUP: STRAINI
       // ========================================================================
       case 'CETATENI':
-        // Assuming V_STRAINI view exists and has IDNP
-        // We add a WHERE clause if user is restricted to a penitentiary, but for simplicity here we fetch all 
-        // unless specific requirement. The PHP code checked $idpenitenciar.
-        
         const uRes2 = await db.execute("SELECT ID_PENITENTIAR FROM USERS WHERE ID = :id", { id: uid });
         const myPen = uRes2.rows[0]?.ID_PENITENTIAR;
 
@@ -128,10 +103,16 @@ router.post("/interogari/exec", async (req, res) => {
         binds = {};
         if (myPen) {
           whereClause = "WHERE PENITENCIAR = :pid";
-          binds.pid = myPen; // Note: V_STRAINI.PENITENCIAR might be ID or Name. Assuming ID based on PHP logic.
+          binds.pid = myPen; 
         }
 
-        sql = `SELECT * FROM V_STRAINI ${whereClause} ORDER BY CETATENIE`;
+        // Explicitly select columns to avoid "ID" appearing first or mismatched columns
+        sql = `
+            SELECT IDNP, NUME, PRENUME, PATRONIMIC, 
+                   TO_CHAR(DATANASTERII, 'DD.MM.YYYY') as DATANASTERII, 
+                   PENITENCIAR, CETATENIE, ID AS REF_ID 
+            FROM V_STRAINI ${whereClause} ORDER BY CETATENIE
+        `;
         headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar", "Cetățenie"];
         title = "Cetățeni Străini";
         break;
@@ -140,12 +121,13 @@ router.post("/interogari/exec", async (req, res) => {
         const currentYear = new Date().getFullYear();
         sql = `
           SELECT 
-            PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+            PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
             TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PD.SEX, sprpen.name AS PENITENCIARUL,
             NVL((SELECT listagg(sprstz.name,',') WITHIN GROUP (ORDER BY sprstz.name)
                  FROM PRISON.SITIZEN stz 
                  INNER JOIN Prison.SPR_SITIZEN sprstz ON (stz.id_sitizen = sprstz.id)
-                 WHERE stz.idnp = PD.IDNP GROUP BY stz.idnp), '-') AS CETATENIE
+                 WHERE stz.idnp = PD.IDNP GROUP BY stz.idnp), '-') AS CETATENIE,
+            PD.ID AS REF_ID
           FROM PRISON.DETINUTI pd 
           INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp)
           INNER JOIN PRISON.SITIZEN pst ON (pst.IDNP = pd.IDNP)
@@ -166,9 +148,10 @@ router.post("/interogari/exec", async (req, res) => {
       // ========================================================================
       case 'TABELESCORTARE':
         sql = `
-          SELECT d.ID AS ID, d.IDNP, d.NAME AS PRENUME, d.SURNAME AS NUME, d.SEC_NAME AS PATRONIMIC,
+          SELECT d.IDNP, d.SURNAME AS NUME, d.NAME AS PRENUME, d.SEC_NAME AS PATRONIMIC,
                  TO_CHAR(vcitatie.ADATE, 'DD.MM.YYYY') AS DATASEDINTA, vcitatie.ORASEDINTA, vcitatie.NAME_INSTANTE, vcitatie.NPPJUDECATOR,
-                 vcitatie.NRSALA, vcitatie.NAME_LOCJUDECATA, pen.NAME AS PENITENCIAR, vcitatie.EXECUTOR_TRANSFER
+                 vcitatie.NRSALA, vcitatie.NAME_LOCJUDECATA, pen.NAME AS PENITENCIAR, vcitatie.EXECUTOR_TRANSFER,
+                 d.ID AS REF_ID
           FROM PRISON.V_CITATIE vcitatie
           INNER JOIN PRISON.DETINUTI d ON (vcitatie.IDNP = d.IDNP)
           INNER JOIN PRISON.MISCARI pm ON (d.idnp = pm.idnp)
@@ -180,16 +163,17 @@ router.post("/interogari/exec", async (req, res) => {
                    vcitatie.NPPJUDECATOR, vcitatie.NRSALA, pen.NAME, vcitatie.EXECUTOR_TRANSFER, vcitatie.NAME_LOCJUDECATA
           ORDER BY pen.NAME, vcitatie.NAME_INSTANTE
         `;
-        binds = { d: params.date }; // format DD.MM.YYYY
-        headers = ["IDNP", "Nume Complet", "Data Ședință", "Detalii Instanță", "Loc Judecată", "Executor", "Penitenciar"];
+        binds = { d: params.date };
+        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Ședință", "Oraș", "Instanță", "Judecător", "Sală", "Loc Judecată", "Penitenciar", "Executor"];
         title = `Tabel Escortare (${params.date})`;
         break;
 
       case 'TABELTRANSFERPENITENCIARE':
         sql = `
-          SELECT d.ID AS ID, d.IDNP, d.NAME AS PRENUME, d.SURNAME AS NUME, d.SEC_NAME AS PATRONIMIC,
+          SELECT d.IDNP, d.SURNAME AS NUME, d.NAME AS PRENUME, d.SEC_NAME AS PATRONIMIC,
                  TO_CHAR(vcitatie.ADATE, 'DD.MM.YYYY') AS DATASEDINTA, vcitatie.ORASEDINTA, vcitatie.NAME_INSTANTE, vcitatie.NPPJUDECATOR,
-                 vcitatie.NRSALA, pen.NAME AS PENITENCIAR
+                 vcitatie.NRSALA, pen.NAME AS PENITENCIAR,
+                 d.ID AS REF_ID
           FROM PRISON.V_CITATIE vcitatie
           INNER JOIN PRISON.DETINUTI d ON (vcitatie.IDNP = d.IDNP)
           INNER JOIN PRISON.MISCARI pm ON (d.idnp = pm.idnp)
@@ -202,15 +186,16 @@ router.post("/interogari/exec", async (req, res) => {
           ORDER BY pen.NAME, vcitatie.NAME_INSTANTE
         `;
         binds = { d: params.date };
-        headers = ["IDNP", "Nume Complet", "Data Transfer", "Destinație (Penitenciar/Instanță)", "Penitenciar Curent"];
+        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Transfer", "Oraș", "Instanță", "Judecător", "Sală", "Penitenciar"];
         title = `Transfer Penitenciare (${params.date})`;
         break;
 
       case 'LISTADUPACELULE':
         sql = `
-          SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+          SELECT PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
                  TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PMC.ROOM AS CELULA, 
-                 TO_CHAR(PMC.ADATE, 'DD.MM.YYYY HH24:MI') AS DATAMISCARECELULA, pen.NAME AS PENITENCIAR
+                 TO_CHAR(PMC.ADATE, 'DD.MM.YYYY HH24:MI') AS DATAMISCARECELULA, pen.NAME AS PENITENCIAR,
+                 PD.ID AS REF_ID
           FROM PRISON.DETINUTI pd
           INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp)
           INNER JOIN PRISON.SPR_PENITENCIAR pen ON (PM.ID_PENETENCIAR = pen.ID)
@@ -229,8 +214,9 @@ router.post("/interogari/exec", async (req, res) => {
         const pen206 = uRes3.rows[0]?.ID_PENITENTIAR || 0;
         
         sql = `
-          SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
-                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, penit.NAME AS PENITENCIAR
+          SELECT PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, penit.NAME AS PENITENCIAR,
+                 PD.ID AS REF_ID
           FROM PRISON.DETINUTI pd
           INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp)
           INNER JOIN PRISON.SPR_PENITENCIAR penit ON (penit.ID = PM.ID_PENETENCIAR)
@@ -250,8 +236,9 @@ router.post("/interogari/exec", async (req, res) => {
          const uRes4 = await db.execute("SELECT ID_PENITENTIAR FROM USERS WHERE ID = :id", { id: uid });
          const penBadge = uRes4.rows[0]?.ID_PENITENTIAR || 0;
          sql = `
-          SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
-                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PM.ID_PENETENCIAR AS PENITENCIAR
+          SELECT PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+                 TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PM.ID_PENETENCIAR AS PENITENCIAR,
+                 PD.ID AS REF_ID
           FROM PRISON.DETINUTI pd 
           INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp )
           INNER JOIN (SELECT pm2.idnp AS idnp, MAX(pm2.adate) AS dt FROM PRISON.MISCARI pm2 GROUP BY pm2.idnp) md
@@ -270,9 +257,10 @@ router.post("/interogari/exec", async (req, res) => {
       // ========================================================================
       case 'COLETE': // by Source
         sql = `
-          SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC, 
+          SELECT PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC, 
                  TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, penit.NAME AS PENITENCIAR,
-                 c.SURSA_PROV, TO_CHAR(c.DATE_IN, 'DD.MM.YYYY') AS DATA_INTRARE
+                 c.SURSA_PROV, TO_CHAR(c.DATE_IN, 'DD.MM.YYYY') AS DATA_INTRARE,
+                 PD.ID AS REF_ID
           FROM PRISON.DETINUTI pd
           INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp)
           INNER JOIN PRISON.SPR_PENITENCIAR penit ON (penit.ID = PM.ID_PENETENCIAR)
@@ -284,29 +272,32 @@ router.post("/interogari/exec", async (req, res) => {
           ORDER BY NUME, PRENUME
         `;
         binds = { s: `%${(params.sursa || '').toUpperCase()}%` };
-        headers = ["ID", "IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar", "Sursa", "Data Intrare"];
+        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Data Nașterii", "Penitenciar", "Sursa", "Data Intrare"];
         title = `Colete (Sursa: ${params.sursa})`;
         break;
 
       case 'SEARCH_COLETA_DATE':
+        // Removed c.ID (Package ID) from selection to avoid confusion
         sql = `
-          SELECT c.ID, c.IDNP, TO_CHAR(c.DATE_IN, 'DD.MM.YYYY') AS DATE_IN, c.PERSON, c.CONTINUT, c.SURSA_PROV,
-                 d.ID AS DETINUT_ID, d.SURNAME || ' ' || d.NAME as NUME_DETINUT
+          SELECT c.IDNP, d.SURNAME || ' ' || d.NAME as NUME_DETINUT, c.PERSON, 
+                 TO_CHAR(c.DATE_IN, 'DD.MM.YYYY') AS DATE_IN, c.CONTINUT, c.SURSA_PROV,
+                 d.ID AS REF_ID
           FROM PRISON.COLETA c
           LEFT JOIN PRISON.DETINUTI d ON d.IDNP = c.IDNP
           WHERE c.DATE_IN BETWEEN TO_DATE(:b,'DD.MM.YYYY') AND TO_DATE(:e,'DD.MM.YYYY')
           ORDER BY c.DATE_IN DESC
         `;
         binds = { b: params.start_date, e: params.end_date };
-        headers = ["ID", "IDNP", "Deținut", "Persoană Predare", "Data", "Conținut", "Sursă"];
+        headers = ["IDNP", "Deținut", "Persoană Predare", "Data", "Conținut", "Sursă"];
         title = `Colete (${params.start_date} - ${params.end_date})`;
         break;
         
       case 'CAUTINTREVEDERE':
          const qTerm = (params.term || '').toUpperCase();
          sql = `
-            SELECT I.IDNP, I.NRDOCUMENT, I.SURNAME, I.NAME, I.SEC_NAME, I.ID, D.ID AS PROFIL_DET,
-                   TO_CHAR(I.DATA_INTREVEDERE, 'DD.MM.YYYY') AS DATA_VIZITA
+            SELECT I.IDNP, I.SURNAME, I.NAME, I.SEC_NAME, I.NRDOCUMENT, 
+                   TO_CHAR(I.BDATE, 'DD.MM.YYYY') AS DATA_VIZITA,
+                   D.ID AS REF_ID
             FROM PRISON.INTREVEDERI I
             LEFT JOIN PRISON.DETINUTI D ON I.IDNP = D.IDNP
             WHERE UPPER(I.SURNAME) LIKE '%' || :q || '%'
@@ -321,13 +312,14 @@ router.post("/interogari/exec", async (req, res) => {
          break;
 
       // ========================================================================
-      // GROUP: EVIDENTA (Released, Acts, Articles, Lesions)
+      // GROUP: EVIDENTA
       // ========================================================================
       case 'ELIBERATI':
         sql = `
-          SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+          SELECT PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
                  TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, pen.NAME AS PENITENCIAR, 
-                 TO_CHAR(PM.ADATE, 'DD.MM.YYYY') AS DATAELIBERARE
+                 TO_CHAR(PM.ADATE, 'DD.MM.YYYY') AS DATAELIBERARE,
+                 PD.ID AS REF_ID
           FROM PRISON.DETINUTI pd
           INNER JOIN PRISON.MISCARI pm ON (pd.idnp = pm.idnp)
           INNER JOIN PRISON.SPR_PENITENCIAR pen ON (PM.ID_PENETENCIAR = pen.ID)
@@ -344,8 +336,9 @@ router.post("/interogari/exec", async (req, res) => {
 
       case 'SEARCH_ACTE_EXPIRED':
         sql = `
-          SELECT DISTINCT d.ID, d.IDNP, d.SURNAME AS NUME, d.NAME AS PRENUME, d.SEC_NAME AS PATRONIMIC,
-                 TO_CHAR(d.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, pen.NAME AS PENITENCIARUL
+          SELECT DISTINCT d.IDNP, d.SURNAME AS NUME, d.NAME AS PRENUME, d.SEC_NAME AS PATRONIMIC,
+                 TO_CHAR(d.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, pen.NAME AS PENITENCIARUL,
+                 d.ID AS REF_ID
           FROM PRISON.DETINUTI d
           JOIN PRISON.MISCARI m ON m.IDNP = d.IDNP
           JOIN (
@@ -363,8 +356,10 @@ router.post("/interogari/exec", async (req, res) => {
         
       case 'SEARCH_LEZIUNI':
          sql = `
-          SELECT i.IDNP, TO_CHAR(i.INSERTEDDATE, 'DD.MM.YYYY') AS INSERTEDDATE, i.CIRCUMSTANTE, i.MEDICAL_CONCLUSION, 
-                 s.NAME AS INCIDENT_TYPE, p.NAME AS PENITENCIAR, d.ID AS DETINUT_ID, d.SURNAME || ' ' || d.NAME as NUME
+          SELECT i.IDNP, d.SURNAME || ' ' || d.NAME as NUME,
+                 TO_CHAR(i.INSERTEDDATE, 'DD.MM.YYYY') AS INSERTEDDATE, s.NAME AS INCIDENT_TYPE,
+                 i.CIRCUMSTANTE, i.MEDICAL_CONCLUSION, p.NAME AS PENITENCIAR, 
+                 d.ID AS REF_ID
           FROM PRISON.INCIDENTS i
           JOIN PRISON.SPR_TYPE_INCIDENT s ON i.ID_TYPE_INCIDENT = s.ID
           JOIN PRISON.SPR_PENITENCIAR p ON i.ID_PENITENCIAR = p.ID
@@ -378,16 +373,15 @@ router.post("/interogari/exec", async (req, res) => {
          break;
          
       case 'CAUTARTICOL':
-         // First get article ID
          const aRes = await db.execute("SELECT ID FROM PRISON.SPR_ARTICOL WHERE ANUMBER = :anum", { anum: params.article });
          if (!aRes.rows.length) {
              return res.json({ success: true, rows: [], headers: [], title: "Căutare Articol: " + params.article });
          }
          const artId = aRes.rows[0].ID;
-         
          sql = `
-           SELECT PD.ID, PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
-                  TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PEN.NAME AS PENITENCIARUL
+           SELECT PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,
+                  TO_CHAR(PD.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII, PEN.NAME AS PENITENCIARUL,
+                  PD.ID AS REF_ID
            FROM PRISON.DETINUTI PD
            INNER JOIN PRISON.MISCARI PM ON (PD.IDNP = PM.IDNP)
            INNER JOIN PRISON.HOTARIRI_JUD PHOT ON (PD.IDNP = PHOT.IDNP)
@@ -409,11 +403,9 @@ router.post("/interogari/exec", async (req, res) => {
     }
 
     const result = await db.execute(sql, binds);
-    const rows = result.rows || [];
-    
     res.json({
       success: true,
-      rows: rows,
+      rows: result.rows || [],
       headers: headers,
       title: title
     });
@@ -424,14 +416,19 @@ router.post("/interogari/exec", async (req, res) => {
   }
 });
 
-/*
-  ENDPOINT: /api/interogari/print
-  Renders a pure HTML page for printing
-*/
 router.post("/interogari/print", async (req, res) => {
   const { headers, rows, title } = req.body;
   const userInfo = await getUserInfo(req);
   const dateStr = new Date().toLocaleString('ro-RO');
+
+  // Filter out REF_ID from rows for printing
+  const printRows = rows.map(r => {
+    // We assume backend logic: REF_ID is the last key, or named specifically.
+    // However, headers logic matches visual logic. 
+    // We will iterate based on headers length to ensure we don't print hidden ID.
+    const values = Object.values(r);
+    return values.slice(0, headers.length); // simple approach: take first N values matching N headers
+  });
 
   const html = `
   <!DOCTYPE html>
@@ -457,48 +454,26 @@ router.post("/interogari/print", async (req, res) => {
       <button onclick="window.print()" style="padding: 8px 16px; cursor:pointer;">🖨️ Printează acum</button>
       <button onclick="window.close()" style="padding: 8px 16px; cursor:pointer;">Închide</button>
     </div>
-
     <h1>RAPORT: ${title}</h1>
-    
     <div class="meta">
       <strong>Generat de:</strong> ${userInfo.username} (Rol: ${userInfo.role})<br/>
       <strong>Data generării:</strong> ${dateStr}<br/>
       <strong>Total înregistrări:</strong> ${rows.length}
     </div>
-
     <table>
       <thead>
-        <tr>
-          ${headers.map(h => `<th>${h}</th>`).join('')}
-        </tr>
+        <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
       </thead>
       <tbody>
-        ${rows.map(row => `
-          <tr>
-             ${headers.map((_, i) => {
-                // Try to match object keys to headers index or just generic object iteration
-                // Since row is an object from DB (e.g. {IDNP: '...', NUME: '...'}), we need to map headers to keys
-                // But the headers array sent from frontend doesn't carry keys.
-                // Quick fix: Backend sends 'rows' as array of objects. 
-                // We will trust the object key order OR map generically.
-                const keys = Object.keys(row);
-                // We skip 'ID' if it's the first key and headers doesn't look like it wants ID (usually for links)
-                // For robustness, let's just dump values.
-                const val = Object.values(row)[i] || ''; 
-                return `<td>${val}</td>`;
-             }).join('')}
-          </tr>
-        `).join('')}
+        ${printRows.map(vals => `<tr>${vals.map(v => `<td>${v || ''}</td>`).join('')}</tr>`).join('')}
       </tbody>
     </table>
   </body>
   </html>
   `;
-
   res.send(html);
 });
 
-// Helper for select dropdowns (Institutions)
 router.get("/interogari/institutions", async (req, res) => {
   try {
     const r = await db.execute("SELECT ID, NAME FROM PRISON.SPR_PENITENCIAR ORDER BY NAME");

@@ -15,112 +15,107 @@
     messageEl.className = "form-message" + (type ? " " + type : "");
   }
 
+  // --- 1. DB Health Check ---
   async function checkHealth() {
     if (!authCard) return;
     try {
       const data = await window.prisonApi.get("/health");
-
-      // Doar dacă serverul spune explicit că DB NU e disponibilă
       if (data && data.dbAvailable === false) {
         authCard.innerHTML = `
-          <h1 class="auth-title">Eroare conexiune bază de date</h1>
+          <h1 class="auth-title">Eroare conexiune DB</h1>
           <p class="auth-subtitle">
-            Pagina web este accesibilă dar conexiunea cu baza de date a eșuat.
-            Vă rugăm contactați-ne de urgență la
-            <a href="mailto:anp.siarprac@anp.gov.md">anp.siarprac@anp.gov.md</a>.
+            Contactați administratorul: <a href="mailto:admin@anp.gov.md">admin@anp.gov.md</a>
           </p>
         `;
       }
-      // Dacă dbAvailable este true sau null/undefined → nu facem nimic,
-      // lăsăm login-ul să funcționeze normal.
-    } catch (err) {
-      // Nu mai speriem utilizatorul; doar logăm în consolă.
-      console.error("Eroare la /api/health:", err);
+    } catch (err) { console.error("Health check error", err); }
+  }
+
+  // --- 2. Load System Announcement ---
+  async function loadAnnouncement() {
+    try {
+      console.log("Fetching announcement...");
+      const data = await window.prisonApi.get("/ann");
+      console.log("Announcement data:", data);
+
+      if (data.success && data.message && data.message.trim().length > 0) {
+        const banner = document.getElementById("systemAnnouncement");
+        const textEl = document.getElementById("sysAnnText");
+        
+        if (banner && textEl) {
+          textEl.textContent = data.message;
+          // Force display flex to override display:none
+          banner.style.display = "flex"; 
+          // Add visible class for animation
+          setTimeout(() => banner.classList.add('visible'), 50);
+        }
+      } else {
+        console.log("No active announcement found.");
+      }
+    } catch (e) {
+      console.error("Error loading announcement:", e);
     }
   }
 
+  // --- 3. Load Motives ---
   async function loadMotives() {
     if (!motivationEl) return;
     try {
       const data = await window.prisonApi.get("/motives");
-      if (!data.success || !Array.isArray(data.motives)) {
-        throw new Error(data.error || "Nu s-au putut încărca motivele de acces.");
-      }
+      if (!data.success) throw new Error(data.error);
 
-      motivationEl.innerHTML =
-        '<option value="">-- Selectați motivul --</option>';
-      data.motives.forEach((m) => {
+      motivationEl.innerHTML = '<option value="">-- Selectați motivul --</option>';
+      (data.motives || []).forEach((m) => {
         const opt = document.createElement("option");
         opt.value = m.id;
         opt.textContent = m.text;
         motivationEl.appendChild(opt);
       });
     } catch (err) {
-      console.error("Eroare la /api/motives:", err);
-      // Lăsăm opțiunea default, utilizatorul nu poate continua fără selectare oricum.
+      console.error("Motives load error:", err);
     }
   }
 
+  // --- 4. Handle Login ---
   async function handleSubmit(ev) {
     ev.preventDefault();
     if (!formEl) return;
     setMessage("", "");
-    if (!usernameEl || !passwordEl || !motivationEl || !loginBtn) return;
 
     const username = usernameEl.value.trim();
     const password = passwordEl.value;
     const motivId = motivationEl.value;
 
     if (!username || !password || !motivId) {
-      setMessage("Completați utilizatorul, parola și motivul de acces.", "error");
+      setMessage("Toate câmpurile sunt obligatorii.", "error");
       return;
     }
 
     loginBtn.disabled = true;
 
     try {
-      const payload = {
-        username,
-        password,
-        motivId
-      };
+      const data = await window.prisonApi.post("/login", { username, password, motivId });
+      if (!data.success) throw new Error(data.error || "Login failed");
 
-      const data = await window.prisonApi.post("/login", payload);
-      if (!data.success) {
-        throw new Error(data.error || "Autentificare eșuată.");
-      }
-
-      try {
-        sessionStorage.setItem("prison.userId", String(data.user.id));
-        sessionStorage.setItem("prison.username", String(data.user.username));
-      } catch (e) {
-        // ignore
-      }
-
+      sessionStorage.setItem("prison.userId", data.user.id);
+      sessionStorage.setItem("prison.username", data.user.username);
+      
       window.location.href = "/app/index.html?module=cautare";
     } catch (err) {
-      console.error("Eroare la login:", err);
-      setMessage(
-        err.message || "Nu s-a putut realiza autentificarea.",
-        "error"
-      );
+      setMessage(err.message, "error");
     } finally {
-      if (loginBtn) loginBtn.disabled = false;
+      loginBtn.disabled = false;
     }
   }
 
+  // --- Init ---
   document.addEventListener("DOMContentLoaded", () => {
-    checkHealth().catch(() => {});
-    loadMotives().catch(() => {});
+    // Run checks parallel
+    checkHealth();
+    loadMotives();
+    loadAnnouncement();
 
-    if (formEl) {
-      formEl.addEventListener("submit", handleSubmit);
-    }
-
-    if (guideBtn) {
-      guideBtn.addEventListener("click", () => {
-        window.location.href = "/ghid.html";
-      });
-    }
+    if (formEl) formEl.addEventListener("submit", handleSubmit);
+    if (guideBtn) guideBtn.addEventListener("click", () => window.location.href = "/ghid.html");
   });
 })();

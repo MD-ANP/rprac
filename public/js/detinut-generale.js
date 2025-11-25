@@ -100,7 +100,6 @@
     window.DetinutTabs['generale'] = {
         render: async (container, detinutId) => {
             _detId = detinutId;
-            container.innerHTML = '<div class="loader-box">Se încarcă profilul...</div>';
             injectModals();
             
             try {
@@ -111,65 +110,52 @@
                 const { detinut, canEdit, images, citizenships, acts, employment, address } = res;
                 _idnp = detinut.IDNP;
 
-                // --- Define Toggle Function ---
+                // --- Setup Toggle Function for Edit Mode ---
                 window.toggleEditMode = () => {
                      const view = document.getElementById('viewMode');
                      const edit = document.getElementById('editForm');
+                     const btn = document.getElementById('portal-edit-btn');
+                     
                      if(!view || !edit) return;
 
-                     view.classList.toggle('hidden');
-                     edit.classList.toggle('hidden');
+                     const isEditing = edit.classList.contains('hidden');
                      
-                     const btn = document.getElementById('portal-edit-btn');
-                     if(btn) btn.innerHTML = edit.classList.contains('hidden') ? '✏️ Editează Date' : '❌ Închide';
+                     if (isEditing) {
+                        view.classList.add('hidden');
+                        edit.classList.remove('hidden');
+                        if(btn) {
+                            btn.innerHTML = '❌ Anulează';
+                            btn.classList.add('active');
+                        }
+                     } else {
+                        view.classList.remove('hidden');
+                        edit.classList.add('hidden');
+                        if(btn) {
+                            btn.innerHTML = '✏️ Editează Date';
+                            btn.classList.remove('active');
+                        }
+                     }
                 };
 
-                // Move Header Actions (Edit Button) to Hero
-                if(canEdit) {
-                    const heroActions = document.querySelector('.hero-actions') || document.querySelector('#detinutHeader');
-                    const btnId = 'portal-edit-btn';
-                    const existingBtn = document.getElementById(btnId);
-                    if(existingBtn) existingBtn.remove();
-                    
+                // --- INJECT EDIT BUTTON INTO HEADER ---
+                // We now target #headerActions explicitly created by shell.js
+                // Clear existing first
+                const actionContainer = document.getElementById('headerActions');
+                if(actionContainer) actionContainer.innerHTML = '';
+                
+                if(canEdit && actionContainer) {
                     const editBtn = document.createElement('button');
-                    editBtn.id = btnId;
-                    editBtn.className = 'btn-primary';
+                    editBtn.id = 'portal-edit-btn';
+                    editBtn.className = 'btn-compact-edit';
                     editBtn.innerHTML = '✏️ Editează Date';
                     editBtn.onclick = window.toggleEditMode;
-                    
-                    // --- COMPACT BUTTON STYLING ---
-                    // Overriding btn-primary defaults to be compact
-                    editBtn.style.marginLeft = 'auto'; // Push to right if flex
-                    editBtn.style.marginRight = '20px'; // Spacing
-                    editBtn.style.width = 'auto';
-                    editBtn.style.height = 'auto';
-                    editBtn.style.padding = '8px 16px';
-                    editBtn.style.fontSize = '0.9rem';
-                    editBtn.style.borderRadius = '8px'; // Rounded square look
-                    editBtn.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
-                    editBtn.style.display = 'inline-flex';
-                    editBtn.style.alignItems = 'center';
-                    
-                    // Inject into header (try to find specific spot or append)
-                    if(heroActions) {
-                         // Find the info container to append next to it, or just append
-                         const contentDiv = heroActions.querySelector('.profile-hero-content');
-                         if(contentDiv) contentDiv.appendChild(editBtn);
-                         else heroActions.appendChild(editBtn); 
-                    }
-                }
-
-                // Update Avatar
-                const front = images.find(i => i.type == 1);
-                const headerAvatar = document.querySelector('.hero-avatar');
-                if (headerAvatar && front) {
-                    headerAvatar.innerHTML = `<img src="${front.url}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;" onerror="this.style.display='none'">`;
+                    actionContainer.appendChild(editBtn);
                 }
 
                 // UI
                 container.innerHTML = `
                 <div class="profile-page-wrapper">
-                    <!-- Cards Grid -->
+                    <!-- VIEW MODE (Cards Grid) -->
                     <div id="viewMode">
                         <div class="gen-grid-3">
                             <div class="admin-panel">
@@ -198,7 +184,7 @@
                                 <div class="mb-2">
                                     <div class="flex-between">
                                         <span class="detail-label block">Cetățenie</span>
-                                        ${canEdit ? `<button class="btn-small" onclick="openCitModal()">+ Adaugă</button>` : ''}
+                                        ${canEdit ? `<button class="btn-tiny" onclick="openCitModal()">+ Adaugă</button>` : ''}
                                     </div>
                                     <div class="badges mt-1">
                                         ${citizenships.map(c => `<span class="badge badge-read">${c.NAME} ${canEdit?`<b class="del-x" onclick="delCit(${c.ID})">×</b>`:''}</span>`).join('')}
@@ -207,7 +193,7 @@
                                 <div class="mt-4">
                                     <div class="flex-between">
                                         <span class="detail-label">Domiciliu</span>
-                                        ${canEdit ? `<button class="btn-small" onclick="openAddrModal()">+ Adaugă</button>` : ''}
+                                        ${canEdit ? `<button class="btn-tiny" onclick="openAddrModal()">+ Adaugă</button>` : ''}
                                     </div>
                                     <ul class="addr-list mt-1">
                                        ${address.map(a => `<li><b>${a.START_DATE_STR}</b>: ${a.CITY}, ${a.ADDRESS} ${canEdit?`<span class="del-x" onclick="delAddr(${a.ID})">×</span>`:''}</li>`).join('')}
@@ -220,19 +206,19 @@
                             <div class="admin-panel">
                                 <div class="flex-between mb-2">
                                     <div class="profile-section-title m-0 border-0">🪪 Acte de Identitate</div>
-                                    ${canEdit ? `<button class="btn-small" onclick="openActModal()">+ Adaugă</button>` : ''}
+                                    ${canEdit ? `<button class="btn-tiny" onclick="openActModal()">+ Adaugă</button>` : ''}
                                 </div>
                                 <table class="compact-table">
                                     <thead><tr><th>Tip</th><th>Număr</th><th>Eliberat</th><th>Expiră</th><th></th></tr></thead>
                                     <tbody>
-                                        ${acts.map(a => `<tr><td>${a.TIP_DOC}</td><td><b>${a.NRDOCUMENT}</b></td><td>${a.ELIB_STR}</td><td>${a.EXP_STR}</td><td class="text-right">${canEdit?`<button class="btn-danger btn-small" onclick="delAct(${a.ID})">×</button>`:''}</td></tr>`).join('')}
+                                        ${acts.map(a => `<tr><td>${a.TIP_DOC}</td><td><b>${a.NRDOCUMENT}</b></td><td>${a.ELIBERAT_DE||'-'}</td><td>${a.EXP_STR}</td><td class="text-right">${canEdit?`<button class="btn-danger btn-small" onclick="delAct(${a.ID})">×</button>`:''}</td></tr>`).join('')}
                                     </tbody>
                                 </table>
                             </div>
                             <div class="admin-panel">
                                 <div class="flex-between mb-2">
                                     <div class="profile-section-title m-0 border-0">💼 Loc de Muncă</div>
-                                    ${canEdit ? `<button class="btn-small" onclick="openJobModal()">+ Adaugă</button>` : ''}
+                                    ${canEdit ? `<button class="btn-tiny" onclick="openJobModal()">+ Adaugă</button>` : ''}
                                 </div>
                                 <table class="compact-table">
                                     <thead><tr><th>Loc Muncă</th><th>Profesie</th><th>Data</th><th></th></tr></thead>
@@ -246,7 +232,7 @@
                         <div class="admin-panel mt-4">
                             <div class="flex-between">
                                 <div class="profile-section-title">Galerie Foto</div>
-                                ${canEdit ? `<button class="btn-small" onclick="openPhotoModal()">Gestionare Foto</button>`:''}
+                                ${canEdit ? `<button class="btn-tiny" onclick="openPhotoModal()">Gestionare Foto</button>`:''}
                             </div>
                             <div class="gallery-row">
                                 ${images.map(img => `<div class="gallery-item"><a href="${img.url}" target="_blank"><img src="${img.url}"></a></div>`).join('')}
@@ -255,7 +241,7 @@
                         </div>
                     </div>
 
-                    <!-- EDIT FORM -->
+                    <!-- EDIT FORM (Hidden by default) -->
                     <form id="editForm" class="admin-panel hidden">
                         <div class="profile-section-title mb-4">Editare Date Principale</div>
                         <div class="gen-grid-3">
@@ -285,7 +271,6 @@
                         try { await window.prisonApi.post(`/detinut/${detinutId}/update_main`, Object.fromEntries(new FormData(e.target))); reload(); } catch(err) { alert(err.message); }
                     };
                     
-                    // Setup Modal Openers
                     window.openActModal = () => { fillSelect('actTip', meta.docTypes); openM('actModal'); };
                     window.openJobModal = () => { fillSelect('jobProf', meta.professions); openM('jobModal'); };
                     window.openCitModal = () => { fillSelect('citList', meta.citizen); openM('citModal'); };
@@ -321,12 +306,17 @@
     }
 
     // Deletes
-    window.delPhoto = (t) => delC(`/detinut/${_detId}/photos/${t}`);
     window.delCit = (id) => delC(`/detinut/citizenship/${id}`);
     window.delAct = (id) => delC(`/detinut/acte/${id}`);
     window.delJob = (id) => delC(`/detinut/employment/${id}`);
     window.delAddr = (id) => delC(`/detinut/address/${id}`);
-    async function delC(url) { if(confirm('Sigur ștergeți?')) { await window.prisonApi.del(url); reload(); } }
+    
+    async function delC(url) { 
+        if(confirm('Sigur ștergeți?')) { 
+            try { await window.prisonApi.del(url); reload(); }
+            catch(e) { alert(e.message); }
+        } 
+    }
 
     // Drag Drop
     function setupDragDrop() {
@@ -341,9 +331,25 @@
         btn.onclick = async () => {
             if(!file) return;
             const fd = new FormData(); fd.append('image', file); fd.append('type', document.getElementById('photoType').value);
-            btn.innerText = '...';
-            await fetch(`/api/detinut/${_detId}/photos`, { method:'POST', headers:{"x-user-id":sessionStorage.getItem("prison.userId")}, body:fd });
-            window.closeModal('photoModal'); reload();
+            btn.innerText = 'Se încarcă...';
+            btn.disabled = true;
+            
+            // Raw fetch because api wrapper usually handles JSON, and this is Multipart
+            try {
+                const res = await fetch(`/api/detinut/${_detId}/photos`, { 
+                    method:'POST', 
+                    headers:{"x-user-id":sessionStorage.getItem("prison.userId")}, 
+                    body:fd 
+                });
+                const d = await res.json();
+                if(!d.success) throw new Error(d.error);
+                window.closeModal('photoModal'); 
+                reload();
+            } catch(e) {
+                alert("Eroare upload: " + e.message);
+                btn.innerText = 'Încarcă';
+                btn.disabled = false;
+            }
         };
     }
 })();

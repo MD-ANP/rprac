@@ -10,6 +10,14 @@ const modules = [
     oracleModuleId: null
   },
   {
+    key: "adaugaDetinut", // <--- NEW MODULE
+    label: "Adaugă Deținut",
+    path: "/app/index.html?module=adaugaDetinut",
+    visible: true,
+    oracleModuleId: null, 
+    requiredRoles: [1, 7, 99] // Only these roles will see it
+  },
+  {
     key: "interogari",
     label: "Rapoarte & Interogări",
     path: "/app/index.html?module=interogari",
