@@ -15,7 +15,7 @@
                         <form id="addDetinutForm" autocomplete="off">
                             
                             <div class="form-group mb-4" style="text-align: center; margin-bottom: 2rem;">
-                                <label style="display: block; margin-bottom: 8px; font-weight: 700; color: #374151;">IDNP (13 cifre)</label>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 700; color: #374151;">IDNP</label>
                                 <input type="text" name="idnp" maxlength="13" 
                                        placeholder="xxxxxxxxxxxxx" 
                                        style="width: 100%; max-width: 400px; text-align: center; font-size: 1.2rem; letter-spacing: 0.15em; font-family: monospace; padding: 12px; margin: 0 auto; display: block; box-sizing: border-box;"

@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("../db");
+const oracledb = require("oracledb"); // <--- Ensures BIND_OUT and NUMBER are available
 const router = express.Router();
 
 // Middleware to check permissions (Roles 1, 7, 99)
@@ -41,7 +42,7 @@ router.post("/detinuti/add", checkPermission, async (req, res) => {
       SEX, WPOLICE, ID_SPR_CATEG_SOCIAL, ID_SPR_EDU_LEVEL, 
       ID_HEALTH_STAT, ID_MAR_STATUS, ID_SPR_NATIONALITY, ID_SPR_RELIGION
     ) VALUES (
-      :prenume, -- Note: Schema says NAME is Name (Prenume usually) and SURNAME is Surname (Nume)
+      :prenume, 
       :nume, 
       :patronimic, 
       TO_DATE(:dob, 'DD.MM.YYYY'), 
@@ -52,14 +53,19 @@ router.post("/detinuti/add", checkPermission, async (req, res) => {
   `;
 
   try {
-    const result = await db.execute(sql, {
-      prenume: prenume,
-      nume: nume,
-      patronimic: patronimic || '-',
-      dob: data_nasterii,
-      idnp: idnp,
-      rid: { dir: db.oracledb.BIND_OUT, type: db.oracledb.NUMBER }
-    });
+    const result = await db.execute(
+      sql, 
+      {
+        prenume: prenume,
+        nume: nume,
+        patronimic: patronimic || '-',
+        dob: data_nasterii,
+        idnp: idnp,
+        // Using correct oracledb constants
+        rid: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER } 
+      },
+      { autoCommit: true } // <--- CRITICAL FIX: Commits the transaction
+    );
 
     const newId = result.outBinds.rid ? result.outBinds.rid[0] : null;
 
