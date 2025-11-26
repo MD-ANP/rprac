@@ -5,8 +5,8 @@ const sharp = require("sharp");
 const fs = require("fs");
 const path = require("path");
 
-const PHOTOS_BASE_DIR = path.join(__dirname, "../../public/photos");
-const TEMP_DIR = path.join(__dirname, "../../temp_uploads");
+const PHOTOS_BASE_DIR = path.join(__dirname, "../../public/resources/photos");
+const TEMP_DIR = path.join(__dirname, "../../public/resources/temp_uploads");
 
 // Ensure temp dir exists
 if (!fs.existsSync(TEMP_DIR)) {
@@ -134,7 +134,7 @@ router.get("/detinut/:id/general_full", async (req, res) => {
 
     // Fetch Sub-entities
     const imgRes = await db.execute("SELECT IMAGE_TYPE FROM PRISON.IMAGES WHERE DETINUT_ID = :id ORDER BY IMAGE_TYPE ASC", { id });
-    const images = (imgRes.rows || []).map(i => ({ id: i.IMAGE_TYPE, type: i.IMAGE_TYPE, url: `/photos/${idnp.charAt(0)}/${idnp}/${i.IMAGE_TYPE}.webp?v=${Date.now()}` }));
+    const images = (imgRes.rows || []).map(i => ({ id: i.IMAGE_TYPE, type: i.IMAGE_TYPE, url: `/resources/photos/${idnp.charAt(0)}/${idnp}/${i.IMAGE_TYPE}.webp?v=${Date.now()}` }));
 
     const citRes = await db.execute(`SELECT C.ID, S.NAME, TO_CHAR(C.BDATE, 'DD.MM.YYYY') as BDATE FROM PRISON.SITIZEN C JOIN PRISON.SPR_SITIZEN S ON S.ID = C.ID_SITIZEN WHERE C.IDNP = :idnp`, { idnp });
     const actRes = await db.execute(`SELECT A.ID, A.NRDOCUMENT, TO_CHAR(A.ELIBERAT_DATA, 'DD.MM.YYYY') as ELIB_STR, TO_CHAR(A.VALABIL_PINA, 'DD.MM.YYYY') as EXP_STR, T.NAME as TIP_DOC FROM PRISON.ACTE A JOIN PRISON.SPR_TIP_DOCUMENT T ON T.ID = A.ID_TIP_DOCUMENT WHERE A.IDNP = :idnp`, { idnp });

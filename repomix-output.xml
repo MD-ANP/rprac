@@ -44,17 +44,17 @@ The content is organized as follows:
 package.json
 public/app/index.html
 public/ghid.html
-public/js/api.js
 public/js/app.js
 public/js/detinut-generale.js
 public/js/detinut-medicina.js
 public/js/detinut.js
-public/js/shell.js
 public/login.html
 public/resources/css/ghid.css
 public/resources/css/styles.css
 public/resources/files/anexe.docx
 public/resources/img/logo.png
+public/resources/js/api.js
+public/resources/js/shell.js
 public/resources/photos/7/7777777777777/1.webp
 public/resources/photos/7/7777777777777/2.webp
 src/config.js
@@ -140,8 +140,7 @@ npm-debug.log
   </main>
 
   <!-- Common API helper -->
-  <script src="../js/api.js" defer></script>
-
+  <script src="/resources/js/api.js" defer></script>
   <!-- Base Modules -->
   <script src="/modules/search/client.js" defer></script>
   <script src="/modules/reports/client.js" defer></script>
@@ -151,7 +150,7 @@ npm-debug.log
   <script src="../js/detinut.js" defer></script> 
 
   <!-- Router -->
-  <script src="../js/shell.js" defer></script>
+  <script src="/resources/js/shell.js" defer></script>
 </body>
 </html>
 </file>
@@ -193,7 +192,7 @@ npm-debug.log
             <h3><span class="badge">1</span> Descarcă anexa</h3>
             <p>Fișierul standard pentru inițierea accesului la baza de date.</p>
             <div class="actions center">
-              <a class="btn btn-primary" href="/files/anexe.docx" download>
+              <a class="btn btn-primary" href="/resources/files/anexe.docx" download>
                 ⬇️ Descarcă anexa (.docx)
               </a>
             </div>
@@ -288,82 +287,6 @@ npm-debug.log
   </script>
 </body>
 </html>
-</file>
-
-<file path="public/js/api.js">
-// public/js/api.js
-const API_BASE_URL = "/api";
-
-function getAuthHeaders() {
-  const headers = {
-    "Accept": "application/json"
-  };
-  
-  // Retrieve the User ID from the browser session
-  const userId = sessionStorage.getItem("prison.userId");
-  if (userId) {
-    headers["X-User-Id"] = userId;
-  }
-  
-  return headers;
-}
-
-async function apiGet(path) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    credentials: "same-origin",
-    headers: getAuthHeaders() // <--- Now includes X-User-Id
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    const msg = data.error || data.message || "Eroare la comunicarea cu serverul.";
-    throw new Error(msg);
-  }
-
-  return data;
-}
-
-async function apiPost(path, body) {
-  const headers = getAuthHeaders();
-  headers["Content-Type"] = "application/json"; // Add content type for POST
-
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: "POST",
-    credentials: "same-origin",
-    headers: headers,
-    body: JSON.stringify(body || {})
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    const msg = data.error || data.message || "Eroare la comunicarea cu serverul.";
-    const err = new Error(msg);
-    err.details = data;
-    throw err;
-  }
-
-  return data;
-}
-
-
-
-// Expose globally (no bundler)
-window.prisonApi = {
-  get: apiGet,
-  post: apiPost,
-  // Add to window.prisonApi
-  del: async (path) => {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      method: "DELETE",
-      headers: getAuthHeaders()
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Delete failed");
-    return data;
-}
-};
 </file>
 
 <file path="public/js/app.js">
@@ -1276,8 +1199,8 @@ window.prisonApi = {
       window.currentDetinutData = d; 
       
       const dir1 = d.IDNP ? d.IDNP.charAt(0) : '0';
-      const photoFront = `/photos/${dir1}/${d.IDNP}/1.webp`;
-      const photoProfile = `/photos/${dir1}/${d.IDNP}/2.webp`;
+      const photoFront = `/resources/photos/${dir1}/${d.IDNP}/1.webp`;
+      const photoProfile = `/resources/photos/d${dir1}/${d.IDNP}/2.webp`;
 
       el.innerHTML = `
         <div class="header-photos">
@@ -1347,142 +1270,6 @@ window.prisonApi = {
 })();
 </file>
 
-<file path="public/js/shell.js">
-// public/js/shell.js
-(function () {
-  const navContainer = document.getElementById("navLinks");
-  const userInfoEl = document.getElementById("userInfo");
-  const logoutBtn = document.getElementById("logoutBtn");
-  const appContent = document.getElementById("appContent");
-
-  function getCurrentModuleKey() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("module") || null;
-  }
-
-  function ensureLoggedIn() {
-    const userId = sessionStorage.getItem("prison.userId");
-    const username = sessionStorage.getItem("prison.username");
-
-    if (!userId || !username) {
-      window.location.href = "/";
-      return null;
-    }
-    userInfoEl.textContent = username;
-    return userId;
-  }
-
-  function renderNav(modules, activeKey) {
-    navContainer.innerHTML = "";
-
-    modules.forEach((mod) => {
-      // CHANGED: Check visibility flag before rendering
-      if (mod.visible === false) return; 
-
-      const link = document.createElement("a");
-      link.href = mod.path || '#';
-      link.textContent = mod.label;
-      link.className = "nav-link";
-      if (mod.key === activeKey) {
-        link.classList.add("nav-link-active");
-      }
-      navContainer.appendChild(link);
-    });
-  }
-
-  function renderDefaultContent(activeKey) {
-    let title = "Bine ai venit";
-    let subtitle = "Selectează un modul din meniul de sus.";
-
-    if (activeKey) {
-      subtitle = `Modulul "${activeKey}" nu are încă o implementare dedicată sau nu a fost găsit.`;
-    }
-
-    appContent.innerHTML = `
-      <h1 class="app-title">${title}</h1>
-      <p class="app-subtitle">${subtitle}</p>
-    `;
-  }
-
-  function runModule(activeKey, userId) {
-    const registry = window.prisonModules || {};
-    appContent.innerHTML = "";
-
-    if (registry[activeKey] && typeof registry[activeKey].init === "function") {
-      registry[activeKey].init({ userId, container: appContent });
-    } else {
-      renderDefaultContent(activeKey);
-    }
-  }
-
-  async function initApp() {
-    const userId = ensureLoggedIn();
-    if (!userId) return;
-
-    let activeKey = getCurrentModuleKey();
-
-    try {
-      const navData = await window.prisonApi.get(
-        `/nav?userId=${encodeURIComponent(userId)}`
-      );
-
-      if (!navData.success) {
-        throw new Error(navData.error || "Nu s-a putut încărca meniul.");
-      }
-
-      const modules = Array.isArray(navData.modules) ? navData.modules : [];
-
-      // If no module in URL, pick first visible one
-      if (!activeKey && modules.length > 0) {
-        // Find first visible module
-        const first = modules.find(m => m.visible !== false) || modules[0];
-        activeKey = first.key;
-        const url = new URL(window.location.href);
-        url.searchParams.set("module", activeKey);
-        window.history.replaceState({}, "", url.toString());
-      }
-
-      // Security Check: Is the requested module in the allowed list?
-      // (Even hidden modules like 'detinut' should be in this list now)
-      if (
-        activeKey &&
-        !modules.some((m) => m.key === activeKey) &&
-        modules.length > 0
-      ) {
-        console.warn(`Module ${activeKey} not allowed or not found. Redirecting.`);
-        const first = modules.find(m => m.visible !== false) || modules[0];
-        activeKey = first.key;
-        const url = new URL(window.location.href);
-        url.searchParams.set("module", activeKey);
-        window.history.replaceState({}, "", url.toString());
-      }
-
-      renderNav(modules, activeKey);
-      runModule(activeKey, userId);
-
-    } catch (err) {
-      console.error("App Init Error:", err);
-      appContent.innerHTML = `
-        <h1 class="app-title">Eroare</h1>
-        <p class="app-subtitle">${err.message || "Eroare la inițializare."}</p>
-      `;
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    initApp().catch(() => {});
-
-    if (logoutBtn) {
-      logoutBtn.addEventListener("click", () => {
-        sessionStorage.removeItem("prison.userId");
-        sessionStorage.removeItem("prison.username");
-        window.location.href = "/";
-      });
-    }
-  });
-})();
-</file>
-
 <file path="public/login.html">
 <!DOCTYPE html>
 <html lang="ro">
@@ -1512,7 +1299,7 @@ window.prisonApi = {
       <div class="auth-card">
         <!-- LOGO -->
         <div class="auth-logo">
-          <img src="/img/logo.png" alt="Sigla ANP" />
+          <img src="/resources/img/logo.png" alt="Sigla ANP" />
         </div>
 
         <form id="loginForm" class="auth-form">
@@ -1560,8 +1347,7 @@ window.prisonApi = {
       </div>
     </div>
   </div>
-
-  <script src="js/api.js" defer></script>
+  <script src="/resources/js/api.js" defer></script>
   <script src="/modules/auth/client.js" defer></script>
 </body>
 </html>
@@ -3375,6 +3161,218 @@ body {
     background-position: right 1rem center;
     background-size: 1em;
 }
+</file>
+
+<file path="public/resources/js/api.js">
+// public/js/api.js
+const API_BASE_URL = "/api";
+
+function getAuthHeaders() {
+  const headers = {
+    "Accept": "application/json"
+  };
+  
+  // Retrieve the User ID from the browser session
+  const userId = sessionStorage.getItem("prison.userId");
+  if (userId) {
+    headers["X-User-Id"] = userId;
+  }
+  
+  return headers;
+}
+
+async function apiGet(path) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: "same-origin",
+    headers: getAuthHeaders() // <--- Now includes X-User-Id
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const msg = data.error || data.message || "Eroare la comunicarea cu serverul.";
+    throw new Error(msg);
+  }
+
+  return data;
+}
+
+async function apiPost(path, body) {
+  const headers = getAuthHeaders();
+  headers["Content-Type"] = "application/json"; // Add content type for POST
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: headers,
+    body: JSON.stringify(body || {})
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const msg = data.error || data.message || "Eroare la comunicarea cu serverul.";
+    const err = new Error(msg);
+    err.details = data;
+    throw err;
+  }
+
+  return data;
+}
+
+
+
+// Expose globally (no bundler)
+window.prisonApi = {
+  get: apiGet,
+  post: apiPost,
+  // Add to window.prisonApi
+  del: async (path) => {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      method: "DELETE",
+      headers: getAuthHeaders()
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Delete failed");
+    return data;
+}
+};
+</file>
+
+<file path="public/resources/js/shell.js">
+// public/js/shell.js
+(function () {
+  const navContainer = document.getElementById("navLinks");
+  const userInfoEl = document.getElementById("userInfo");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const appContent = document.getElementById("appContent");
+
+  function getCurrentModuleKey() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("module") || null;
+  }
+
+  function ensureLoggedIn() {
+    const userId = sessionStorage.getItem("prison.userId");
+    const username = sessionStorage.getItem("prison.username");
+
+    if (!userId || !username) {
+      window.location.href = "/";
+      return null;
+    }
+    userInfoEl.textContent = username;
+    return userId;
+  }
+
+  function renderNav(modules, activeKey) {
+    navContainer.innerHTML = "";
+
+    modules.forEach((mod) => {
+      // CHANGED: Check visibility flag before rendering
+      if (mod.visible === false) return; 
+
+      const link = document.createElement("a");
+      link.href = mod.path || '#';
+      link.textContent = mod.label;
+      link.className = "nav-link";
+      if (mod.key === activeKey) {
+        link.classList.add("nav-link-active");
+      }
+      navContainer.appendChild(link);
+    });
+  }
+
+  function renderDefaultContent(activeKey) {
+    let title = "Bine ai venit";
+    let subtitle = "Selectează un modul din meniul de sus.";
+
+    if (activeKey) {
+      subtitle = `Modulul "${activeKey}" nu are încă o implementare dedicată sau nu a fost găsit.`;
+    }
+
+    appContent.innerHTML = `
+      <h1 class="app-title">${title}</h1>
+      <p class="app-subtitle">${subtitle}</p>
+    `;
+  }
+
+  function runModule(activeKey, userId) {
+    const registry = window.prisonModules || {};
+    appContent.innerHTML = "";
+
+    if (registry[activeKey] && typeof registry[activeKey].init === "function") {
+      registry[activeKey].init({ userId, container: appContent });
+    } else {
+      renderDefaultContent(activeKey);
+    }
+  }
+
+  async function initApp() {
+    const userId = ensureLoggedIn();
+    if (!userId) return;
+
+    let activeKey = getCurrentModuleKey();
+
+    try {
+      const navData = await window.prisonApi.get(
+        `/nav?userId=${encodeURIComponent(userId)}`
+      );
+
+      if (!navData.success) {
+        throw new Error(navData.error || "Nu s-a putut încărca meniul.");
+      }
+
+      const modules = Array.isArray(navData.modules) ? navData.modules : [];
+
+      // If no module in URL, pick first visible one
+      if (!activeKey && modules.length > 0) {
+        // Find first visible module
+        const first = modules.find(m => m.visible !== false) || modules[0];
+        activeKey = first.key;
+        const url = new URL(window.location.href);
+        url.searchParams.set("module", activeKey);
+        window.history.replaceState({}, "", url.toString());
+      }
+
+      // Security Check: Is the requested module in the allowed list?
+      // (Even hidden modules like 'detinut' should be in this list now)
+      if (
+        activeKey &&
+        !modules.some((m) => m.key === activeKey) &&
+        modules.length > 0
+      ) {
+        console.warn(`Module ${activeKey} not allowed or not found. Redirecting.`);
+        const first = modules.find(m => m.visible !== false) || modules[0];
+        activeKey = first.key;
+        const url = new URL(window.location.href);
+        url.searchParams.set("module", activeKey);
+        window.history.replaceState({}, "", url.toString());
+      }
+
+      renderNav(modules, activeKey);
+      runModule(activeKey, userId);
+
+    } catch (err) {
+      console.error("App Init Error:", err);
+      appContent.innerHTML = `
+        <h1 class="app-title">Eroare</h1>
+        <p class="app-subtitle">${err.message || "Eroare la inițializare."}</p>
+      `;
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    initApp().catch(() => {});
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
+        sessionStorage.removeItem("prison.userId");
+        sessionStorage.removeItem("prison.username");
+        window.location.href = "/";
+      });
+    }
+  });
+})();
 </file>
 
 <file path="src/config.js">
@@ -6194,7 +6192,7 @@ module.exports = router;
         if (item.hasPhoto && item.idnp) {
             const dir1 = item.idnp.charAt(0);
             // Default to type 1 (frontal) for search result thumbnails
-            const url = `/photos/${dir1}/${item.idnp}/1.webp`;
+            const url = `/resources/photos/${dir1}/${item.idnp}/1.webp`;
             imgHtml = `<img src="${url}" onerror="this.style.display='none'" style="width:70px; height:85px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1;">`;
         }
 
@@ -6891,8 +6889,8 @@ const sharp = require("sharp");
 const fs = require("fs");
 const path = require("path");
 
-const PHOTOS_BASE_DIR = path.join(__dirname, "../../public/photos");
-const TEMP_DIR = path.join(__dirname, "../../temp_uploads");
+const PHOTOS_BASE_DIR = path.join(__dirname, "../../public/resources/photos");
+const TEMP_DIR = path.join(__dirname, "../../public/resources/temp_uploads");
 
 // Ensure temp dir exists
 if (!fs.existsSync(TEMP_DIR)) {

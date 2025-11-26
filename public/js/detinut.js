@@ -108,8 +108,8 @@
       window.currentDetinutData = d; 
       
       const dir1 = d.IDNP ? d.IDNP.charAt(0) : '0';
-      const photoFront = `/photos/${dir1}/${d.IDNP}/1.webp`;
-      const photoProfile = `/photos/${dir1}/${d.IDNP}/2.webp`;
+      const photoFront = `/resources/photos/${dir1}/${d.IDNP}/1.webp`;
+      const photoProfile = `/resources/photos/d${dir1}/${d.IDNP}/2.webp`;
 
       el.innerHTML = `
         <div class="header-photos">

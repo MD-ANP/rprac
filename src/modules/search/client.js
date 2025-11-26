@@ -93,7 +93,7 @@
         if (item.hasPhoto && item.idnp) {
             const dir1 = item.idnp.charAt(0);
             // Default to type 1 (frontal) for search result thumbnails
-            const url = `/photos/${dir1}/${item.idnp}/1.webp`;
+            const url = `/resources/photos/${dir1}/${item.idnp}/1.webp`;
             imgHtml = `<img src="${url}" onerror="this.style.display='none'" style="width:70px; height:85px; object-fit:cover; border-radius:4px; border:1px solid #cbd5e1;">`;
         }
 
