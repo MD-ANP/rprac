@@ -9,8 +9,8 @@
   // role: required role ID to see the tab (optional)
   const TABS_CONFIG = [
     { key: 'generale', label: 'Detalii Generale' },
-    { key: 'medicina', label: 'Medicină', roles: [7, 12] },
-    { key: 'educatie', label: 'Educație', roles: [3, 7, 99] }, 
+    { key: 'medicina', label: 'Medicină'},
+    { key: 'educatie', label: 'Educație'}, 
     { key: 'psihologie', label: 'Psihologie' },
     { key: 'social', label: 'Asistență Socială' },
     { key: 'securitate', label: 'Securitate' },

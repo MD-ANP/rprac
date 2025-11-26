@@ -1,6 +1,5 @@
 const express = require("express");
-const db = require("../db");
-const oracledb = require("oracledb"); // <--- Ensures BIND_OUT and NUMBER are available
+const db = require("../../db");const oracledb = require("oracledb"); // <--- Ensures BIND_OUT and NUMBER are available
 const router = express.Router();
 
 // Middleware to check permissions (Roles 1, 7, 99)

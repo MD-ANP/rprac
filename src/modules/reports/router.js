@@ -1,6 +1,5 @@
 const express = require("express");
-const db = require("../db");
-const router = express.Router();
+const db = require("../../db");const router = express.Router();
 
 /* HELPER: Get User Info for Print Headers */
 async function getUserInfo(req) {

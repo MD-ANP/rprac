@@ -1,7 +1,7 @@
 // src/routes/nav.js
 const express = require("express");
-const db = require("../db");
-const modulesConfig = require("../modulesConfig");
+const db = require("../../db");
+const modulesConfig = require("../../modulesConfig");
 
 const router = express.Router();
 

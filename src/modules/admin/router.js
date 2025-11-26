@@ -1,6 +1,5 @@
 const express = require("express");
-const db = require("../db");
-
+const db = require("../../db");
 const router = express.Router();
 
 /** Simple admin guard: requires x-user-id and role 7 */
@@ -28,7 +27,7 @@ async function adminGuard(req, res, next) {
   }
 }
 
-router.use(adminGuard);
+router.use("/admin", adminGuard);
 
 /** GET /api/admin/meta -> roles + penitenciars */
 router.get("/admin/meta", async (req, res) => {

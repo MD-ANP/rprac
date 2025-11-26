@@ -1,6 +1,6 @@
 // src/routes/search.js
 const express = require("express");
-const db = require("../db");
+const db = require("../../db");
 const router = express.Router();
 
 router.post("/search/detinuti", async (req, res) => {

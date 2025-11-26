@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Aplicație – Panou principal</title>
-  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../resources/css/styles.css" />
 </head>
 <body>
   <header class="topbar">
   <div class="topbar-left">
-    <span class="app-logo">PRISON APP</span>
+    <span class="app-logo">SISTEM AUTOMATIZAT "RPRAC"</span>
   </div>
   <nav class="topbar-nav" id="navLinks">
     <!-- links injected by JS -->
@@ -19,7 +19,6 @@
     <button id="logoutBtn" class="btn-ghost">Deconectare</button>
   </div>
 </header>
-
 
   <main class="app-main">
     <section class="app-content" id="appContent">
@@ -34,12 +33,11 @@
   <script src="../js/api.js" defer></script>
 
   <!-- Base Modules -->
-  <script src="../js/cautare.js" defer></script>
-  <script src="../js/interogari.js" defer></script>
-  <script src="../js/profil.js" defer></script>
-  <script src="../js/admin.js" defer></script>
-  <script src="../js/adauga_detinut.js" defer></script> 
-  <!-- PROFILE SKELETON (Sub-modules loaded dynamically) -->
+  <script src="/modules/search/client.js" defer></script>
+  <script src="/modules/reports/client.js" defer></script>
+  <script src="/modules/user/client.js" defer></script>
+  <script src="/modules/admin/client.js" defer></script>
+  <script src="/modules/detinut-add/client.js" defer></script> 
   <script src="../js/detinut.js" defer></script> 
 
   <!-- Router -->

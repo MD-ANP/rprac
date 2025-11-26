@@ -1,6 +1,5 @@
 const express = require("express");
-const db = require("../db");
-const router = express.Router();
+const db = require("../db");const router = express.Router();
 const multer = require("multer");
 const sharp = require("sharp");
 const fs = require("fs");
@@ -302,7 +301,7 @@ router.get("/detinut/:idnp/medical/radiografie", async (req, res) => {
     const uid = getUid(req);
     if (!await checkPermission(uid, 10, 'R')) return res.status(403).json({ success: false });
     const canWrite = await checkPermission(uid, 10, 'W');
-    const result = await db.execute(`SELECT R.ID, TO_CHAR(R.ADATE, 'DD.MM.YYYY') as ADATE, R.COMMENTS, R.ID_PENETENTIAR, R.ID_RESULTAT, P.NAME as PENITENCIAR, RES.NAME as REZULTAT FROM PRISON.RADIOGRAFIE R LEFT JOIN PRISON.SPR_PENITENCIAR P ON P.ID = R.ID_PENETENCIAR LEFT JOIN PRISON.SPR_RADIOGRAFIE_RESULTAT RES ON RES.ID = R.ID_RESULTAT WHERE R.IDNP = :idnp ORDER BY R.ADATE DESC`, { idnp: req.params.idnp });
+    const result = await db.execute(`SELECT R.ID, TO_CHAR(R.ADATE, 'DD.MM.YYYY') as ADATE, R.COMMENTS, R.ID_PENETENTIAR, R.ID_RESULTAT, P.NAME as PENITENCIAR, RES.NAME as REZULTAT FROM PRISON.RADIOGRAFIE R LEFT JOIN PRISON.SPR_PENITENCIAR P ON P.ID = R.ID_PENETENTIAR LEFT JOIN PRISON.SPR_RADIOGRAFIE_RESULTAT RES ON RES.ID = R.ID_RESULTAT WHERE R.IDNP = :idnp ORDER BY R.ADATE DESC`, { idnp: req.params.idnp });
     res.json({ success: true, rows: result.rows, canWrite });
 });
 router.post("/detinut/:idnp/medical/radiografie", async (req, res) => {
