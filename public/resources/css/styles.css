@@ -573,7 +573,7 @@ body {
 }
 
 .ann-id { font-weight: 700; color: #9ca3af; font-size: 0.8rem; margin-right: 10px;}
-.ann-text { font-size: 0.9rem; color: #1f2937; flex: 1; }
+.ann-text { font-size: 0.9rem; color: #ffffff; flex: 1; }
 
 @media (max-width: 640px) {
   .admin-grid-2 { grid-template-columns: 1fr; }
@@ -1373,7 +1373,7 @@ body {
   display: flex;
   gap: 8px;
   border-bottom: 1px solid #e2e8f0;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
   overflow-x: auto;
   padding-bottom: 1px;
 }
@@ -1381,7 +1381,7 @@ body {
 .tab-btn {
   background: transparent;
   border: none;
-  padding: 10px 16px;
+  padding: 10px 14px;
   font-size: 0.95rem;
   font-weight: 500;
   color: #64748b;
