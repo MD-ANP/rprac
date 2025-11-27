@@ -40,6 +40,14 @@ const modules = [
     oracleModuleId: null,
     requiredRoles: [7]
   },
+  {
+    key: "detinut",
+    label: "Dosar Deținut",
+    path: null,
+    visible: false, 
+    oracleModuleId: null,
+    requiredRoles: [] 
+  },
 
   // --- HIDDEN (PROFILE / SUB-MODULES) ---
   {
