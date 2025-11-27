@@ -67,15 +67,21 @@ src/modules/auth/router.js
 src/modules/detinut-add/client.js
 src/modules/detinut-add/router.js
 src/modules/health/router.js
+src/modules/inmate/complici/client.js
+src/modules/inmate/complici/router.js
 src/modules/inmate/education/client.js
 src/modules/inmate/education/router.js
 src/modules/inmate/garantii/client.js
 src/modules/inmate/garantii/router.js
+src/modules/inmate/hotariri/client.js
+src/modules/inmate/hotariri/router.js
 src/modules/inmate/medical/client.js
 src/modules/inmate/medical/router.js
 src/modules/inmate/profile/client.js
 src/modules/inmate/profile/router.js
 src/modules/inmate/profile/shell.js
+src/modules/inmate/rude/client.js
+src/modules/inmate/rude/router.js
 src/modules/reports/client.js
 src/modules/reports/router.js
 src/modules/search/client.js
@@ -148,15 +154,12 @@ npm-debug.log
   </main>
 
   <script src="/resources/js/api.js" defer></script>
-  
   <script src="/modules/search/client.js" defer></script>
   <script src="/modules/reports/client.js" defer></script>
   <script src="/modules/user/client.js" defer></script>
   <script src="/modules/admin/client.js" defer></script>
   <script src="/modules/detinut-add/client.js" defer></script> 
-  
   <script src="/modules/inmate/profile/shell.js" defer></script> 
-
   <script src="/resources/js/shell.js" defer></script>
 </body>
 </html>
@@ -4390,6 +4393,413 @@ router.get("/health", async (req, res) => {
 module.exports = router;
 </file>
 
+<file path="src/modules/inmate/complici/client.js">
+(function() {
+    window.DetinutTabs = window.DetinutTabs || {};
+    
+    let currentIdnp = null;
+    let meta = null; // Cache for dropdown data (SPR_COMPLICI_STATUS)
+
+    // --- METADATA LOADER ---
+    async function fetchMeta() {
+        if(meta) return;
+        
+        const res = await window.prisonApi.get('/detinut/meta/complici');
+        if(res.success) meta = res;
+        else throw new Error(res.error || "Nu s-au putut încărca nomenclatoarele pentru complici.");
+    }
+
+    // --- HTML & UI Helpers ---
+    function injectCompliceModal() {
+        if(document.getElementById('compliceModal')) return;
+
+        // Modal for adding a new accomplice
+        const html = `
+        <div class="modal-overlay" id="compliceModal">
+            <div class="modal-card" style="max-width:700px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Adaugă Complice</h3>
+                    <button class="btn-close" onclick="window.compliceOps.closeModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="compliceForm" class="admin-form" onsubmit="return false;">
+                        <div class="admin-grid-3">
+                            <div class="f">
+                                <label for="nume">Nume *</label>
+                                <input type="text" id="nume" name="nume" class="full-width" required>
+                            </div>
+                            <div class="f">
+                                <label for="prenume">Prenume *</label>
+                                <input type="text" id="prenume" name="prenume" class="full-width" required>
+                            </div>
+                            <div class="f">
+                                <label for="patronimic">Patronimic</label>
+                                <input type="text" id="patronimic" name="patronimic" class="full-width">
+                            </div>
+                        </div>
+
+                        <div class="admin-grid-3 mt-2">
+                            <div class="f">
+                                <label for="idnpComplice">IDNP Complice</label>
+                                <input type="text" id="idnpComplice" name="idnpComplice" maxlength="13" class="full-width" placeholder="xxxxxxxxxxxxx">
+                            </div>
+                            <div class="f">
+                                <label for="birthday">Data Nașterii</label>
+                                <input type="text" id="birthday" name="birthday" class="datepicker full-width" placeholder="DD.MM.YYYY">
+                            </div>
+                            <div class="f">
+                                <label for="idStatus">Status *</label>
+                                <select name="idStatus" id="compliceStatusSelect" class="full-width" required></select>
+                            </div>
+                        </div>
+
+                        <div class="admin-grid-2 mt-2">
+                            <div class="f">
+                                <label for="dosar">Nr. Dosar Penal</label>
+                                <input type="text" id="dosar" name="dosar" class="full-width">
+                            </div>
+                            <div class="f">
+                                <label for="hDate">Data Hotărârii (Dosar)</label>
+                                <input type="text" id="hDate" name="hDate" class="datepicker full-width" placeholder="DD.MM.YYYY">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-ghost" onclick="window.compliceOps.closeModal()">Anulează</button>
+                    <button class="btn-primary" id="btnCompliceSave" onclick="window.compliceOps.submitForm()">Salvează</button>
+                </div>
+            </div>
+        </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
+        
+        // Initialize date pickers if available
+        if (typeof window.flatpickr !== 'undefined') {
+            flatpickr(document.getElementById('birthday'), { dateFormat: "d.m.Y" });
+            flatpickr(document.getElementById('hDate'), { dateFormat: "d.m.Y" });
+        }
+    }
+    
+    function fillSelect(id, items) { 
+        const el = document.getElementById(id); 
+        if(!el) return;
+        el.innerHTML = '<option value="">- Selectează -</option>' + 
+                       items.map(i => `<option value="${i.ID}">${i.NAME}</option>`).join(''); 
+    }
+
+    // --- DATA & RENDERER ---
+    async function loadComplici(container) {
+        container.innerHTML = `<div class="loader-box">Se încarcă lista de complici...</div>`;
+        
+        try {
+            const res = await window.prisonApi.get(`/detinut/${currentIdnp}/complici`);
+            const rows = res.rows || [];
+            const canWrite = res.canWrite; 
+
+            const btnAdd = canWrite ? 
+                `<button class="btn-primary" onclick="window.compliceOps.openModal()">+ Adaugă Complice</button>` : '';
+
+            let html = `
+                <div class="flex-between" style="border-bottom:1px solid #e2e8f0; padding-bottom:15px; margin-bottom:20px;">
+                    <h2 style="margin:0; font-size:1.1rem; color:#1e293b;">Lista de Complici</h2>
+                    ${btnAdd}
+                </div>
+            `;
+
+            if (rows.length === 0) {
+                html += `<div class="table-empty">Nu există complici înregistrați.</div>`;
+            } else {
+                html += `
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nume & Prenume</th>
+                                    <th>IDNP / Data Nașterii</th>
+                                    <th>Status</th>
+                                    <th>Dosar Penal</th>
+                                    <th style="width:100px; text-align:center;">Acțiuni</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                html += rows.map(r => `
+                    <tr>
+                        <td><b>${r.NUME} ${r.PRENUME}</b> ${r.PATRONIMIC||'—'}</td>
+                        <td>${r.IDNP || '—'} / ${r.BIRTHDAY_STR || '—'}</td>
+                        <td><span class="badge ${r.ID_STATUS === 1 ? 'badge-info' : 'badge-default'}">${r.STATUS_NAME}</span></td>
+                        <td>${r.DOSAR || '—'} ${r.HDATE_STR ? `(Hot. ${r.HDATE_STR})` : ''}</td>
+                        <td class="text-center">
+                            ${canWrite ? `<button class="btn-danger btn-tiny" onclick="window.compliceOps.delete(${r.ID})" title="Șterge Complice">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                            </button>` : '—'}
+                        </td>
+                    </tr>
+                `).join('');
+
+                html += `</tbody></table></div>`;
+            }
+            container.innerHTML = html;
+
+        } catch (e) {
+            console.error("Error loading complici:", e);
+            container.innerHTML = `<div class="error-box">Eroare la încărcarea complicilor: ${e.message}</div>`;
+        }
+    }
+
+    // --- GLOBAL OPERATIONS WRAPPER ---
+    window.compliceOps = {
+        openModal: () => {
+            const modal = document.getElementById('compliceModal');
+            const form = document.getElementById('compliceForm');
+            if(form) form.reset();
+            
+            // Populate dropdown before opening
+            if (meta && meta.compliciStatus) {
+                fillSelect('compliceStatusSelect', meta.compliciStatus);
+            }
+            
+            if(modal) modal.classList.add('open');
+        },
+
+        closeModal: () => {
+            const modal = document.getElementById('compliceModal');
+            if(modal) modal.classList.remove('open');
+        },
+
+        submitForm: async () => {
+            const form = document.getElementById('compliceForm');
+            const btn = document.getElementById('btnCompliceSave');
+            const fd = new FormData(form);
+            const payload = Object.fromEntries(fd);
+            
+            if(!payload.nume || !payload.prenume || !payload.idStatus) {
+                alert("Vă rugăm completați Nume, Prenume și Statusul complicelui.");
+                return; 
+            }
+
+            btn.disabled = true;
+            btn.textContent = "Se salvează...";
+
+            try {
+                const url = `/detinut/${currentIdnp}/complici`;
+                const res = await window.prisonApi.post(url, payload);
+                
+                if(!res.success) throw new Error(res.error);
+                
+                window.compliceOps.closeModal();
+                await loadComplici(document.getElementById('profileContent')); // Reload list
+            } catch (e) {
+                alert("Eroare la salvare: " + e.message); 
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Salvează";
+            }
+        },
+
+        delete: async (id) => {
+            if(!confirm("Sigur ștergeți această înregistrare de complice?")) return;
+            try {
+                const res = await window.prisonApi.del(`/detinut/complici/${id}`);
+                if (!res.success) throw new Error(res.error || "Ștergerea nu a reușit.");
+                await loadComplici(document.getElementById('profileContent')); // Reload list
+            } catch(e) { 
+                alert("Eroare la ștergere: " + e.message); 
+            }
+        }
+    };
+
+    // --- TAB RENDER ENTRY POINT ---
+    window.DetinutTabs['complici'] = {
+        render: async (container, detinutId) => {
+             const idnp = window.currentDetinutData ? window.currentDetinutData.IDNP : null;
+             if (!idnp) { 
+                 container.innerHTML = '<div class="error-box">Lipsă IDNP al deținutului.</div>'; 
+                 return; 
+             }
+             currentIdnp = idnp;
+
+             // 1. Fetch Metadata (Dropdowns)
+             try {
+                 await fetchMeta();
+             } catch(e) {
+                 container.innerHTML = `<div class="error-box">${e.message}</div>`;
+                 return;
+             }
+
+             // 2. Inject Modal UI
+             injectCompliceModal();
+             
+             // 3. Load & Render Data Table
+             await loadComplici(container);
+        }
+    };
+})();
+</file>
+
+<file path="src/modules/inmate/complici/router.js">
+const express = require("express");
+const db = require("../../../db");
+const router = express.Router();
+
+// Modulul ID 4 pentru "Complici" (presupus următorul ID)
+const COMPLICI_MODULE_ID = 4; 
+
+// --- Funcții Helper (Copiate pentru modularitate) ---
+function getUid(req) { 
+  return req.header("x-user-id") ? Number(req.header("x-user-id")) : 0; 
+}
+const safe = (val) => (val === undefined || val === '') ? null : val;
+
+/**
+ * Verifică permisiunile utilizatorului pe un modul specific.
+ */
+async function checkPermission(userId, moduleId, requiredRight = 'R') {
+  if (!userId) return false;
+  try {
+    const sql = `SELECT DREPT FROM PRISON.SPR_ACCESS WHERE ID_USER = :u AND ID_MODUL = :m`;
+    const res = await db.execute(sql, { u: userId, m: moduleId });
+    const right = res.rows.length ? res.rows[0].DREPT : null;
+    
+    if (!right) return false;
+    
+    if (requiredRight === 'R') return (right === 'R' || right === 'W');
+    if (requiredRight === 'W') return (right === 'W');
+    
+    return false;
+  } catch (e) { 
+    console.error("Permission check failed:", e);
+    return false;
+  }
+}
+
+// --- METADATA ROUTE (SPR_COMPLICI_STATUS) ---
+router.get("/detinut/meta/complici", async (req, res) => {
+  const uid = getUid(req);
+  if (!await checkPermission(uid, COMPLICI_MODULE_ID, 'R')) {
+      return res.status(403).json({ success: false, error: "Acces interzis la metadate." });
+  }
+
+  try {
+    const statusRes = await db.execute("SELECT ID, NAME FROM PRISON.SPR_COMPLICI_STATUS ORDER BY NAME");
+    res.json({
+      success: true,
+      compliciStatus: statusRes.rows
+    });
+  } catch(e) { 
+    console.error("Error loading complici statuses:", e);
+    res.status(500).json({success:false, error: "Eroare la încărcarea statutelor complicilor."}); 
+  }
+});
+
+
+// --- LIST COMPLICI (GET) ---
+router.get("/detinut/:idnp/complici", async (req, res) => {
+    const uid = getUid(req);
+    // Check Read Permission
+    if (!await checkPermission(uid, COMPLICI_MODULE_ID, 'R')) {
+        return res.status(403).json({ success: false, error: "Acces interzis (Permisiune R lipsă)." });
+    }
+    
+    // Check Write Permission separately to enable/disable UI buttons
+    const canWrite = await checkPermission(uid, COMPLICI_MODULE_ID, 'W');
+    
+    try {
+        const sql = `
+            SELECT C.ID, C.IDNP, C.NUME, C.PRENUME, C.PATRONIMIC, C.DOSAR, 
+                   C.ID_STATUS,
+                   TO_CHAR(C.BIRTHDAY, 'DD.MM.YYYY') as BIRTHDAY_STR,
+                   TO_CHAR(C.HDATE, 'DD.MM.YYYY') as HDATE_STR,
+                   SCS.NAME as STATUS_NAME
+            FROM PRISON.COMPLICI C
+            INNER JOIN PRISON.SPR_COMPLICI_STATUS SCS ON SCS.ID = C.ID_STATUS
+            WHERE C.IDNP_DET = :idnp
+            ORDER BY C.HDATE DESC
+        `;
+        const result = await db.execute(sql, { idnp: req.params.idnp });
+        res.json({ success: true, rows: result.rows, canWrite });
+    } catch (e) {
+        console.error("Error listing complici:", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// --- ADD COMPLICE (POST) ---
+router.post("/detinut/:idnp/complici", async (req, res) => {
+    // Check Write Permission
+    if (!await checkPermission(getUid(req), COMPLICI_MODULE_ID, 'W')) {
+        return res.status(403).json({ success: false, error: "Permisiuni insuficiente pentru adăugare (Permisiune W lipsă)." });
+    }
+    
+    const { nume, prenume, patronimic, birthday, idnpComplice, dosar, hDate, idStatus } = req.body;
+    
+    // Basic validation
+    if (!nume || !prenume || !idStatus) {
+        return res.status(400).json({ success: false, error: "Nume, Prenume și Statusul sunt obligatorii." });
+    }
+
+    try {
+        // ID is populated by the trigger COMPLICI_TRG (using COMPLICI_SEQ.nextval)
+        const sql = `
+            INSERT INTO PRISON.COMPLICI (
+                IDNP_DET, NUME, PRENUME, PATRONIMIC, IDNP, BIRTHDAY, HDATE, DOSAR, ID_STATUS
+            ) VALUES (
+                :idnp_det, :nume, :prenume, :patronimic, :idnpComplice, 
+                ${birthday ? `TO_DATE(:birthday,'DD.MM.YYYY')` : `NULL`}, 
+                ${hDate ? `TO_DATE(:hDate,'DD.MM.YYYY')` : `NULL`}, 
+                :dosar, :idStatus
+            )
+        `;
+        
+        await db.execute(
+            sql, 
+            {
+                idnp_det: req.params.idnp,
+                nume: nume.toUpperCase(),
+                prenume: prenume.toUpperCase(),
+                patronimic: safe(patronimic),
+                idnpComplice: safe(idnpComplice),
+                birthday: safe(birthday),
+                hDate: safe(hDate),
+                dosar: safe(dosar),
+                idStatus: Number(idStatus),
+            }, 
+            { autoCommit: true }
+        ); 
+        res.json({ success: true }); 
+    } catch(e) { 
+        console.error("Add Complice Error:", e);
+        res.status(500).json({ success: false, error: e.message || "Eroare la adăugarea complicelui." }); 
+    }
+});
+
+// --- DELETE COMPLICE (DELETE) ---
+router.delete("/detinut/complici/:id", async (req, res) => {
+    // Check Write Permission
+    if (!await checkPermission(getUid(req), COMPLICI_MODULE_ID, 'W')) {
+        return res.status(403).json({ success: false, error: "Permisiuni insuficiente pentru ștergere (Permisiune W lipsă)." });
+    }
+    
+    try { 
+        const id = Number(req.params.id);
+        const result = await db.execute("DELETE FROM PRISON.COMPLICI WHERE ID = :id", { id }, { autoCommit: true }); 
+        
+        if (result.rowsAffected === 0) {
+            return res.status(404).json({ success: false, error: "Înregistrarea nu a fost găsită." });
+        }
+        
+        res.json({ success: true }); 
+    } catch(e) { 
+        console.error("Delete Complice Error:", e);
+        res.status(500).json({ success: false, error: e.message || "Eroare la ștergerea complicelui." }); 
+    }
+});
+
+module.exports = router;
+</file>
+
 <file path="src/modules/inmate/education/client.js">
 (function() {
     window.DetinutTabs = window.DetinutTabs || {};
@@ -6127,22 +6537,29 @@ module.exports = router;
   // Configuration for tabs including permission rules
   // role: required role ID to see the tab (optional)
   const TABS_CONFIG = [
-    { key: 'generale', label: 'Detalii Generale' },
+    { key: 'generale', label: 'Date Generale' },
+    { key: 'garantii', label: 'Garanții' },
+    { key: 'hotariri', label: 'Hotărîri' },
+    { key: 'miscari', label: 'Mișcări' },
+    { key: 'incidente', label: 'Incidente' },
+    { key: 'citatii', label: 'Citații' },
+    { key: 'rude', label: 'Rude' },
+    { key: 'complici', label: 'Complici' },
     { key: 'medicina', label: 'Medicină'},
     { key: 'educatie', label: 'Educație'}, 
     { key: 'psihologie', label: 'Psihologie' },
-    { key: 'social', label: 'Asistență Socială' },
+    { key: 'social', label: 'Social' },
     { key: 'securitate', label: 'Securitate' },
     { key: 'regim', label: 'Regim' },
-    { key: 'garantii', label: 'Garanții' },
   ];
 
   // NEW: Map tab keys to their new modular paths
   const MODULE_SCRIPT_MAP = {
     'generale': '/modules/inmate/profile/client.js',
     'medicina': '/modules/inmate/medical/client.js',
-    'educatie': '/modules/inmate/education/client.js',
     'garantii': '/modules/inmate/garantii/client.js',
+    'rude': '/modules/inmate/rude/client.js',
+    'complici': '/modules/inmate/complici/client.js',
   };
 
   let currentId = null;
@@ -6311,6 +6728,425 @@ module.exports = router;
     destroy() { document.body.classList.remove('profile-mode'); }
   };
 })();
+</file>
+
+<file path="src/modules/inmate/rude/client.js">
+(function() {
+    window.DetinutTabs = window.DetinutTabs || {};
+    
+    let currentIdnp = null;
+    let meta = null; // Cache for dropdown data (SPR_RELATIVE_TYPE)
+
+    // --- METADATA LOADER ---
+    async function fetchMeta() {
+        // If meta is already loaded, skip fetching
+        if(meta) return;
+        
+        const res = await window.prisonApi.get('/detinut/meta/rude');
+        if(res.success) meta = res;
+        else throw new Error(res.error || "Nu s-au putut încărca nomenclatoarele pentru rude.");
+    }
+
+    // --- HTML & UI Helpers ---
+    function injectRudeModal() {
+        // Prevent duplicate injection
+        if(document.getElementById('rudeModal')) return;
+
+        // Modal for adding a new relative
+        const html = `
+        <div class="modal-overlay" id="rudeModal">
+            <div class="modal-card" style="max-width:600px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">Adaugă Rudă</h3>
+                    <button class="btn-close" onclick="window.rudeOps.closeModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="rudeForm" class="admin-form" onsubmit="return false;">
+                        <div class="admin-grid-2">
+                            <div class="f">
+                                <label for="surname">Nume *</label>
+                                <input type="text" id="surname" name="surname" class="full-width" required>
+                            </div>
+                            <div class="f">
+                                <label for="name">Prenume *</label>
+                                <input type="text" id="name" name="name" class="full-width" required>
+                            </div>
+                        </div>
+                        <div class="admin-grid-2 mt-2">
+                             <div class="f">
+                                <label for="secName">Patronimic (Opțional)</label>
+                                <input type="text" id="secName" name="secName" class="full-width">
+                             </div>
+                             <div class="f">
+                                <label for="relTypeSelect">Tipul Relației *</label>
+                                <select name="idRelativeType" id="relTypeSelect" class="full-width" required></select>
+                            </div>
+                        </div>
+                        <div class="admin-grid-2 mt-2">
+                            <div class="f">
+                                <label for="dBirdth">Data Nașterii (Opțional)</label>
+                                <input type="text" id="dBirdth" name="dBirdth" class="datepicker full-width" placeholder="DD.MM.YYYY">
+                            </div>
+                            <div class="f">
+                                <label for="idnpRude">IDNP Rudă (Opțional)</label>
+                                <input type="text" id="idnpRude" name="idnpRude" maxlength="13" class="full-width" placeholder="xxxxxxxxxxxxx">
+                            </div>
+                        </div>
+                        <div class="f mt-2">
+                            <label for="address">Adresa</label>
+                            <input type="text" id="address" name="address" class="full-width">
+                        </div>
+                        <div class="f mt-2">
+                            <label for="phone">Telefon</label>
+                            <input type="text" id="phone" name="phone" class="full-width">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-ghost" onclick="window.rudeOps.closeModal()">Anulează</button>
+                    <button class="btn-primary" id="btnRudeSave" onclick="window.rudeOps.submitForm()">Salvează</button>
+                </div>
+            </div>
+        </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
+        
+        // Initialize date picker if available
+        if (typeof window.flatpickr !== 'undefined') {
+            flatpickr(document.getElementById('dBirdth'), { dateFormat: "d.m.Y" });
+        }
+    }
+    
+    function fillSelect(id, items) { 
+        const el = document.getElementById(id); 
+        if(!el) return;
+        el.innerHTML = '<option value="">- Selectează -</option>' + 
+                       items.map(i => `<option value="${i.ID}">${i.NAME}</option>`).join(''); 
+    }
+
+    // --- DATA & RENDERER ---
+    async function loadRelatives(container) {
+        container.innerHTML = `<div class="loader-box">Se încarcă lista de rude...</div>`;
+        
+        try {
+            const res = await window.prisonApi.get(`/detinut/${currentIdnp}/rude`);
+            const rows = res.rows || [];
+            const canWrite = res.canWrite; // Determined by W permission check in router
+
+            const btnAdd = canWrite ? 
+                `<button class="btn-primary" onclick="window.rudeOps.openModal()">+ Adaugă Rudă</button>` : '';
+
+            let html = `
+                <div class="flex-between" style="border-bottom:1px solid #e2e8f0; padding-bottom:15px; margin-bottom:20px;">
+                    <h2 style="margin:0; font-size:1.1rem; color:#1e293b;">Lista de Rude</h2>
+                    ${btnAdd}
+                </div>
+            `;
+
+            if (rows.length === 0) {
+                html += `<div class="table-empty">Nu există rude înregistrate.</div>`;
+            } else {
+                html += `
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nume & Prenume</th>
+                                    <th>Relație</th>
+                                    <th>Data Nașterii / IDNP</th>
+                                    <th>Contact & Adresă</th>
+                                    <th style="width:100px; text-align:center;">Acțiuni</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                html += rows.map(r => `
+                    <tr>
+                        <td><b>${r.SURNAME} ${r.NAME}</b> ${r.SEC_NAME||''}</td>
+                        <td>${r.RELATIVE_TYPE_NAME}</td>
+                        <td>${r.D_BIRDTH_STR || r.Y_BIRDTH || '—'} ${r.IDNP ? `(${r.IDNP})` : ''}</td>
+                        <td>${r.PHONE || '—'} / ${r.ADDRESS || '—'}</td>
+                        <td class="text-center">
+                            ${canWrite ? `<button class="btn-danger btn-tiny" onclick="window.rudeOps.delete(${r.ID})" title="Șterge Rudă">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                            </button>` : '—'}
+                        </td>
+                    </tr>
+                `).join('');
+
+                html += `</tbody></table></div>`;
+            }
+            container.innerHTML = html;
+
+        } catch (e) {
+            console.error("Error loading relatives:", e);
+            container.innerHTML = `<div class="error-box">Eroare la încărcarea rudelor: ${e.message}</div>`;
+        }
+    }
+
+    // --- GLOBAL OPERATIONS WRAPPER ---
+    window.rudeOps = {
+        openModal: () => {
+            const modal = document.getElementById('rudeModal');
+            const form = document.getElementById('rudeForm');
+            if(form) form.reset();
+            
+            // Populate dropdown before opening
+            if (meta && meta.relativeTypes) {
+                fillSelect('relTypeSelect', meta.relativeTypes);
+            }
+            
+            if(modal) modal.classList.add('open');
+        },
+
+        closeModal: () => {
+            const modal = document.getElementById('rudeModal');
+            if(modal) modal.classList.remove('open');
+        },
+
+        submitForm: async () => {
+            const form = document.getElementById('rudeForm');
+            const btn = document.getElementById('btnRudeSave');
+            const fd = new FormData(form);
+            // Convert FormData to plain object
+            const payload = Object.fromEntries(fd);
+            
+            // Simple Client-side validation
+            if(!payload.surname || !payload.name || !payload.idRelativeType) {
+                // Use custom alert or visual feedback instead of browser alert
+                console.error("Validation failed: Required fields missing.");
+                return; 
+            }
+
+            btn.disabled = true;
+            btn.textContent = "Se salvează...";
+
+            try {
+                const url = `/detinut/${currentIdnp}/rude`;
+                const res = await window.prisonApi.post(url, payload);
+                
+                if(!res.success) throw new Error(res.error);
+                
+                window.rudeOps.closeModal();
+                await loadRelatives(document.getElementById('profileContent')); // Reload list
+            } catch (e) {
+                alert("Eroare la salvare: " + e.message); // Use alert as a fallback error notification
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Salvează";
+            }
+        },
+
+        delete: async (id) => {
+            if(!confirm("Sigur ștergeți această înregistrare de rudă? Această acțiune nu poate fi anulată.")) return;
+            try {
+                const res = await window.prisonApi.del(`/detinut/rude/${id}`);
+                if (!res.success) throw new Error(res.error || "Ștergerea nu a reușit.");
+                await loadRelatives(document.getElementById('profileContent')); // Reload list
+            } catch(e) { 
+                alert("Eroare la ștergere: " + e.message); 
+            }
+        }
+    };
+
+    // --- TAB RENDER ENTRY POINT ---
+    window.DetinutTabs['rude'] = {
+        render: async (container, detinutId) => {
+             // Get IDNP from global context
+             const idnp = window.currentDetinutData ? window.currentDetinutData.IDNP : null;
+             if (!idnp) { 
+                 container.innerHTML = '<div class="error-box">Lipsă IDNP al deținutului.</div>'; 
+                 return; 
+             }
+             currentIdnp = idnp;
+
+             // 1. Fetch Metadata (Dropdowns)
+             try {
+                 await fetchMeta();
+             } catch(e) {
+                 container.innerHTML = `<div class="error-box">${e.message}</div>`;
+                 return;
+             }
+
+             // 2. Inject Modal UI
+             injectRudeModal();
+             
+             // 3. Load & Render Data Table
+             await loadRelatives(container);
+        }
+    };
+})();
+</file>
+
+<file path="src/modules/inmate/rude/router.js">
+const express = require("express");
+const db = require("../../../db");
+const router = express.Router();
+
+// Modulul ID 3 pentru "Rude" (conform cererii)
+const RUDE_MODULE_ID = 3; 
+
+// --- Funcții Helper ---
+
+// Extrage ID-ul utilizatorului din header (pentru verificare permisiuni)
+function getUid(req) { 
+  return req.header("x-user-id") ? Number(req.header("x-user-id")) : 0; 
+}
+
+// Asigură că valoarea este null dacă este undefined, altfel returnează valoarea
+const safe = (val) => (val === undefined || val === '') ? null : val;
+
+/**
+ * Verifică permisiunile utilizatorului pe un modul specific.
+ * @param {number} userId - ID-ul utilizatorului.
+ * @param {number} moduleId - ID-ul modulului din SPR_MODULES (aici 3).
+ * @param {'R'|'W'} requiredRight - Dreptul minim necesar ('R' sau 'W').
+ * @returns {Promise<boolean>}
+ */
+async function checkPermission(userId, moduleId, requiredRight = 'R') {
+  if (!userId) return false;
+  try {
+    const sql = `SELECT DREPT FROM PRISON.SPR_ACCESS WHERE ID_USER = :u AND ID_MODUL = :m`;
+    const res = await db.execute(sql, { u: userId, m: moduleId });
+    const right = res.rows.length ? res.rows[0].DREPT : null;
+    
+    if (!right) return false;
+    
+    // R (Read) allows R or W access
+    if (requiredRight === 'R') return (right === 'R' || right === 'W');
+    // W (Write) only allows W access
+    if (requiredRight === 'W') return (right === 'W');
+    
+    return false;
+  } catch (e) { 
+    console.error("Permission check failed:", e);
+    return false;
+  }
+}
+
+// --- METADATA ROUTE (SPR_RELATIVE_TYPE) ---
+router.get("/detinut/meta/rude", async (req, res) => {
+  // Metadata is public/read-only info, R access is sufficient
+  const uid = getUid(req);
+  if (!await checkPermission(uid, RUDE_MODULE_ID, 'R')) {
+      return res.status(403).json({ success: false, error: "Acces interzis la metadate." });
+  }
+
+  try {
+    const typesRes = await db.execute("SELECT ID, NAME FROM PRISON.SPR_RELATIVE_TYPE ORDER BY NAME");
+    res.json({
+      success: true,
+      relativeTypes: typesRes.rows
+    });
+  } catch(e) { 
+    console.error("Error loading relative types:", e);
+    res.status(500).json({success:false, error: "Eroare la încărcarea tipurilor de rude."}); 
+  }
+});
+
+
+// --- LIST RELATIVES (GET) ---
+router.get("/detinut/:idnp/rude", async (req, res) => {
+    const uid = getUid(req);
+    // Check Read Permission
+    if (!await checkPermission(uid, RUDE_MODULE_ID, 'R')) {
+        return res.status(403).json({ success: false, error: "Acces interzis (Permisiune R lipsă)." });
+    }
+    
+    // Check Write Permission separately to enable/disable UI buttons
+    const canWrite = await checkPermission(uid, RUDE_MODULE_ID, 'W');
+    
+    try {
+        const sql = `
+            SELECT R.ID, R.IDNP_DET, R.SURNAME, R.NAME, R.SEC_NAME, R.IDNP, R.PHONE, R.ADDRESS,
+                   R.ID_RELATIVE_TYPE,
+                   TO_CHAR(R.D_BIRDTH, 'DD.MM.YYYY') as D_BIRDTH_STR,
+                   SRT.NAME as RELATIVE_TYPE_NAME
+            FROM PRISON.RELATIVES R
+            INNER JOIN PRISON.SPR_RELATIVE_TYPE SRT ON SRT.ID = R.ID_RELATIVE_TYPE
+            WHERE R.IDNP_DET = :idnp
+            ORDER BY R.SURNAME, R.NAME
+        `;
+        const result = await db.execute(sql, { idnp: req.params.idnp });
+        res.json({ success: true, rows: result.rows, canWrite });
+    } catch (e) {
+        console.error("Error listing relatives:", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// --- ADD RELATIVE (POST) ---
+router.post("/detinut/:idnp/rude", async (req, res) => {
+    // Check Write Permission
+    if (!await checkPermission(getUid(req), RUDE_MODULE_ID, 'W')) {
+        return res.status(403).json({ success: false, error: "Permisiuni insuficiente pentru adăugare (Permisiune W lipsă)." });
+    }
+    
+    const { surname, name, secName, dBirdth, idRelativeType, idnpRude, phone, address } = req.body;
+    
+    // Basic validation
+    if (!surname || !name || !idRelativeType) {
+        return res.status(400).json({ success: false, error: "Nume, Prenume și Tipul Relației sunt obligatorii." });
+    }
+
+    try {
+        // ID is populated by the trigger RELATIVES_TRG1 (using RELATIVES_SEQ.nextval)
+        const sql = `
+            INSERT INTO PRISON.RELATIVES (
+                IDNP_DET, SURNAME, NAME, SEC_NAME, D_BIRDTH, ID_RELATIVE_TYPE, IDNP, PHONE, ADDRESS
+            ) VALUES (
+                :idnp_det, :surname, :name, :secName, 
+                ${dBirdth ? `TO_DATE(:dBirdth,'DD.MM.YYYY')` : `NULL`}, 
+                :idType, :idnpRude, :phone, :address
+            )
+        `;
+        
+        await db.execute(
+            sql, 
+            {
+                idnp_det: req.params.idnp,
+                surname: surname.toUpperCase(),
+                name: name.toUpperCase(),
+                secName: safe(secName),
+                dBirdth: safe(dBirdth),
+                idType: Number(idRelativeType),
+                idnpRude: safe(idnpRude),
+                phone: safe(phone),
+                address: safe(address)
+            }, 
+            { autoCommit: true }
+        ); 
+        res.json({ success: true }); 
+    } catch(e) { 
+        console.error("Add Relative Error:", e);
+        res.status(500).json({ success: false, error: e.message || "Eroare la adăugarea rudei." }); 
+    }
+});
+
+// --- DELETE RELATIVE (DELETE) ---
+router.delete("/detinut/rude/:id", async (req, res) => {
+    // Check Write Permission
+    if (!await checkPermission(getUid(req), RUDE_MODULE_ID, 'W')) {
+        return res.status(403).json({ success: false, error: "Permisiuni insuficiente pentru ștergere (Permisiune W lipsă)." });
+    }
+    
+    try { 
+        const id = Number(req.params.id);
+        const result = await db.execute("DELETE FROM PRISON.RELATIVES WHERE ID = :id", { id }, { autoCommit: true }); 
+        
+        if (result.rowsAffected === 0) {
+            return res.status(404).json({ success: false, error: "Înregistrarea nu a fost găsită." });
+        }
+        
+        res.json({ success: true }); 
+    } catch(e) { 
+        console.error("Delete Relative Error:", e);
+        res.status(500).json({ success: false, error: e.message || "Eroare la ștergerea rudei." }); 
+    }
+});
+
+module.exports = router;
 </file>
 
 <file path="src/modules/reports/client.js">
@@ -7851,6 +8687,7 @@ const modules = [
     oracleModuleId: null,
     requiredRoles: [] 
   },
+  
   { 
     key: "garantii", 
     label: "Garanții de Stat", 
@@ -7860,7 +8697,20 @@ const modules = [
     oracleModuleId: 39, 
     minPermission: "R" 
   },
-
+  { 
+    key: "rude",
+    label: "Rude",
+    visible: true,
+    oracleModuleId: 3, 
+    minPermission: "R" 
+  },
+  { 
+    key: "complici",
+    label: "Complici",
+    visible: true,
+    oracleModuleId: 2, 
+    minPermission: "R" 
+  },
   // --- HIDDEN (PROFILE / SUB-MODULES) ---
   {
     key: "detinut",
@@ -7915,8 +8765,10 @@ app.use("/api", require("./modules/detinut-add/router"));
 // Inmate Modules
 app.use("/api", require("./modules/inmate/profile/router"));
 app.use("/api", require("./modules/inmate/medical/router"));
-app.use("/api", require("./modules/inmate/education/router"));
 app.use("/api", require("./modules/inmate/garantii/router"));
+app.use("/api", require("./modules/inmate/rude/router"));
+app.use("/api", require("./modules/inmate/complici/router"));
+
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(publicDir, "login.html"));

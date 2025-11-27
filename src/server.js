@@ -30,8 +30,10 @@ app.use("/api", require("./modules/detinut-add/router"));
 // Inmate Modules
 app.use("/api", require("./modules/inmate/profile/router"));
 app.use("/api", require("./modules/inmate/medical/router"));
-app.use("/api", require("./modules/inmate/education/router"));
 app.use("/api", require("./modules/inmate/garantii/router"));
+app.use("/api", require("./modules/inmate/rude/router"));
+app.use("/api", require("./modules/inmate/complici/router"));
+
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(publicDir, "login.html"));

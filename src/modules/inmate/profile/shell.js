@@ -8,22 +8,29 @@
   // Configuration for tabs including permission rules
   // role: required role ID to see the tab (optional)
   const TABS_CONFIG = [
-    { key: 'generale', label: 'Detalii Generale' },
+    { key: 'generale', label: 'Date Generale' },
+    { key: 'garantii', label: 'Garanții' },
+    { key: 'hotariri', label: 'Hotărîri' },
+    { key: 'miscari', label: 'Mișcări' },
+    { key: 'incidente', label: 'Incidente' },
+    { key: 'citatii', label: 'Citații' },
+    { key: 'rude', label: 'Rude' },
+    { key: 'complici', label: 'Complici' },
     { key: 'medicina', label: 'Medicină'},
     { key: 'educatie', label: 'Educație'}, 
     { key: 'psihologie', label: 'Psihologie' },
-    { key: 'social', label: 'Asistență Socială' },
+    { key: 'social', label: 'Social' },
     { key: 'securitate', label: 'Securitate' },
     { key: 'regim', label: 'Regim' },
-    { key: 'garantii', label: 'Garanții' },
   ];
 
   // NEW: Map tab keys to their new modular paths
   const MODULE_SCRIPT_MAP = {
     'generale': '/modules/inmate/profile/client.js',
     'medicina': '/modules/inmate/medical/client.js',
-    'educatie': '/modules/inmate/education/client.js',
     'garantii': '/modules/inmate/garantii/client.js',
+    'rude': '/modules/inmate/rude/client.js',
+    'complici': '/modules/inmate/complici/client.js',
   };
 
   let currentId = null;

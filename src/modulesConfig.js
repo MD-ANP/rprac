@@ -48,6 +48,7 @@ const modules = [
     oracleModuleId: null,
     requiredRoles: [] 
   },
+  
   { 
     key: "garantii", 
     label: "Garanții de Stat", 
@@ -57,7 +58,20 @@ const modules = [
     oracleModuleId: 39, 
     minPermission: "R" 
   },
-
+  { 
+    key: "rude",
+    label: "Rude",
+    visible: true,
+    oracleModuleId: 3, 
+    minPermission: "R" 
+  },
+  { 
+    key: "complici",
+    label: "Complici",
+    visible: true,
+    oracleModuleId: 2, 
+    minPermission: "R" 
+  },
   // --- HIDDEN (PROFILE / SUB-MODULES) ---
   {
     key: "detinut",
