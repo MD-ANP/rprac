@@ -63,7 +63,10 @@ router.get("/detinut/meta/general", async (req, res) => {
 router.get("/detinut/:id/general", async (req, res) => {
   try {
     const sql = `
-      SELECT D.ID, D.IDNP, D.SURNAME, D.NAME, D.SEC_NAME, TO_CHAR(D.BIRDTH, 'DD.MM.YYYY') as BIRDTH, P.NAME as PENITENCIAR_NAME
+      SELECT D.ID, D.IDNP, D.SURNAME, D.NAME, D.SEC_NAME, 
+             TO_CHAR(D.BIRDTH, 'DD.MM.YYYY') as BIRDTH, 
+             P.NAME as PENITENCIAR_NAME,
+             D.FOLDERPENDING  -- <--- ADDED COLUMN
       FROM PRISON.DETINUTI D
       LEFT JOIN PRISON.MISCARI M ON M.IDNP = D.IDNP
       LEFT JOIN PRISON.SPR_PENITENCIAR P ON P.ID = M.ID_PENETENCIAR

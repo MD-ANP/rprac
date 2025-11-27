@@ -69,6 +69,8 @@ src/modules/detinut-add/router.js
 src/modules/health/router.js
 src/modules/inmate/education/client.js
 src/modules/inmate/education/router.js
+src/modules/inmate/garantii/client.js
+src/modules/inmate/garantii/router.js
 src/modules/inmate/medical/client.js
 src/modules/inmate/medical/router.js
 src/modules/inmate/profile/client.js
@@ -1969,6 +1971,41 @@ body {
 }
 
 /* 2. MAIN TABS (Top Navigation) */
+/* ... inside public/resources/css/styles.css (append to end) */
+
+/* Garanții de stat Badge */
+.badge-guarantee {
+  display: inline-block;
+  background-color: #dc2626; /* Vivid Red */
+  color: white;
+  font-weight: 800;
+  font-size: 0.85rem;
+  padding: 4px 12px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 8px;
+  box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+  animation: pulse-red 2s infinite;
+  vertical-align: middle;
+}
+
+@keyframes pulse-red {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+
 .profile-tabs-nav {
   display: flex;
   gap: 8px;
@@ -4488,6 +4525,477 @@ router.get("/detinut/:idnp/educatie/caracteristica", async (req, res) => {
 module.exports = router;
 </file>
 
+<file path="src/modules/inmate/garantii/client.js">
+(function() {
+    window.DetinutTabs = window.DetinutTabs || {};
+
+    let currentIdnp = null;
+    let currentDetId = null;
+    let selectedFile = null; // Store file selected via drag or input
+
+    // --- RENDER FUNCTION ---
+    window.DetinutTabs['garantii'] = {
+        render: async (container, detinutId) => {
+            currentDetId = detinutId;
+            if (window.currentDetinutData) {
+                currentIdnp = window.currentDetinutData.IDNP;
+            } else {
+                try {
+                    const r = await window.prisonApi.get(`/detinut/${detinutId}/general`);
+                    if(r.success) currentIdnp = r.data.IDNP;
+                } catch(e) {}
+            }
+
+            if (!currentIdnp) {
+                container.innerHTML = `<div class="error-box">Eroare: IDNP lipsă pentru acest deținut.</div>`;
+                return;
+            }
+
+            // Inject Modal HTML
+            injectGarantModal();
+
+            // Build UI layout
+            container.innerHTML = `
+                <div class="admin-panel">
+                    <div class="flex-between" style="border-bottom:1px solid #e2e8f0; padding-bottom:15px; margin-bottom:20px;">
+                        <div>
+                            <h2 style="margin:0; color:#dc2626;">Garanții de Stat (PDF)</h2>
+                            <p class="text-muted" style="margin:4px 0 0 0; font-size:0.9rem;">
+                                Încărcați documentele scanate privind garanțiile de stat.
+                            </p>
+                        </div>
+                        <button class="btn-primary" onclick="window.garantOps.openModal()">
+                            ⬆️ Adaugă Document
+                        </button>
+                    </div>
+
+                    <div id="garantListArea">
+                        <div class="loader-box">Se încarcă lista...</div>
+                    </div>
+                </div>
+            `;
+
+            // Initial Load
+            await loadFiles();
+        }
+    };
+
+    // --- MODAL INJECTION ---
+    function injectGarantModal() {
+        if(document.getElementById('garantModal')) return;
+
+        const html = `
+        <div class="modal-overlay" id="garantModal">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3 class="modal-title">Încărcare Garanție de Stat</h3>
+                    <button class="btn-close" onclick="window.garantOps.closeModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="garantUploadForm" class="admin-form" onsubmit="return false;">
+                        
+                        <div class="upload-area" id="garantDropArea">
+                            <div class="upload-icon">📄</div>
+                            <div class="upload-text" id="garantDropText">Trage fișierul PDF aici sau click pentru a selecta</div>
+                            <input type="file" id="garantFileInput" accept="application/pdf" hidden>
+                        </div>
+                        
+                        <div class="f mt-4">
+                            <label>Descriere Document</label>
+                            <input type="text" name="descriere" id="garantDesc" class="full-width" placeholder="ex: Hotărâre judecătorească nr..." autocomplete="off">
+                        </div>
+
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-ghost" onclick="window.garantOps.closeModal()">Anulează</button>
+                    <button class="btn-primary" id="btnGarantSave" onclick="window.garantOps.submitUpload()">Încarcă</button>
+                </div>
+            </div>
+        </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
+
+        // Setup Drag & Drop Events
+        setTimeout(() => {
+            const area = document.getElementById('garantDropArea');
+            const input = document.getElementById('garantFileInput');
+            
+            if(!area || !input) return;
+
+            area.onclick = () => input.click();
+            
+            input.onchange = (e) => {
+                handleFileSelect(e.target.files[0]);
+            };
+
+            area.ondragover = (e) => { e.preventDefault(); area.classList.add('dragover'); };
+            area.ondragleave = () => area.classList.remove('dragover');
+            area.ondrop = (e) => {
+                e.preventDefault();
+                area.classList.remove('dragover');
+                handleFileSelect(e.dataTransfer.files[0]);
+            };
+        }, 500);
+    }
+
+    function handleFileSelect(file) {
+        const textEl = document.getElementById('garantDropText');
+        const descEl = document.getElementById('garantDesc');
+
+        if (!file) return;
+        if (file.type !== 'application/pdf') {
+            alert("Doar fișiere PDF sunt acceptate!");
+            return;
+        }
+        
+        selectedFile = file;
+        textEl.textContent = `✅ Selectat: ${file.name}`;
+        textEl.style.color = '#15803d';
+        textEl.style.fontWeight = 'bold';
+
+        // Auto-fill description if empty
+        if (!descEl.value) {
+            descEl.value = file.name.replace('.pdf', '');
+        }
+    }
+
+    // --- LOGIC HELPER ---
+    async function loadFiles() {
+        const listArea = document.getElementById('garantListArea');
+        if (!listArea) return;
+
+        try {
+            const res = await window.prisonApi.get(`/detinut/${currentIdnp}/garantii`);
+            const rows = res.rows || [];
+
+            if (rows.length === 0) {
+                listArea.innerHTML = `<div class="table-empty">Nu există documente încărcate.</div>`;
+                return;
+            }
+
+            let html = `
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Descriere Document</th>
+                                <th style="width:180px;">Data Încărcării</th>
+                                <th style="width:150px; text-align:center;">Acțiuni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            html += rows.map(r => `
+                <tr>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:1.2rem; color:#dc2626;">📄</span>
+                            <span style="font-weight:600; color:#1e293b;">${r.DESCRIERE}</span>
+                        </div>
+                    </td>
+                    <td>${r.DATA_UPLOAD}</td>
+                    <td class="text-center">
+                        <a href="/api/detinut/${currentIdnp}/garantii/download/${r.ID}" target="_blank" class="btn-ghost btn-tiny" style="text-decoration:none;">⬇️ PDF</a>
+                        <button class="btn-danger btn-tiny" onclick="window.garantOps.delete(${r.ID})">Șterge</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            html += `</tbody></table></div>`;
+            listArea.innerHTML = html;
+
+        } catch (e) {
+            listArea.innerHTML = `<div class="error-box">Eroare: ${e.message}</div>`;
+        }
+    }
+
+    // --- GLOBAL OPERATIONS ---
+    window.garantOps = {
+        openModal: () => {
+            selectedFile = null;
+            const modal = document.getElementById('garantModal');
+            const form = document.getElementById('garantUploadForm');
+            const textEl = document.getElementById('garantDropText');
+            
+            if(form) form.reset();
+            if(textEl) {
+                textEl.textContent = "Trage fișierul PDF aici sau click pentru a selecta";
+                textEl.style.color = "";
+                textEl.style.fontWeight = "";
+            }
+            if(modal) modal.classList.add('open');
+        },
+
+        closeModal: () => {
+            const modal = document.getElementById('garantModal');
+            if(modal) modal.classList.remove('open');
+        },
+
+        submitUpload: async () => {
+            if (!selectedFile) {
+                alert("Vă rugăm selectați un fișier PDF.");
+                return;
+            }
+
+            const descInput = document.getElementById('garantDesc');
+            const desc = descInput.value.trim() || selectedFile.name;
+            const btn = document.getElementById('btnGarantSave');
+
+            const formData = new FormData();
+            formData.append('pdf', selectedFile);
+            formData.append('descriere', desc);
+
+            btn.disabled = true;
+            btn.textContent = "Se încarcă...";
+
+            try {
+                const userId = sessionStorage.getItem("prison.userId");
+                const res = await fetch(`/api/detinut/${currentIdnp}/garantii`, {
+                    method: 'POST',
+                    headers: { "x-user-id": userId },
+                    body: formData
+                });
+                
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+
+                window.garantOps.closeModal();
+                await loadFiles();
+                
+                // Refresh Badge Logic (Optional: force reload module/header)
+                if(document.getElementById('detinutHeader')) {
+                     const nameEl = document.querySelector('.header-name');
+                     if(nameEl && !nameEl.querySelector('.badge-guarantee')) {
+                         nameEl.insertAdjacentHTML('beforeend', '<div style="font-size:0.5em; line-height:1; vertical-align:middle; display:inline-block;"><div class="badge-guarantee">⚠️ GARANȚII DE STAT!</div></div>');
+                     }
+                }
+
+            } catch (e) {
+                alert("Eroare la încărcare: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Încarcă";
+            }
+        },
+
+        delete: async (id) => {
+            if (!confirm("Sigur ștergeți acest document?")) return;
+            try {
+                await window.prisonApi.del(`/detinut/garantii/${id}`);
+                await loadFiles();
+                
+                // Remove badge if list empty (lazy check)
+                // Ideally backend tells us status, but we can guess or refresh header
+                const listArea = document.getElementById('garantListArea');
+                if(listArea && listArea.innerText.includes("Nu există documente")) {
+                     const badge = document.querySelector('.badge-guarantee');
+                     if(badge) badge.parentElement.remove();
+                }
+
+            } catch (e) {
+                alert("Eroare la ștergere: " + e.message);
+            }
+        }
+    };
+})();
+</file>
+
+<file path="src/modules/inmate/garantii/router.js">
+const express = require("express");
+const db = require("../../../db");
+const router = express.Router();
+const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
+const oracledb = require("oracledb");
+
+// --- CONFIGURATION ---
+const PHOTOS_BASE_DIR = path.join(process.cwd(), "public/resources/photos");
+const TEMP_DIR = path.join(process.cwd(), "public/resources/temp_uploads");
+
+if (!fs.existsSync(TEMP_DIR)) {
+  try { fs.mkdirSync(TEMP_DIR, { recursive: true }); } catch (e) {}
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, TEMP_DIR),
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + '.pdf');
+  }
+});
+
+const upload = multer({ 
+    storage: storage,
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'application/pdf') {
+            cb(null, true);
+        } else {
+            cb(new Error('Doar fișiere PDF sunt acceptate!'));
+        }
+    },
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
+
+function getUid(req) { 
+  return req.header("x-user-id") ? Number(req.header("x-user-id")) : 0; 
+}
+
+// --- FIX IP FUNCTION ---
+function getIp(req) {
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+  
+  // 1. Dacă sunt mai multe IP-uri (prin proxy), luăm primul
+  if (ip.indexOf(',') > -1) {
+      ip = ip.split(',')[0].trim();
+  }
+
+  // 2. Curățăm prefixul IPv6 specific Node.js (::ffff:) pentru a rămâne cu IPv4 curat
+  // Ex: ::ffff:192.168.1.5 (16 chars) devine 192.168.1.5 (11 chars)
+  if (ip.startsWith('::ffff:')) {
+      ip = ip.substring(7);
+  }
+
+  // 3. Forțăm limita de 15 caractere a bazei de date
+  return ip.substring(0, 15);
+}
+
+async function syncFolderPending(idnp) {
+    const countRes = await db.execute(
+        "SELECT COUNT(*) AS CNT FROM PRISON.PENDINGFOLDER WHERE IDNP = :p_idnp", 
+        { p_idnp: idnp }
+    );
+    const count = countRes.rows[0].CNT;
+    const flag = count > 0 ? 'Y' : 'N';
+
+    await db.execute(
+        "UPDATE PRISON.DETINUTI SET FOLDERPENDING = :p_flag WHERE IDNP = :p_idnp",
+        { p_flag: flag, p_idnp: idnp },
+        { autoCommit: true }
+    );
+}
+
+// --- ROUTES ---
+
+// 1. LIST
+router.get("/detinut/:idnp/garantii", async (req, res) => {
+    try {
+        const sql = `
+            SELECT ID, DESCRIERE, TO_CHAR(INSERTEDDATE, 'DD.MM.YYYY HH24:MI') as DATA_UPLOAD 
+            FROM PRISON.PENDINGFOLDER 
+            WHERE IDNP = :p_idnp 
+            ORDER BY INSERTEDDATE DESC
+        `;
+        const result = await db.execute(sql, { p_idnp: req.params.idnp });
+        res.json({ success: true, rows: result.rows });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// 2. UPLOAD
+router.post("/detinut/:idnp/garantii", upload.single('pdf'), async (req, res) => {
+    const userId = getUid(req);
+    const idnp = req.params.idnp;
+    
+    if (!req.file) return res.status(400).json({ success: false, error: "Lipsă fișier PDF." });
+
+    try {
+        const dir1 = idnp.charAt(0);
+        const targetDir = path.join(PHOTOS_BASE_DIR, dir1, idnp, "garant");
+        
+        if (!fs.existsSync(targetDir)) {
+            fs.mkdirSync(targetDir, { recursive: true });
+        }
+
+        const desc = req.body.descriere || req.file.originalname;
+        const userIp = getIp(req); // Folosim funcția fixată
+
+        const insertSql = `
+            INSERT INTO PRISON.PENDINGFOLDER (
+                IDNP, DESCRIERE, USERID, IPUSER, INSERTEDDATE, DOCUMENTDATE
+            ) VALUES (
+                :p_idnp, :p_desc, :p_uid, :p_ip, SYSDATE, SYSDATE
+            ) RETURNING ID INTO :p_rid
+        `;
+        
+        const dbRes = await db.execute(insertSql, {
+            p_idnp: idnp,
+            p_desc: desc,
+            p_uid: userId,
+            p_ip: userIp,
+            p_rid: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
+        }, { autoCommit: true });
+
+        const newId = dbRes.outBinds.p_rid[0];
+        const finalPath = path.join(targetDir, `${newId}.pdf`);
+        fs.renameSync(req.file.path, finalPath);
+
+        await syncFolderPending(idnp);
+
+        res.json({ success: true, id: newId });
+
+    } catch (e) {
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        console.error("Upload error:", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// 3. DELETE
+router.delete("/detinut/garantii/:id", async (req, res) => {
+    const fileId = req.params.id;
+    try {
+        const infoRes = await db.execute("SELECT IDNP FROM PRISON.PENDINGFOLDER WHERE ID = :p_id", { p_id: fileId });
+        if (!infoRes.rows.length) throw new Error("Fișierul nu există.");
+        
+        const idnp = infoRes.rows[0].IDNP;
+        
+        await db.execute("DELETE FROM PRISON.PENDINGFOLDER WHERE ID = :p_id", { p_id: fileId }, { autoCommit: true });
+
+        const dir1 = idnp.charAt(0);
+        const filePath = path.join(PHOTOS_BASE_DIR, dir1, idnp, "garant", `${fileId}.pdf`);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+
+        await syncFolderPending(idnp);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// 4. DOWNLOAD
+router.get("/detinut/:idnp/garantii/download/:id", async (req, res) => {
+    try {
+        const idnp = req.params.idnp;
+        const id = req.params.id;
+        
+        const dbRes = await db.execute("SELECT DESCRIERE FROM PRISON.PENDINGFOLDER WHERE ID = :p_id AND IDNP = :p_idnp", { p_id: id, p_idnp: idnp });
+        if (!dbRes.rows.length) return res.status(404).send("File record not found.");
+        
+        const originalName = dbRes.rows[0].DESCRIERE;
+        const dir1 = idnp.charAt(0);
+        const filePath = path.join(PHOTOS_BASE_DIR, dir1, idnp, "garant", `${id}.pdf`);
+
+        if (fs.existsSync(filePath)) {
+            let downloadName = originalName.endsWith('.pdf') ? originalName : originalName + '.pdf';
+            downloadName = downloadName.replace(/[^a-z0-9\.]/gi, '_');
+            res.download(filePath, downloadName);
+        } else {
+            res.status(404).send("Physical file missing.");
+        }
+    } catch (e) {
+        res.status(500).send(e.message);
+    }
+});
+
+module.exports = router;
+</file>
+
 <file path="src/modules/inmate/medical/client.js">
 (function() {
     window.DetinutTabs = window.DetinutTabs || {};
@@ -5382,7 +5890,10 @@ router.get("/detinut/meta/general", async (req, res) => {
 router.get("/detinut/:id/general", async (req, res) => {
   try {
     const sql = `
-      SELECT D.ID, D.IDNP, D.SURNAME, D.NAME, D.SEC_NAME, TO_CHAR(D.BIRDTH, 'DD.MM.YYYY') as BIRDTH, P.NAME as PENITENCIAR_NAME
+      SELECT D.ID, D.IDNP, D.SURNAME, D.NAME, D.SEC_NAME, 
+             TO_CHAR(D.BIRDTH, 'DD.MM.YYYY') as BIRDTH, 
+             P.NAME as PENITENCIAR_NAME,
+             D.FOLDERPENDING  -- <--- ADDED COLUMN
       FROM PRISON.DETINUTI D
       LEFT JOIN PRISON.MISCARI M ON M.IDNP = D.IDNP
       LEFT JOIN PRISON.SPR_PENITENCIAR P ON P.ID = M.ID_PENETENCIAR
@@ -5623,6 +6134,7 @@ module.exports = router;
     { key: 'social', label: 'Asistență Socială' },
     { key: 'securitate', label: 'Securitate' },
     { key: 'regim', label: 'Regim' },
+    { key: 'garantii', label: 'Garanții' },
   ];
 
   // NEW: Map tab keys to their new modular paths
@@ -5630,6 +6142,7 @@ module.exports = router;
     'generale': '/modules/inmate/profile/client.js',
     'medicina': '/modules/inmate/medical/client.js',
     'educatie': '/modules/inmate/education/client.js',
+    'garantii': '/modules/inmate/garantii/client.js',
   };
 
   let currentId = null;
@@ -5714,7 +6227,14 @@ module.exports = router;
       
       const dir1 = d.IDNP ? d.IDNP.charAt(0) : '0';
       const photoFront = `/resources/photos/${dir1}/${d.IDNP}/1.webp`;
-      const photoProfile = `/resources/photos/${dir1}/${d.IDNP}/2.webp`; // <-- FIX: Removed extra 'd'
+      const photoProfile = `/resources/photos/${dir1}/${d.IDNP}/2.webp`;
+
+      // --- NEW LOGIC START ---
+      let guaranteeHtml = '';
+      if (d.FOLDERPENDING === 'Y') {
+          guaranteeHtml = `<div class="badge-guarantee">⚠️ GARANȚII DE STAT!</div>`;
+      }
+      // --- NEW LOGIC END ---
 
       el.innerHTML = `
         <div class="header-photos">
@@ -5722,7 +6242,10 @@ module.exports = router;
            <img src="${photoProfile}" class="header-photo" onerror="this.style.display='none'">
         </div>
         <div class="header-info">
-           <h1 class="header-name">${d.SURNAME} ${d.NAME} ${d.SEC_NAME || ''}</h1>
+           <h1 class="header-name">
+              ${d.SURNAME} ${d.NAME} ${d.SEC_NAME || ''}
+              <div style="font-size:0.5em; line-height:1; vertical-align:middle;">${guaranteeHtml}</div>
+           </h1>
            <div class="header-meta">
               <div class="meta-pill"><span class="meta-label">ID SISTEM:</span><span class="meta-val">${d.ID}</span></div>
               <div class="meta-pill"><span class="meta-label">IDNP:</span><span class="meta-val">${d.IDNP}</span></div>
@@ -7328,6 +7851,15 @@ const modules = [
     oracleModuleId: null,
     requiredRoles: [] 
   },
+  { 
+    key: "garantii", 
+    label: "Garanții de Stat", 
+    visible: false, 
+    // You can assign a specific Module ID from SPR_MODULES if you create one in DB later.
+    // For now, no specific restriction beyond general access.
+    oracleModuleId: 39, 
+    minPermission: "R" 
+  },
 
   // --- HIDDEN (PROFILE / SUB-MODULES) ---
   {
@@ -7384,6 +7916,7 @@ app.use("/api", require("./modules/detinut-add/router"));
 app.use("/api", require("./modules/inmate/profile/router"));
 app.use("/api", require("./modules/inmate/medical/router"));
 app.use("/api", require("./modules/inmate/education/router"));
+app.use("/api", require("./modules/inmate/garantii/router"));
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(publicDir, "login.html"));

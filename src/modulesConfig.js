@@ -48,6 +48,15 @@ const modules = [
     oracleModuleId: null,
     requiredRoles: [] 
   },
+  { 
+    key: "garantii", 
+    label: "Garanții de Stat", 
+    visible: false, 
+    // You can assign a specific Module ID from SPR_MODULES if you create one in DB later.
+    // For now, no specific restriction beyond general access.
+    oracleModuleId: 39, 
+    minPermission: "R" 
+  },
 
   // --- HIDDEN (PROFILE / SUB-MODULES) ---
   {

@@ -1369,6 +1369,41 @@ body {
 }
 
 /* 2. MAIN TABS (Top Navigation) */
+/* ... inside public/resources/css/styles.css (append to end) */
+
+/* Garanții de stat Badge */
+.badge-guarantee {
+  display: inline-block;
+  background-color: #dc2626; /* Vivid Red */
+  color: white;
+  font-weight: 800;
+  font-size: 0.85rem;
+  padding: 4px 12px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 8px;
+  box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+  animation: pulse-red 2s infinite;
+  vertical-align: middle;
+}
+
+@keyframes pulse-red {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+
 .profile-tabs-nav {
   display: flex;
   gap: 8px;

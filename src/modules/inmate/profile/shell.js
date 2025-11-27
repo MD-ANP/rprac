@@ -15,6 +15,7 @@
     { key: 'social', label: 'Asistență Socială' },
     { key: 'securitate', label: 'Securitate' },
     { key: 'regim', label: 'Regim' },
+    { key: 'garantii', label: 'Garanții' },
   ];
 
   // NEW: Map tab keys to their new modular paths
@@ -22,6 +23,7 @@
     'generale': '/modules/inmate/profile/client.js',
     'medicina': '/modules/inmate/medical/client.js',
     'educatie': '/modules/inmate/education/client.js',
+    'garantii': '/modules/inmate/garantii/client.js',
   };
 
   let currentId = null;
@@ -106,7 +108,14 @@
       
       const dir1 = d.IDNP ? d.IDNP.charAt(0) : '0';
       const photoFront = `/resources/photos/${dir1}/${d.IDNP}/1.webp`;
-      const photoProfile = `/resources/photos/${dir1}/${d.IDNP}/2.webp`; // <-- FIX: Removed extra 'd'
+      const photoProfile = `/resources/photos/${dir1}/${d.IDNP}/2.webp`;
+
+      // --- NEW LOGIC START ---
+      let guaranteeHtml = '';
+      if (d.FOLDERPENDING === 'Y') {
+          guaranteeHtml = `<div class="badge-guarantee">⚠️ GARANȚII DE STAT!</div>`;
+      }
+      // --- NEW LOGIC END ---
 
       el.innerHTML = `
         <div class="header-photos">
@@ -114,7 +123,10 @@
            <img src="${photoProfile}" class="header-photo" onerror="this.style.display='none'">
         </div>
         <div class="header-info">
-           <h1 class="header-name">${d.SURNAME} ${d.NAME} ${d.SEC_NAME || ''}</h1>
+           <h1 class="header-name">
+              ${d.SURNAME} ${d.NAME} ${d.SEC_NAME || ''}
+              <div style="font-size:0.5em; line-height:1; vertical-align:middle;">${guaranteeHtml}</div>
+           </h1>
            <div class="header-meta">
               <div class="meta-pill"><span class="meta-label">ID SISTEM:</span><span class="meta-val">${d.ID}</span></div>
               <div class="meta-pill"><span class="meta-label">IDNP:</span><span class="meta-val">${d.IDNP}</span></div>
