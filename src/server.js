@@ -33,6 +33,7 @@ app.use("/api", require("./modules/inmate/medical/router"));
 app.use("/api", require("./modules/inmate/garantii/router"));
 app.use("/api", require("./modules/inmate/rude/router"));
 app.use("/api", require("./modules/inmate/complici/router"));
+app.use("/api", require("./modules/inmate/hotariri/router"));
 
 
 app.get("/", (req, res) => {

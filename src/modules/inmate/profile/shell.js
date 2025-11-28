@@ -31,6 +31,7 @@
     'garantii': '/modules/inmate/garantii/client.js',
     'rude': '/modules/inmate/rude/client.js',
     'complici': '/modules/inmate/complici/client.js',
+    'hotariri': '/modules/inmate/hotariri/client.js'
   };
 
   let currentId = null;
