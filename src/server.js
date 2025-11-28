@@ -26,6 +26,8 @@ app.use("/api", require("./modules/user/profile.router"));
 app.use("/api", require("./modules/reports/router"));
 app.use("/api", require("./modules/health/router"));
 app.use("/api", require("./modules/detinut-add/router"));
+app.use("/api", require("./modules/comasare/router"));
+
 
 // Inmate Modules
 app.use("/api", require("./modules/inmate/profile/router"));

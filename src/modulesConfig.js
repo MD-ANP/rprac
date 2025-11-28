@@ -18,6 +18,14 @@ const modules = [
     requiredRoles: [1, 7, 99] // Only these roles will see it
   },
   {
+    key: "comasare", // <--- NEW MODULE
+    label: "Comasare",
+    path: "/app/index.html?module=comasare",
+    visible: true,
+    oracleModuleId: null, 
+    requiredRoles: [7, 99] // Only these roles will see it
+  },
+  {
     key: "interogari",
     label: "Rapoarte & Interogări",
     path: "/app/index.html?module=interogari",
@@ -56,20 +64,6 @@ const modules = [
     // You can assign a specific Module ID from SPR_MODULES if you create one in DB later.
     // For now, no specific restriction beyond general access.
     oracleModuleId: 39, 
-    minPermission: "R" 
-  },
-  { 
-    key: "rude",
-    label: "Rude",
-    visible: true,
-    oracleModuleId: 3, 
-    minPermission: "R" 
-  },
-  { 
-    key: "complici",
-    label: "Complici",
-    visible: true,
-    oracleModuleId: 2, 
     minPermission: "R" 
   },
   // --- HIDDEN (PROFILE / SUB-MODULES) ---
