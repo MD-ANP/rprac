@@ -115,6 +115,12 @@
          <div class="admin-panel hidden" data-panel="evidenta">
              <h2>Evidență și Acte</h2>
              <div class="admin-grid-2">
+                 <div class="card-action">
+                   <h3>Revenit în sistem (Istoric)</h3>
+                   <p>Deținuți reîinarcerați care au avut anterior articolul:</p>
+                   <input type="text" id="recidiva_art" placeholder="Ex: 473" class="mb-2 full-width">
+                   <button class="btn-primary" onclick="runQuery('RECIDIVA_ARTICOL', {article: getValue('recidiva_art')})">Generează</button>
+                </div>
                 <div class="card-action">
                    <h3>Acte Expirate</h3>
                    <p>Listă completă deținuți cu acte expirate.</p>

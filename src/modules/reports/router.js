@@ -50,6 +50,49 @@ router.post("/interogari/exec", async (req, res) => {
         title = "Lista Deținuți (Instituția Curentă)";
         break;
 
+      case 'RECIDIVA_ARTICOL':
+        const artParam = (params.article || '').trim();
+        // We use a subquery to identify the IDNPs based on your logic, 
+        // then join Detinuti/Penitenciar for the display details.
+        sql = `
+          SELECT d.IDNP, d.SURNAME AS NUME, d.NAME AS PRENUME, d.SEC_NAME AS PATRONIMIC,
+                 TO_CHAR(d.BIRDTH, 'DD.MM.YYYY') AS DATANASTERII,
+                 pen.NAME AS PENITENCIAR,
+                 TO_CHAR(Target.MAX_DATE, 'DD.MM.YYYY') AS DATA_ULTIMA_HOT,
+                 d.ID AS REF_ID
+          FROM (
+              SELECT Newer.IDNP, MAX(Newer.D_DATE) AS MAX_DATE
+              FROM PRISON.V_OPEN_HOTARIRI Newer
+              JOIN PRISON.V_OPEN_HOTARIRI OldArt ON Newer.IDNP = OldArt.IDNP
+              WHERE OldArt.ART LIKE :artPattern      -- 1. Has past record with specific Art
+                AND Newer.D_DATE > OldArt.D_DATE     -- 2. Has a newer record
+                AND EXISTS (
+                    -- 3. Check for specific Movement Pattern (Exit then Entry)
+                    SELECT 1
+                    FROM PRISON.MISCARI m_exit
+                    JOIN PRISON.MISCARI m_entry ON m_exit.IDNP = m_entry.IDNP
+                    WHERE m_exit.IDNP = Newer.IDNP
+                      AND m_exit.ID_TYPE_MISCARI = 4 -- Exit
+                      AND m_entry.ID_TYPE_MISCARI = 1 -- Entry
+                      AND m_entry.ADATE > m_exit.ADATE
+                      -- 4. Old Article was BEFORE the return entry
+                      AND OldArt.D_DATE < m_entry.ADATE
+                )
+              GROUP BY Newer.IDNP
+          ) Target
+          JOIN PRISON.DETINUTI d ON Target.IDNP = d.IDNP
+          JOIN PRISON.MISCARI m ON d.IDNP = m.IDNP
+          JOIN PRISON.SPR_PENITENCIAR pen ON m.ID_PENETENCIAR = pen.ID
+          JOIN (SELECT idnp, MAX(adate) as dt FROM PRISON.MISCARI GROUP BY idnp) md
+            ON (md.idnp = d.idnp AND m.adate = md.dt)
+          WHERE m.ID_TYPE_MISCARI IN (1,3) -- Ensure they are currently active in the system
+          ORDER BY d.SURNAME, d.NAME
+        `;
+        binds = { artPattern: `%${artParam}%` };
+        headers = ["IDNP", "Nume", "Prenume", "Patronimic", "Naștere", "Penitenciar", "Data Ult. Hot."];
+        title = `Revenit în sistem (Art. anterior: ${artParam})`;
+        break;
+
       case 'LISTAP': 
         sql = `
           SELECT PD.IDNP, PD.SURNAME AS NUME, PD.NAME AS PRENUME, PD.SEC_NAME AS PATRONIMIC,

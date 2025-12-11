@@ -31,7 +31,7 @@ const modules = [
     path: "/app/index.html?module=interogari",
     visible: true,
     oracleModuleId: null, 
-    requiredRoles: [7] // Only Role 7 sees this top-level item
+    requiredRoles: [7,99] // Only Role 7 sees this top-level item
   },
   {
     key: "profil",

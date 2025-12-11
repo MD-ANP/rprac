@@ -91,6 +91,20 @@
             const style = `
             <style>
                 /* Modal Polish */
+
+                .art-badge {
+                display: inline-block;
+                background: #f1f5f9;
+                border: 1px solid #cbd5e1;
+                color: #334155;
+                padding: 1px 6px;
+                border-radius: 4px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                margin-right: 4px;
+                margin-top: 4px;
+                }
+
                 .modal-overlay {
                     backdrop-filter: blur(2px);
                     background: rgba(0,0,0,0.5);
@@ -223,7 +237,7 @@
                 <thead>
                     <tr>
                         <th width="100">Data</th>
-                        <th>Document / Dosar</th>
+                        <th>Document / Articole</th>
                         <th>Pedeapsa</th>
                         <th>Penitenciar</th>
                         <th>Perioada</th>
@@ -231,12 +245,34 @@
                     </tr>
                 </thead>
                 <tbody>
-                    ${rows.map(r => `
+                    ${rows.map(r => {
+                        // Format articles list
+                        let artHtml = '';
+                        if (r.ARTICOLE && r.ARTICOLE.length > 0) {
+                            artHtml = `<div style="margin-top:2px;">` + 
+                                r.ARTICOLE.map(a => {
+                                    // 1. Article Number + Index (e.g. 188^1)
+                                    let artLabel = `${a.ART_NUMBER}`; 
+                                    if (a.ART_INDICE) artLabel += `<sup>${a.ART_INDICE}</sup>`;
+
+                                    // 2. Paragraph (Alineat)
+                                    let alinLabel = a.ALIN_NUMBER ? ` (${a.ALIN_NUMBER})` : '';
+
+                                    // 3. Letter (Litera)
+                                    let litLabel = a.LIT_TEXT ? ` ${a.LIT_TEXT})` : '';
+
+                                    return `<span class="art-badge">Art. ${artLabel}${alinLabel}${litLabel}</span>`;
+                                }).join('') + 
+                            `</div>`;
+                        }
+
+                        return `
                         <tr>
                             <td>${formatDisplayDate(r.D_DATE)}</td>
                             <td>
                                 <div style="font-weight:600; color:#0f172a;">${r.DOCUMENTNAME || 'Nedefinit'}</div>
                                 ${r.NRDOSARPENAL ? `<div style="font-size:0.8rem; color:#64748b;">Dosar: ${r.NRDOSARPENAL}</div>` : ''}
+                                ${artHtml}
                             </td>
                             <td>
                                 <span style="background:#dbeafe; color:#1e40af; padding:2px 6px; border-radius:4px; font-weight:600; font-size:0.85rem;">
@@ -255,7 +291,6 @@
                                     <div style="display:flex; justify-content:center; gap:5px;">
                                         <button class="btn-tiny" onclick="window.hotaririOps.openSubModules(${r.ID})" title="Sub-module">⚙️</button>
                                         
-                                        <!-- Edit OR View Button -->
                                         <button class="btn-tiny ${_canWrite ? '' : 'btn-secondary'}" 
                                             onclick="window.hotaririOps.openEdit(${r.ID})" 
                                             title="${_canWrite ? 'Editează' : 'Vizualizează Detalii'}">
@@ -269,7 +304,7 @@
                                 ` : '<span class="text-muted" style="font-size:0.8rem">Arhivat</span>'}
                             </td>
                         </tr>
-                    `).join('')}
+                    `}).join('')}
                 </tbody>
             </table>
         </div>`;

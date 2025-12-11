@@ -94,12 +94,45 @@ router.get("/detinut/:idnp/hotariri", async (req, res) => {
       { b_idnp: req.params.idnp }
     );
 
+    let activeRows = activeRes.rows || [];
+    
+    // --- CHANGE START: Fetch Articles for Active Rows ---
+    if (activeRows.length > 0) {
+      const ids = activeRows.map(r => Number(r.ID)).join(',');
+      
+      // We JOIN to get the actual numbers (ANUMBER) and letters (LETTER)
+      // We also get INDICE (e.g. for articles like 158^1)
+      const artSql = `
+        SELECT 
+            a.ID_DOCUMENT, 
+            s_art.ANUMBER AS ART_NUMBER,
+            s_art.INDICE AS ART_INDICE,
+            s_alin.ANUMBER AS ALIN_NUMBER,
+            s_lit.LETTER AS LIT_TEXT
+        FROM ARTICOLES a
+        LEFT JOIN SPR_ARTICOL s_art ON a.ID_ARTICOL = s_art.ID
+        LEFT JOIN SPR_ART_ALINEAT s_alin ON a.ID_ALINEAT = s_alin.ID
+        LEFT JOIN SPR_ART_LITERA s_lit ON a.ID_LETTER = s_lit.ID
+        WHERE a.TYPE_DOCUMENT = '2' AND a.ID_DOCUMENT IN (${ids})
+        ORDER BY s_art.ANUMBER ASC
+      `;
+      
+      const artRes = await db.execute(artSql);
+      
+      activeRows.forEach(row => {
+        row.ARTICOLE = artRes.rows.filter(a => a.ID_DOCUMENT == row.ID);
+      });
+    }
+    // --- CHANGE END ---
+
     res.json({ 
       success: true, 
-      active: activeRes.rows || [], 
+      active: activeRows, 
       antecedents: antRes.rows || [],
       canWrite 
     });
+
+
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
   }
