@@ -356,7 +356,7 @@
                     </div>
 
                     <div id="consoleLog" class="log-console">
-                        <div class="log-line info">System ready. Waiting for input...</div>
+                        <div class="log-line info">În așteptare...</div>
                     </div>
                 </div>
             </div>

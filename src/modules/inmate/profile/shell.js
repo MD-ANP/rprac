@@ -13,7 +13,7 @@
     { key: 'hotariri', label: 'Hotărîri' },
     { key: 'miscari', label: 'Mișcări' },
     { key: 'incidente', label: 'Incidente' },
-    { key: 'citatii', label: 'Citații' },
+    { key: 'citatie', label: 'Citații' },
     { key: 'rude', label: 'Rude' },
     { key: 'complici', label: 'Complici' },
     { key: 'medicina', label: 'Medicină'},
@@ -32,6 +32,7 @@
     'rude': '/modules/inmate/rude/client.js',
     'complici': '/modules/inmate/complici/client.js',
     'hotariri': '/modules/inmate/hotariri/client.js',
+    'citatie': '/modules/inmate/citatie/client.js',
     'miscari': '/modules/inmate/miscari/client.js'
   };
 
