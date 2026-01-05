@@ -1,6 +1,81 @@
 const express = require("express");
 const db = require("../../db");
 const router = express.Router();
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+// --- CONFIGURARE STOCARE DINAMICĂ ---
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const userId = req.params.id;
+        const dir = `./uploads/users/${userId}`;
+        // Creăm folderul utilizatorului dacă nu există
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        // Forțăm numele să fie proof.pdf (va suprascrie dacă există unul vechi)
+        cb(null, "proof.pdf");
+    }
+});
+const upload = multer({ storage });
+
+// --- RUTE MODIFICATE ---
+
+// 1. Căutare Utilizatori (Verificăm fișierul pe disc)
+router.get("/admin/user/search", async (req, res) => {
+    try {
+        const q = (req.query.q || "").toString().trim().toLowerCase();
+        if (!q) return res.status(400).json({ success: false, error: "Termen lipsă." });
+
+        const like = q + "%";
+        const isNum = /^[0-9]+$/.test(q);
+        const sql = `
+            SELECT ID, USERNAME, PASSWD, ID_ROLE, ID_PENITENTIAR, LAST_LOGIN
+            FROM USERS
+            WHERE LOWER(USERNAME) LIKE :term ${isNum ? 'OR ID = :id' : ''}
+            ORDER BY ID
+        `;
+        const binds = { term: like };
+        if (isNum) binds.id = Number(q);
+
+        const result = await db.execute(sql, binds);
+        
+        // Mapăm rezultatele și verificăm dacă există fișierul fizic pentru fiecare
+        const users = result.rows.map(row => {
+            const userId = Number(row.ID);
+            const proofPath = `./uploads/users/${userId}/proof.pdf`;
+            return {
+                id: userId,
+                username: row.USERNAME,
+                password: row.PASSWD,
+                roleId: Number(row.ID_ROLE),
+                penitenciarId: Number(row.ID_PENITENTIAR),
+                lastLogin: row.LAST_LOGIN || null,
+                hasProof: fs.existsSync(proofPath) // Verificare pe disc, fără coloană în DB
+            };
+        });
+
+        res.json({ success: true, users });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// 2. Upload (Simplificat)
+router.post("/admin/user/:id/proof", upload.single('proof'), (req, res) => {
+    if (!req.file) return res.status(400).json({ success: false, error: "Eroare upload." });
+    res.json({ success: true }); // Nu mai facem UPDATE în DB
+});
+
+// 3. Vizualizare PDF
+router.get("/admin/user/:id/proof/view", (req, res) => {
+    const filePath = path.join(__dirname, `../../../uploads/users/${req.params.id}/proof.pdf`);
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        res.status(404).send("Documentul nu a fost găsit.");
+    }
+});
 
 /** Simple admin guard: requires x-user-id and role 7 */
 async function adminGuard(req, res, next) {
@@ -207,48 +282,6 @@ router.post("/admin/user/bulk", async (req, res) => {
   }
 });
 
-/** GET /api/admin/user/search?q=... */
-router.get("/admin/user/search", async (req, res) => {
-  try {
-    const q = (req.query.q || "").toString().trim().toLowerCase();
-    if (!q) {
-      return res.status(400).json({ success: false, error: "Termen de căutare lipsă." });
-    }
-    const like = q + "%";
-    const isNum = /^[0-9]+$/.test(q);
-    let sql, binds = { term: like };
-    if (isNum) {
-      sql = `
-        SELECT ID, USERNAME, PASSWD, ID_ROLE, ID_PENITENTIAR, LAST_LOGIN
-        FROM USERS
-        WHERE LOWER(USERNAME) LIKE :term OR ID = :id
-        ORDER BY ID
-      `;
-      binds.id = Number(q);
-    } else {
-      sql = `
-        SELECT ID, USERNAME, PASSWD, ID_ROLE, ID_PENITENTIAR, LAST_LOGIN
-        FROM USERS
-        WHERE LOWER(USERNAME) LIKE :term
-        ORDER BY ID
-      `;
-    }
-
-    const r = await db.execute(sql, binds);
-    const users = (r.rows || []).map(row => ({
-      id: Number(row.ID),
-      username: row.USERNAME,
-      password: row.PASSWD,
-      roleId: Number(row.ID_ROLE),
-      penitenciarId: Number(row.ID_PENITENTIAR),
-      lastLogin: row.LAST_LOGIN || null
-    }));
-    res.json({ success: true, users });
-  } catch (err) {
-    console.error("/admin/user/search:", err);
-    res.status(500).json({ success: false, error: "Eroare la căutare." });
-  }
-});
 
 /** POST /api/admin/user/:id/update */
 router.post("/admin/user/:id/update", async (req, res) => {
@@ -318,13 +351,13 @@ router.post("/admin/user/:id/deactivate", async (req, res) => {
 });
 
 /** GET /api/admin/user/:id/rights */
+/** GET /api/admin/user/:id/rights */
 router.get("/admin/user/:id/rights", async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!id) return res.status(400).json({ success: false, error: "ID invalid." });
 
-    const r = await db.execute(
-      `
+    const sql = `
       SELECT
         m.ID   AS MODULE_ID,
         m.NAME AS MODULE_NAME,
@@ -333,11 +366,12 @@ router.get("/admin/user/:id/rights", async (req, res) => {
       FROM SPR_MODULES m
       LEFT JOIN SPR_ACCESS a
         ON a.ID_MODUL = m.ID
-        AND a.ID_USER  = :uid
+        AND a.ID_USER  = :v_userid
       ORDER BY m.NAME
-      `,
-      { uid: id }
-    );
+    `;
+
+    // Schimbăm cheia din uid în v_userid pentru a se potrivi cu SQL-ul de mai sus
+    const r = await db.execute(sql, { v_userid: id });
 
     const modules = (r.rows || []).map(row => ({
       moduleId: Number(row.MODULE_ID),
@@ -345,9 +379,10 @@ router.get("/admin/user/:id/rights", async (req, res) => {
       accessId: row.ACCESS_ID ? Number(row.ACCESS_ID) : null,
       drept: row.DREPT || "N"
     }));
+
     res.json({ success: true, modules });
   } catch (err) {
-    console.error("/admin/user/:id/rights:", err);
+    console.error("Eroare drepturi user:", err);
     res.status(500).json({ success: false, error: "Eroare la încărcarea drepturilor." });
   }
 });
@@ -469,6 +504,27 @@ router.delete("/admin/ann/:id", async (req, res) => {
     console.error("/admin/ann/:id DELETE:", err);
     res.status(500).json({ success: false, error: "Eroare la ștergere." });
   }
+});
+
+
+// Upload Proof PDF
+router.post("/admin/user/:id/proof", upload.single('proof'), async (req, res) => {
+    try {
+        if (!req.file) throw new Error("Fișier lipsă.");
+        await db.execute(
+            "UPDATE USERS SET PROOF_FILE = :f WHERE ID = :id",
+            { f: req.file.filename, id: req.params.id },
+            { autoCommit: true }
+        );
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// View Proof PDF
+router.get("/admin/user/:id/proof/view", async (req, res) => {
+    const r = await db.execute("SELECT PROOF_FILE FROM USERS WHERE ID = :id", { id: req.params.id });
+    if (!r.rows.length || !r.rows[0].PROOF_FILE) return res.status(404).send("Lipsă document.");
+    res.sendFile(path.join(__dirname, '../../../uploads/proofs', r.rows[0].PROOF_FILE));
 });
 
 module.exports = router;

@@ -285,7 +285,7 @@
         el.className = `profile-card ${type} active`;
 
         const dir1 = detinut.IDNP ? detinut.IDNP.charAt(0) : '0';
-        const photo = `/resources/photos/${dir1}/${detinut.IDNP}/1.webp`;
+        const photo = `/uploads/photos/${dir1}/${detinut.IDNP}/1.webp`;
 
         el.innerHTML = `
             <div class="detinut-preview">

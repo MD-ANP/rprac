@@ -1,64 +1,92 @@
-// src/server.js
 const express = require("express");
 const path = require("path");
 const config = require("./config");
 const db = require("./db");
 
 const app = express();
+
+// --- CONFIGURARE MIDDLEWARE ---
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// 1. SERVE RESOURCES (CSS, Images, Core JS)
-app.use("/resources", express.static(path.join(__dirname, "..", "resources")));
+// --- RESURSE STATICE ---
+const PATHS = {
+    resources: path.join(__dirname, "..", "resources"),
+    public: path.join(__dirname, "..", "public"),
+    modules: path.join(__dirname, "modules"),
+    uploads: path.join(__dirname, "..", "uploads")
+};
 
-// 2. SERVE PUBLIC (HTML files)
-const publicDir = path.join(__dirname, "..", "public");
-app.use(express.static(publicDir));
+app.use("/resources", express.static(PATHS.resources));
+app.use("/modules", express.static(PATHS.modules));
+app.use("/uploads", express.static(PATHS.uploads));
+app.use(express.static(PATHS.public));
 
-// 3. SERVE MODULE SCRIPTS (Allows <script src="/modules/...">)
-app.use("/modules", express.static(path.join(__dirname, "modules")));
+// --- RUTE API (MODULARIZATE) ---
 
-// 4. REGISTER API ROUTES (Modularized)
-app.use("/api", require("./modules/admin/router"));
+// 1. Module de Sistem & Autentificare
 app.use("/api", require("./modules/auth/router"));
-app.use("/api", require("./modules/search/router"));
 app.use("/api", require("./modules/user/nav.router"));
-app.use("/api", require("./modules/user/profile.router"));
-app.use("/api", require("./modules/reports/router"));
+app.use("/api", require("./modules/admin/router"));
 app.use("/api", require("./modules/health/router"));
+
+// 2. Module de Căutare și Gestiune Generală
+app.use("/api", require("./modules/search/router"));
 app.use("/api", require("./modules/detinut-add/router"));
 app.use("/api", require("./modules/comasare/router"));
+app.use("/api", require("./modules/reports/router"));
 
+// 3. Module Specifice Deținut (Inmate)
+const INMATE_ROUTES = [
+    "profile", "medical", "garantii", "rude", 
+    "complici", "hotariri", "citatie", "miscari"
+];
 
-// Inmate Modules
-app.use("/api", require("./modules/inmate/profile/router"));
-app.use("/api", require("./modules/inmate/medical/router"));
-app.use("/api", require("./modules/inmate/garantii/router"));
-app.use("/api", require("./modules/inmate/rude/router"));
-app.use("/api", require("./modules/inmate/complici/router"));
-app.use("/api", require("./modules/inmate/hotariri/router"));
-app.use("/api", require("./modules/inmate/citatie/router"));
-app.use("/api", require("./modules/inmate/miscari/router"));
-
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(publicDir, "login.html"));
+INMATE_ROUTES.forEach(route => {
+    app.use("/api", require(`./modules/inmate/${route}/router`));
 });
 
-function start() {
-  console.log("Initializing DB Pool...");
-  db.initPool()
-    .then(() => {
-      console.log("✅ DB Pool Initialized.");
-      app.listen(config.port, () => {
-        console.log(`Server listening on http://localhost:${config.port}`);
-      });
-    })
-    .catch((err) => {
-      console.error("❌ Failed to init DB:", err);
-      app.listen(config.port, () => {
-        console.log(`Server started (Offline Mode) on http://localhost:${config.port}`);
-      });
-    });
+// --- RUTE PRINCIPALE ---
+app.get("/", (req, res) => {
+    res.sendFile(path.join(PATHS.public, "login.html"));
+});
+
+// --- HANDLERS EROARE ---
+
+// 404 - Not Found
+app.use((req, res) => {
+    res.status(404).json({ success: false, error: "Ruta API nu a fost găsită." });
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+    console.error("Internal Server Error:", err.stack);
+    res.status(500).json({ success: false, error: "Eroare internă de server." });
+});
+
+// --- INIȚIALIZARE SERVER ---
+async function startServer() {
+    console.log("-----------------------------------------");
+    console.log("🚀 Initializing System...");
+
+    try {
+        console.log("📡 Connecting to Oracle Database...");
+        await db.initPool();
+        console.log("✅ DB Pool Initialized Successfully.");
+        
+        app.listen(config.port, () => {
+            console.log(`🌐 Server Online: http://localhost:${config.port}`);
+            console.log("-----------------------------------------");
+        });
+    } catch (err) {
+        console.error("❌ Critical: Failed to init DB Pool:", err.message);
+        
+        // Pornire în modul limitat (Offline) dacă baza de date e indisponibilă
+        app.listen(config.port, () => {
+            console.log(`⚠️  Server started in OFFLINE MODE on port ${config.port}`);
+            console.log("-----------------------------------------");
+        });
+    }
 }
 
-start();
+startServer();

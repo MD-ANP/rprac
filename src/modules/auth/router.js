@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const db = require("../../db");
 const config = require("../../config");
+const { logUserAction } = require("../../logger"); 
 
 const router = express.Router();
 
@@ -13,6 +14,8 @@ const router = express.Router();
  * - bcrypt ($2*... 60 chars)
  * - MD5 (32 hex chars)
  */
+
+
 function verifyPasswordLegacy(input, dbHash) {
   if (!dbHash) return false;
   input = String(input);
@@ -37,25 +40,6 @@ function verifyPasswordLegacy(input, dbHash) {
   }
 
   return false;
-}
-
-async function logUserAction(username, action, detail) {
-  const safeUser = String(username || "").substring(0, 30);
-  const safeDetail = String(detail || "").substring(0, 50);
-
-  const sql =
-    "INSERT INTO USER_LOGS (USERNAME, ACTION, E_DATE, DETINUT) " +
-    "VALUES (:u, :a, SYSDATE, :d)";
-
-  try {
-    await db.execute(
-      sql,
-      { u: safeUser, a: action, d: safeDetail },
-      { autoCommit: true }
-    );
-  } catch (err) {
-    console.error("USER_LOGS insert failed:", err);
-  }
 }
 
 async function isLoginBlocked(username) {

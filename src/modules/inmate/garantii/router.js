@@ -7,8 +7,8 @@ const path = require("path");
 const oracledb = require("oracledb");
 
 // --- CONFIGURATION ---
-const PHOTOS_BASE_DIR = path.join(process.cwd(), "public/resources/photos");
-const TEMP_DIR = path.join(process.cwd(), "public/resources/temp_uploads");
+const PHOTOS_BASE_DIR = path.join(process.cwd(), "/uploads/photos");
+const TEMP_DIR = path.join(process.cwd(), "/uploads/temp_uploads");
 
 if (!fs.existsSync(TEMP_DIR)) {
   try { fs.mkdirSync(TEMP_DIR, { recursive: true }); } catch (e) {}

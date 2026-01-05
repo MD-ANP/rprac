@@ -34,9 +34,7 @@
   // --- 2. Load System Announcement ---
   async function loadAnnouncement() {
     try {
-      console.log("Fetching announcement...");
       const data = await window.prisonApi.get("/ann");
-      console.log("Announcement data:", data);
 
       if (data.success && data.message && data.message.trim().length > 0) {
         const banner = document.getElementById("systemAnnouncement");
@@ -99,7 +97,7 @@
 
       sessionStorage.setItem("prison.userId", data.user.id);
       sessionStorage.setItem("prison.username", data.user.username);
-      
+
       window.location.href = "/app/index.html?module=cautare";
     } catch (err) {
       setMessage(err.message, "error");

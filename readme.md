@@ -1,58 +1,101 @@
-📋 Status Proiect: Sistem Gestiune Detinuți (rprac)
+# 📋 Sistem Informațional pentru Deținuți
 
-Acest document monitorizează progresul implementării modulelor sistemului, interfața cu baza de date Oracle și frontend-ul Node.js.
-🚀 Module Finalizate (Core)
-Modul	Descriere	Status
-Autentificare	Pagina de login și sesiunile utilizatorilor.	✅ Finalizat
-Ghid de Utilizare	Documentația de ajutor integrată în aplicație.	✅ Finalizat
-Adăugare Deținut	Formularul principal de înregistrare (IDNP, Date Personale).	✅ Finalizat
-Comasare	Funcționalitatea de unire a înregistrărilor duplicate.	✅ Finalizat
-Profil Utilizator	Vizualizarea și gestionarea propriului profil de utilizator.	✅ Finalizat
-Rapoarte & Interogări	Generatorul de rapoarte și extragerea datelor complexe.	✅ Finalizat
-📂 Module Date Deținuți (Tab-uri Profil)
-Modul	Descriere	Status
-Date Generale	Informații de bază despre deținut.	✅ Finalizat
-Garanții	Garanții și obligații legale.	✅ Finalizat
-Hotărâri	Deciziile instanțelor judecătorești.	✅ Finalizat
-Mișcări	Transferuri între celule sau instituții.	✅ Finalizat
-Citații	Managementul citațiilor (Module ID 36).	✅ Finalizat
-Rude	Managementul listei de rude (Module ID 3).	✅ Finalizat
-Complici	Înregistrarea persoanelor implicate în aceleași cauze.	✅ Finalizat
-Medicină	Evidența medicală și istoricul clinic.	✅ Finalizat
-🛠️ Module în Lucru sau În Așteptare
-🏗️ În curs de dezvoltare (WIP)
+Acest proiect reprezintă un **sistem informațional integrat pentru gestionarea deținuților**, destinat utilizării în instituții penitenciare. Aplicația centralizează date operaționale, juridice și administrative, oferind funcții de căutare, raportare și management detaliat al fiecărui deținut.
 
-    Educație: Integrarea activităților educaționale.
+---
 
-    Psihologie: Fișele de evaluare psihologică.
+## 🎯 Scopul Proiectului
 
-    Social: Asistența socială și reintegrarea.
+* Evidență unică și coerentă a deținuților
+* Acces rapid la informații juridice, administrative și personale
+* Trasabilitate completă a mișcărilor și evenimentelor
+* Suport pentru decizii administrative și rapoarte oficiale
+* Control pe roluri (utilizator / administrator)
 
-    Securitate: Clasificarea deținuților și riscurile.
+---
 
-    Regim: Managementul regimului de detenție.
+## 🧩 Module de Bază
 
-⏳ În Așteptare (Backlog)
+| Modul                    | Descriere                                           | Status          |
+| ------------------------ | --------------------------------------------------- | --------------- |
+| 🔍 Căutare               | Căutare avansată după criterii multiple             | ✅ Lucru finisat |
+| ➕ Adăugare Deținut Nou   | Crearea unui profil nou de deținut                  | ✅ Lucru finisat |
+| 🔗 Comasare Deținuți     | Unificarea profilurilor duplicate                   | ✅ Lucru finisat |
+| 📊 Rapoarte & Interogări | Generare rapoarte și interogări personalizate       | ✅ Lucru finisat |
+| 👤 Profil Utilizator     | Gestionarea datelor și preferințelor utilizatorului | ✅ Lucru finisat |
+| 🛠️ Pagină Admin         | Administrare utilizatori și drepturi                | 🚧 În lucru     |
 
-    Incidente: Raportarea incidentelor critice și a abaterilor disciplinare.
+---
 
-    Căutare Globală: Optimizarea căutării pentru a ignora diferențele de diacritice (ex: "ș" vs "s").
+## ⚙️ Funcționalități Extra
 
-    Raport Creare User: Generarea automată a raportului de confirmare la crearea unui cont nou de admin.
+| Funcționalitate               | Descriere                                                            | Status                     |
+| ----------------------------- | -------------------------------------------------------------------- | -------------------------- |
+| 📄 Încărcare PDF – Formular   | Încărcare și atașare formulare PDF în sistem                         | ✅ Lucru finisat            |
+| 🔐 Solicitare acces SIA RPRAC | Solicitare și gestionare acces per utilizator la resursele SIA RPRAC | ✅ Lucru finisat            |
+| 🖼️ Convertor imagini → WebP  | Conversie automată JPG/PNG în format .webp                           | ✅ Lucru finisat            |
+| 📢 Sistem publicare anunțuri  | Publicare și gestionare anunțuri (admin)                             | ✅ Lucru finisat            |
+| 🧾 Sistem de loguri           | Jurnalizare acțiuni per modul                                        | 🔄 În curs de implementare |
 
-⚙️ Pagina de Administrare
-Funcționalitate	Status	Note
-Adaugă Utilizator	✅ Finalizat	Creare conturi individuale.
-Import Useri în Masă	✅ Finalizat	Import via CSV/Excel.
-Statistici	✅ Finalizat	Grafice și date de sistem.
-Anunțuri	✅ Finalizat	🐛 Bug: Culoarea textului este prea albă, greu de citit.
-Editare Utilizatori	🏗️ În Lucru	Căutarea funcționează, butonul de editare necesită logică.
-🐛 Probleme Cunoscute & Optimizări
+---
 
-    UI/UX: Fixarea contrastului în modulul de Anunțuri din panoul de Admin.
+---|-----------|--------|
+| 🔍 Căutare | Căutare avansată după criterii multiple | ✅ Lucru finisat |
+| ➕ Adăugare Deținut Nou | Crearea unui profil nou de deținut | ✅ Lucru finisat |
+| 🔗 Comasare Deținuți | Unificarea profilurilor duplicate | ✅ Lucru finisat |
+| 📊 Rapoarte & Interogări | Generare rapoarte și interogări personalizate | ✅ Lucru finisat |
+| 👤 Profil Utilizator | Gestionarea datelor și preferințelor utilizatorului | ✅ Lucru finisat |
+| 🛠️ Pagină Admin | Administrare utilizatori și drepturi | 🚧 În lucru |
 
-    Database: Optimizarea query-urilor de tip LIKE în Oracle pentru a trata diacriticele ca echivalente (Romanian Insensitive Search).
+---
 
-    Performanță: Verificarea indexării pe coloana IDNP pentru a asigura viteza în modulele Citații și Rude.
+## 🧑‍⚖️ Module Deținuți
 
-Ultima actualizare: 05.01.2026 Responsabil: Gemini Thought Partner & Lead Developer
+Aceste module descriu structura detaliată a profilului fiecărui deținut.
+
+| Modul            | Descriere                          | Status                                      |
+| ---------------- | ---------------------------------- | ------------------------------------------  |
+| 📄 Date Generale | Identitate, date personale, statut | ✅ Lucru finisat                           |
+| 📷 Fotografii    | Gestionare fotografii deținut      | ✅ Lucru finisat                           |
+| 💰 Garanții      | Evidență garanții și bunuri        | ✅ Lucru finisat                           |
+| ⚖️ Hotărâri      | Decizii judecătorești              | 🔄 Modificare în proces (conform feedback) |
+| 🔁 Mișcări       | Transferuri și deplasări           | 🔄 Modificare în proces (conform feedback) |
+| ⚠️ Incidente     | Evenimente disciplinare            | 🚧 În lucru                                |
+| 📨 Citații       | Evidență citații și prezentări     | ✅ Lucru finisat                           |
+| 👨‍👩‍👧 Rude          | Relații de familie                 | ✅ Lucru finisat                           |
+| 🤝 Complici      | Legături cu alți inculpați         | ✅ Lucru finisat                           |
+| 🏥 Medicină      | Istoric medical                    | 🚧 În lucru                                |
+| 🎓 Educație      | Studii și formare                  | 🚧 În lucru                                |
+| 🧠 Psihologie    | Evaluări psihologice               | 🚧 În lucru                                |
+| 🏠 Social        | Situație socială                   | 🚧 În lucru                                |
+| 🔒 Securitate    | Evaluări de risc                   | 🚧 În lucru                                |
+| 🚨 Regim         | Regim de detenție                  | 🚧 În lucru                                |
+
+---
+
+## 📌 Status General
+
+* ✅ Module finalizate: funcționale și stabile
+* 🔄 Module în modificare: ajustări pe baza feedback‑ului operațional
+* 🚧 Module în lucru: implementare activă
+
+---
+
+## 🧠 Observații
+
+* Proiectul este dezvoltat incremental, cu accent pe stabilitate și compatibilitate cu sisteme existente.
+* Structura modulară permite extinderea ulterioară fără refactorizări majore.
+* Feedback‑ul utilizatorilor finali este integrat continuu.
+
+---
+
+## 📅 Următorii Pași
+
+* Finalizarea paginii de administrare
+* Implementarea modulelor medical, psihologic și de securitate
+* Optimizări de performanță și UX
+* Documentație tehnică detaliată
+
+---
+
+📘 *Acest README va fi actualizat pe măsură ce proiectul evoluează.*

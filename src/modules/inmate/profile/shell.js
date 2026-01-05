@@ -117,8 +117,8 @@
       window.currentDetinutData = d; 
       
       const dir1 = d.IDNP ? d.IDNP.charAt(0) : '0';
-      const photoFront = `/resources/photos/${dir1}/${d.IDNP}/1.webp`;
-      const photoProfile = `/resources/photos/${dir1}/${d.IDNP}/2.webp`;
+      const photoFront = `/uploads/photos/${dir1}/${d.IDNP}/1.webp`;
+      const photoProfile = `/uploads/photos/${dir1}/${d.IDNP}/2.webp`;
 
       // --- NEW LOGIC START ---
       let guaranteeHtml = '';

@@ -1,773 +1,606 @@
-// public/js/admin.js
 (function () {
-  const api = window.prisonApi;
+    const api = window.prisonApi;
 
-  // --- Helper Functions ---
-  function qs(root, sel) {
-    return root.querySelector(sel);
-  }
-  function qsa(root, sel) {
-    return Array.from(root.querySelectorAll(sel));
-  }
+    // --- Helper Functions ---
+    const qs = (root, sel) => root.querySelector(sel);
+    const qsa = (root, sel) => Array.from(root.querySelectorAll(sel));
 
-  function setMsg(el, text, type) {
-    if (!el) return;
-    el.textContent = text || "";
-    el.className = "admin-msg" + (type ? " " + type : "");
-  }
+    const setMsg = (el, text, type) => {
+        if (!el) return;
+        el.textContent = text || "";
+        el.className = `admin-msg ${type || ""}`;
+    };
 
-  function fillSelect(sel, items, placeholder) {
-    if (!sel) return;
-    sel.innerHTML = "";
-    if (placeholder) {
-      const o = document.createElement("option");
-      o.value = "";
-      o.textContent = placeholder;
-      sel.appendChild(o);
-    }
-    items.forEach((it) => {
-      const o = document.createElement("option");
-      o.value = it.id;
-      o.textContent = it.name;
-      sel.appendChild(o);
-    });
-  }
-
-  // Ensure Chart.js is loaded
-  function ensureChartJS() {
-    return new Promise((resolve, reject) => {
-      if (window.Chart) return resolve();
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
-      s.onload = resolve;
-      s.onerror = reject;
-      document.head.appendChild(s);
-    });
-  }
-
-  async function loadMeta() {
-    const data = await api.get("/admin/meta");
-    if (!data.success) throw new Error(data.error || "Eroare meta.");
-    return data;
-  }
-
-  // --- Rights Management ---
-  async function loadRights(container, userId) {
-    container.textContent = "Se încarcă drepturile...";
-    const data = await api.get(`/admin/user/${userId}/rights`);
-    if (!data.success) {
-      container.textContent = data.error || "Eroare drepturi.";
-      return;
-    }
-    const mods = data.modules || [];
-    if (!mods.length) {
-      container.textContent = "Nu există module definite.";
-      return;
-    }
-
-    const rows = mods
-      .map((m) => {
-        const id = m.moduleId;
-        const drept = (m.drept || "N").toUpperCase();
-        return `
-        <tr data-module-id="${id}" data-access-id="${m.accessId || ""}">
-          <td>${m.moduleName}</td>
-          <td class="c"><input type="radio" name="mod-${id}" value="N"${
-          drept === "N" ? " checked" : ""
-        }></td>
-          <td class="c"><input type="radio" name="mod-${id}" value="R"${
-          drept === "R" ? " checked" : ""
-        }></td>
-          <td class="c"><input type="radio" name="mod-${id}" value="W"${
-          drept === "W" ? " checked" : ""
-        }></td>
-        </tr>
-      `;
-      })
-      .join("");
-
-    container.innerHTML = `
-      <div class="rights-wrap">
-        <div class="rights-top">
-          <input type="text" class="rights-filter" placeholder="Filtrează module..." />
-          <div class="rights-bulk">
-            <button type="button" data-bulk="N">Fără</button>
-            <button type="button" data-bulk="R">Citire</button>
-            <button type="button" data-bulk="W">Scriere</button>
-          </div>
-        </div>
-        <table class="rights-table">
-          <thead>
-            <tr>
-              <th>Modul</th>
-              <th class="c">Fără</th>
-              <th class="c">Citire</th>
-              <th class="c">Scriere</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-        <div class="form-buttons right">
-          <button type="button" class="btn-secondary rights-save">Salvează drepturi</button>
-        </div>
-        <div class="admin-msg" id="rightsMsg"></div>
-      </div>
-    `;
-
-    const filter = qs(container, ".rights-filter");
-    const tbody = qs(container, "tbody");
-    const msg = qs(container, "#rightsMsg");
-
-    if (filter && tbody) {
-      filter.addEventListener("input", () => {
-        const q = filter.value.toLowerCase();
-        qsa(tbody, "tr").forEach((tr) => {
-          const name = (tr.cells[0].textContent || "").toLowerCase();
-          tr.style.display = name.indexOf(q) !== -1 ? "" : "none";
+    const fillSelect = (sel, items, placeholder) => {
+        if (!sel) return;
+        sel.innerHTML = "";
+        if (placeholder) {
+            const o = document.createElement("option");
+            o.value = "";
+            o.textContent = placeholder;
+            sel.appendChild(o);
+        }
+        items.forEach((it) => {
+            const o = document.createElement("option");
+            o.value = it.id;
+            o.textContent = it.name;
+            sel.appendChild(o);
         });
-      });
-    }
+    };
 
-    qsa(container, "[data-bulk]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const v = btn.getAttribute("data-bulk");
-        qsa(tbody, `input[type=radio][value=${v}]`).forEach(
-          (r) => (r.checked = true)
-        );
-      });
-    });
-
-    const saveBtn = qs(container, ".rights-save");
-    if (saveBtn) {
-      saveBtn.addEventListener("click", async () => {
-        setMsg(msg, "", "");
-        const rights = [];
-        qsa(tbody, "tr").forEach((tr) => {
-          const moduleId = Number(tr.getAttribute("data-module-id"));
-          const accessId = tr.getAttribute("data-access-id");
-          const checked = qs(tr, "input[type=radio]:checked");
-          if (!checked) return;
-          rights.push({
-            moduleId,
-            accessId: accessId ? Number(accessId) : null,
-            drept: checked.value,
-          });
+    const ensureChartJS = () => {
+        return new Promise((resolve, reject) => {
+            if (window.Chart) return resolve();
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+            s.onload = resolve;
+            s.onerror = reject;
+            document.head.appendChild(s);
         });
+    };
+
+    const loadMeta = async () => {
+        const data = await api.get("/admin/meta");
+        if (!data.success) throw new Error(data.error || "Eroare meta.");
+        return data;
+    };
+
+    const getUid_helper = () => localStorage.getItem('userId') || 0;
+
+    // --- Rights Management ---
+    async function loadRightsInCard(container, userId) {
+        container.innerHTML = "<div class='loader-sm'>Se încarcă modulele...</div>";
         try {
-          const resp = await api.post(`/admin/user/${userId}/rights`, {
-            rights,
-          });
-          if (!resp.success) throw new Error(resp.error || "Eroare salvare.");
-          setMsg(msg, "Drepturi salvate.", "success");
-        } catch (e) {
-          setMsg(msg, e.message || "Eroare la salvarea drepturilor.", "error");
-        }
-      });
-    }
-  }
+            const data = await window.prisonApi.get(`/admin/user/${userId}/rights`);
+            if (!data.success) throw new Error();
 
-  // --- User Cards & Actions ---
-  function renderUserCard(user, meta) {
-    const div = document.createElement("div");
-    div.className = "admin-user-card";
-    
-    let lastLogin = "N/A";
-    if (user.lastLogin) {
-      try {
-        const d = new Date(user.lastLogin);
-        if (!isNaN(d.getTime())) {
-          lastLogin = d.toLocaleString('ro-RO', { 
-            day: '2-digit', month: '2-digit', year: 'numeric', 
-            hour: '2-digit', minute: '2-digit' 
-          });
-        } else {
-            lastLogin = user.lastLogin; 
-        }
-      } catch(e) { lastLogin = user.lastLogin; }
-    }
+            const rows = data.modules.map(m => `
+                <tr data-module-id="${m.moduleId}" data-access-id="${m.accessId || ''}">
+                    <td class="truncate" title="${m.moduleName}">${m.moduleName}</td>
+                    <td class="c"><input type="radio" name="mod-${userId}-${m.moduleId}" value="N" ${m.drept === 'N' ? 'checked' : ''}></td>
+                    <td class="c"><input type="radio" name="mod-${userId}-${m.moduleId}" value="R" ${m.drept === 'R' ? 'checked' : ''}></td>
+                    <td class="c"><input type="radio" name="mod-${userId}-${m.moduleId}" value="W" ${m.drept === 'W' ? 'checked' : ''}></td>
+                </tr>
+            `).join('');
 
-    div.innerHTML = `
-      <h3 class="admin-user-title">
-        ${user.username} <span style="font-weight:400; color:#64748b; font-size:0.9em;">(ID: ${user.id})</span>
-      </h3>
-      
-      <div class="admin-grid-2">
-        <div class="f">
-           <label>Ultima autentificare</label>
-           <input type="text" value="${lastLogin}" readonly style="background:#f8fafc; color:#64748b;">
-        </div>
+            container.innerHTML = `
+                <div class="rights-table-container">
+                    <table class="rights-table compact">
+                        <thead><tr><th>Modul</th><th>Fără</th><th>Citire</th><th>Scriere</th></tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+                <button type="button" class="btn-secondary btn-save-rights full-width mt-10">💾 Salvează Drepturi Acces</button>
+            `;
 
-        <div class="f">
-          <label>Username (Login)</label>
-          <input type="text" name="username" value="${user.username}">
-        </div>
-
-        <div class="f">
-          <label>Resetare Parolă</label>
-          <input type="text" name="password" value="" placeholder="(Lasă gol pt. a păstra)">
-        </div>
-
-        <div class="f">
-          <label>Rol Acces</label>
-          <select name="roleId"></select>
-        </div>
-
-        <div class="f">
-          <label>Penitenciar</label>
-          <select name="penitenciarId"></select>
-        </div>
-      </div>
-
-      <div class="admin-card-actions">
-        <button type="button" class="btn-primary btn-save">Salvează schimbări</button>
-        <button type="button" class="btn-danger btn-deactivate">Dezactivează utilizator</button>
-      </div>
-      
-      <div class="admin-msg user-msg"></div>
-    `;
-
-    const roleSel = qs(div, "select[name=roleId]");
-    const penSel = qs(div, "select[name=penitenciarId]");
-    
-    // Add placeholders to handle null values correctly
-    fillSelect(roleSel, meta.roles, "-- Selectează --");
-    fillSelect(penSel, meta.penitenciars, "-- Selectează --");
-    
-    // Set value or empty string for null
-    if (user.roleId !== null && user.roleId !== undefined) {
-        roleSel.value = String(user.roleId);
-    } else {
-        roleSel.value = "";
+            container.querySelector(".btn-save-rights").onclick = async () => {
+                const rights = Array.from(container.querySelectorAll("tbody tr")).map(tr => ({
+                    moduleId: Number(tr.dataset.moduleId),
+                    accessId: tr.dataset.accessId ? Number(tr.dataset.accessId) : null,
+                    drept: tr.querySelector("input:checked").value
+                }));
+                const resp = await window.prisonApi.post(`/admin/user/${userId}/rights`, { rights });
+                alert(resp.success ? "Drepturi salvate!" : "Eroare: " + resp.error);
+            };
+        } catch (e) { container.innerHTML = "<div class='error-text'>Eroare la încărcarea modulelor.</div>"; }
     }
 
-    if (user.penitenciarId !== null && user.penitenciarId !== undefined) {
-        penSel.value = String(user.penitenciarId);
-    } else {
-        penSel.value = "";
-    }
+    // --- User Card Rendering ---
+    function renderUserCard(user, meta) {
+        const div = document.createElement("div");
+        div.className = "admin-user-card";
 
-    const msg = qs(div, ".user-msg");
-    
-    const btnSave = qs(div, ".btn-save");
-    btnSave.addEventListener("click", async () => {
-      setMsg(msg, "Se salvează...", "");
-      
-      const rVal = roleSel.value;
-      const pVal = penSel.value;
+        div.innerHTML = `
+          <div class="admin-two-col">
+            <div class="left-col">
+              <h3 class="admin-user-title">👤 ${user.username} <small class="text-muted">(ID: ${user.id})</small></h3>
+              
+              <div class="f-group">
+                <label>Ultima logare</label>
+                <input type="text" value="${user.lastLogin || 'Niciodată'}" readonly class="readonly-input">
+              </div>
+              
+              <div class="f-group">
+                <label>Username (Login)</label>
+                <input type="text" name="username" value="${user.username}" autocomplete="off">
+              </div>
+              
+              <div class="f-group">
+                <label>Resetare Parolă</label>
+                <input type="text" name="password" placeholder="Lasă gol pentru a păstra parola actuală" autocomplete="off">
+              </div>
+              
+              <div class="admin-grid-2">
+                <div class="f-group">
+                    <label>Rol Acces</label>
+                    <select name="roleId"></select>
+                </div>
+                <div class="f-group">
+                    <label>Penitenciar</label>
+                    <select name="penitenciarId"></select>
+                </div>
+              </div>
+              
+              <div class="admin-card-actions mt-20">
+                <button type="button" class="btn-primary btn-save">💾 Salvează Date</button>
+                <button type="button" class="btn-danger btn-deactivate">🚫 Dezactivează Cont</button>
+              </div>
 
-      const payload = {
-        username: qs(div, "input[name=username]").value.trim(),
-        password: qs(div, "input[name=password]").value.trim(),
-        // Convert to Number, default to 0 for constraints
-        roleId: rVal === "" ? 0 : Number(rVal),
-        penitenciarId: pVal === "" ? 0 : Number(pVal),
-      };
-
-      try {
-        const resp = await api.post(`/admin/user/${user.id}/update`, payload);
-        if (!resp.success) throw new Error(resp.error || "Eroare actualizare.");
-        setMsg(msg, "Salvat cu succes.", "success");
-        qs(div, "input[name=password]").value = "";
-      } catch (e) {
-        setMsg(msg, e.message, "error");
-      }
-    });
-
-    const btnDeact = qs(div, ".btn-deactivate");
-    btnDeact.addEventListener("click", async () => {
-      if (!confirm("Sigur dezactivați acest utilizator?")) return;
-      try {
-        const resp = await api.post(`/admin/user/${user.id}/deactivate`, {});
-        if (!resp.success) throw new Error(resp.error || "Eroare dezactivare.");
-        setMsg(msg, "Utilizator dezactivat.", "success");
-        div.style.opacity = "0.5";
-        div.style.pointerEvents = "none";
-      } catch (e) {
-        setMsg(msg, e.message, "error");
-      }
-    });
-
-    return div;
-  }
-
-  // --- Announcements (Simplified: Only One allowed) ---
-  async function initAnnouncements(root) {
-    const listEl = qs(root, "#adminAnnList");
-    const form = qs(root, "#adminAnnForm");
-    const msg = qs(root, "#adminAnnMsg");
-
-    async function refresh() {
-      listEl.textContent = "Se încarcă...";
-      try {
-        const data = await api.get("/admin/ann");
-        if (!data.success) throw new Error(data.error || "Eroare anunțuri.");
-        const items = data.items || [];
-        
-        listEl.innerHTML = "";
-        
-        if (!items.length) {
-          listEl.innerHTML = '<div style="padding:10px; color:#6b7280; font-style:italic;">Nu există niciun anunț activ.</div>';
-          return;
-        }
-
-        // Show only the latest one
-        const latest = items[0]; // Assuming order DESC from backend
-        const row = document.createElement("div");
-        row.className = "ann-item";
-        row.style.background = "#fff";
-        row.innerHTML = `
-            <div style="flex:1;">
-                <strong style="display:block; font-size:0.75rem; color:#2563eb; text-transform:uppercase; margin-bottom:4px;">Anunț Activ</strong>
-                <span class="ann-text" style="font-size:1rem;">${latest.message}</span>
+              <div class="proof-section mt-20">
+                <label class="section-label">📄 Document Justificativ (Proof PDF)</label>
+                <div id="proof-status-${user.id}" class="proof-status-box">
+                    ${user.hasProof ? 
+                        `<a href="/api/admin/user/${user.id}/proof/view" target="_blank" class="btn-view-pdf">👁️ Vezi Document Semnat</a>` : 
+                        `<span class="error-text">⚠️ Documentul lipsește de pe server</span>`}
+                </div>
+                
+                <div class="upload-controls mt-10">
+                    <input type="file" id="file-${user.id}" accept=".pdf" style="display:none">
+                    <button type="button" class="btn-ghost btn-sm" onclick="document.getElementById('file-${user.id}').click()">📁 Alege Fișier</button>
+                    <button type="button" class="btn-success btn-sm btn-upload" id="upload-btn-${user.id}" style="display:none;">🚀 Confirmă Încărcarea</button>
+                </div>
+                <p class="hint">Încărcarea va suprascrie orice document existent pentru acest utilizator.</p>
+              </div>
             </div>
-            <button type="button" class="btn-danger btn-small">Șterge</button>
+
+            <div class="right-col">
+               <h3 class="admin-user-title">🔐 Drepturi Module</h3>
+               <div class="rights-card-inner" id="rights-container-${user.id}"></div>
+            </div>
+          </div>
+          <div class="admin-msg user-msg"></div>
         `;
+
+        const roleSel = div.querySelector("select[name=roleId]");
+        const penSel = div.querySelector("select[name=penitenciarId]");
+        fillSelect(roleSel, meta.roles, "-- Rol --");
+        fillSelect(penSel, meta.penitenciars, "-- Penitenciar --");
+        roleSel.value = user.roleId || "";
+        penSel.value = user.penitenciarId || "";
+
+        loadRightsInCard(div.querySelector(`#rights-container-${user.id}`), user.id);
+
+        const fInput = div.querySelector(`#file-${user.id}`);
+        const uBtn = div.querySelector(`#upload-btn-${user.id}`);
         
-        const btn = qs(row, "button");
-        btn.addEventListener("click", async () => {
-            if (!confirm(`Ștergi anunțul?`)) return;
+        fInput.onchange = () => { if(fInput.files.length > 0) uBtn.style.display = "inline-block"; };
+        
+        uBtn.onclick = async () => {
+            const file = fInput.files[0];
+            if(!file) return;
+            const fd = new FormData();
+            fd.append('proof', file);
+            uBtn.disabled = true;
+            uBtn.textContent = "Se încarcă...";
+
             try {
-              // Delete specific ID or all - safer to delete all if we enforce single
-              const resp = await api.del(`/admin/ann`); 
-              if (!resp.success) throw new Error(resp.error || "Eroare ștergere.");
-              refresh();
-            } catch (e) {
-              setMsg(msg, e.message || "Eroare ștergere.", "error");
+                const resp = await fetch(`/api/admin/user/${user.id}/proof`, { 
+                    method: 'POST', 
+                    body: fd, 
+                    headers: { 'x-user-id': getUid_helper() } 
+                }).then(res => res.json());
+
+                if(resp.success) { 
+                    alert("Documentul a fost salvat cu succes!"); 
+                    location.reload(); 
+                } else throw new Error(resp.error || "Eroare la server."); 
+            } catch(e) { 
+                alert("Eroare la upload: " + e.message); 
+                uBtn.disabled = false;
+                uBtn.textContent = "Confirmă Încărcarea";
             }
-        });
-        listEl.appendChild(row);
+        };
 
-      } catch (e) {
-        listEl.textContent = e.message || "Eroare anunțuri.";
-      }
+        div.querySelector(".btn-save").onclick = async () => {
+            const msg = div.querySelector(".user-msg");
+            setMsg(msg, "Se salvează...", "info");
+            const payload = {
+                username: div.querySelector("input[name=username]").value.trim(),
+                password: div.querySelector("input[name=password]").value.trim(),
+                roleId: Number(roleSel.value),
+                penitenciarId: Number(penSel.value)
+            };
+            try {
+                const res = await api.post(`/admin/user/${user.id}/update`, payload);
+                if (!res.success) throw new Error(res.error);
+                setMsg(msg, "Datele utilizatorului au fost actualizate.", "success");
+                div.querySelector("input[name=password]").value = "";
+            } catch (e) { setMsg(msg, e.message, "error"); }
+        };
+
+        div.querySelector(".btn-deactivate").onclick = async () => {
+            if (!confirm(`Dezactivați utilizatorul ${user.username}?`)) return;
+            try {
+                const res = await api.post(`/admin/user/${user.id}/deactivate`, {});
+                if (!res.success) throw new Error(res.error);
+                location.reload();
+            } catch (e) { alert("Eroare: " + e.message); }
+        };
+
+        return div;
     }
 
-    if (form) {
-      form.addEventListener("submit", async (ev) => {
-        ev.preventDefault();
-        setMsg(msg, "", "");
-        const text = qs(form, "textarea[name=message]").value.trim();
-        if (!text) {
-          setMsg(msg, "Textul este gol.", "error");
-          return;
+    // --- Announcements ---
+    async function initAnnouncements(root) {
+        const listEl = qs(root, "#adminAnnList");
+        const form = qs(root, "#adminAnnForm");
+        const msg = qs(root, "#adminAnnMsg");
+
+        const refresh = async () => {
+            listEl.innerHTML = "<div class='loader-sm'>Se încarcă...</div>";
+            try {
+                const data = await api.get("/admin/ann");
+                if (!data.success) throw new Error(data.error || "Eroare anunțuri.");
+                const items = data.items || [];
+                listEl.innerHTML = "";
+                
+                if (!items.length) {
+                    listEl.innerHTML = '<div class="empty-state">Nu există niciun anunț activ.</div>';
+                    return;
+                }
+
+                const latest = items[0];
+                const row = document.createElement("div");
+                row.className = "ann-card-display";
+                row.innerHTML = `
+                    <div class="ann-content">
+                        <span class="ann-badge">Anunț Activ</span>
+                        <p class="ann-text-body">${latest.message}</p>
+                    </div>
+                    <button type="button" class="btn-danger-outline btn-sm">Șterge</button>
+                `;
+                row.querySelector("button").onclick = async () => {
+                    if (!confirm(`Ștergi anunțul?`)) return;
+                    try {
+                        const resp = await api.del(`/admin/ann`); 
+                        if (!resp.success) throw new Error(resp.error || "Eroare.");
+                        refresh();
+                    } catch (e) { setMsg(msg, e.message, "error"); }
+                };
+                listEl.appendChild(row);
+            } catch (e) { listEl.textContent = e.message; }
+        };
+
+        if (form) {
+            form.onsubmit = async (ev) => {
+                ev.preventDefault();
+                const text = qs(form, "textarea[name=message]").value.trim();
+                if (!text) return setMsg(msg, "Textul este gol.", "error");
+                try {
+                    await api.del("/admin/ann");
+                    const resp = await api.post("/admin/ann", { message: text });
+                    if (!resp.success) throw new Error(resp.error);
+                    qs(form, "textarea[name=message]").value = "";
+                    setMsg(msg, "Anunț publicat.", "success");
+                    refresh();
+                } catch (e) { setMsg(msg, e.message, "error"); }
+            };
         }
+        refresh();
+    }
+
+    // --- Statistics ---
+    async function initStatsPanel(root) {
+        const canvas = qs(root, "#usersByPrisonChart");
+        if (!canvas) return;
         try {
-          // Enforce Singleton: Delete all existing before adding new
-          await api.del("/admin/ann");
+            await ensureChartJS();
+            const res = await api.get("/admin/stats/users");
+            if (!res.success) throw new Error(res.error);
 
-          const resp = await api.post("/admin/ann", { message: text });
-          if (!resp.success) throw new Error(resp.error || "Eroare salvare.");
-          
-          qs(form, "textarea[name=message]").value = "";
-          setMsg(msg, "Anunț publicat.", "success");
-          refresh();
-        } catch (e) {
-          setMsg(msg, e.message || "Eroare salvare.", "error");
-        }
-      });
+            qs(root, "#statActive").textContent = res.counters.active;
+            qs(root, "#statDeact").textContent = res.counters.deactivated;
+            qs(root, "#statInact").textContent = res.counters.inactive;
+
+            const existingChart = window.Chart.getChart(canvas);
+            if (existingChart) existingChart.destroy();
+
+            const dist = res.distribution || [];
+            new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: dist.map(d => d.label),
+                    datasets: [{
+                        label: 'Utilizatori',
+                        data: dist.map(d => d.count),
+                        backgroundColor: '#2563eb',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+        } catch (e) { console.error(e); }
     }
 
-    refresh();
-  }
-
-  // --- Statistics Panel ---
-  async function initStatsPanel(root) {
-    const activeVal = qs(root, "#statActive");
-    const deactVal = qs(root, "#statDeact");
-    const inactVal = qs(root, "#statInact");
-    const canvas = qs(root, "#usersByPrisonChart");
-    const container = qs(root, "[data-admin-panel=stats]");
-
-    if (!container || !canvas) return;
-
-    // Load Data and ChartJS
-    try {
-      await ensureChartJS();
-      const res = await api.get("/admin/stats/users");
-      if (!res.success) throw new Error(res.error || "Eroare date statistici");
-
-      // Set Counters
-      if(activeVal) activeVal.textContent = res.counters.active;
-      if(deactVal) deactVal.textContent = res.counters.deactivated;
-      if(inactVal) inactVal.textContent = res.counters.inactive;
-
-      // --- FIX: Check for and destroy existing chart instance ---
-      // Chart.js 4.x attaches the instance to the canvas using Chart.getChart(canvas)
-      if (window.Chart) {
-          const existingChart = window.Chart.getChart(canvas);
-          if (existingChart) {
-            existingChart.destroy();
-          }
-      }
-
-      // Render Chart
-      const dist = res.distribution || [];
-      const labels = dist.map(d => d.label);
-      const data = dist.map(d => d.count);
-
-      new Chart(canvas.getContext('2d'), {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Număr Useri',
-            data: data,
-            backgroundColor: '#2563eb',
-            barPercentage: 0.7
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          indexAxis: labels.length > 8 ? 'y' : 'x', // Horizontal if many items
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            x: { beginAtZero: true, ticks: { precision: 0 } },
-            y: { beginAtZero: true, ticks: { precision: 0 } }
-          }
-        }
-      });
-
-    } catch (e) {
-      console.error("Stats Error:", e);
-      // Don't append error if one already exists to avoid clutter
-      if(!container.querySelector('.admin-msg.error')) {
-          container.innerHTML += `<div class="admin-msg error">Eroare încărcare statistici: ${e.message}</div>`;
-      }
+    // --- Search ---
+    async function initSearchPanel(root, meta) {
+        const form = qs(root, "#adminSearchForm");
+        const results = qs(root, "#adminSearchResults");
+        if (!form) return;
+        form.onsubmit = async (ev) => {
+            ev.preventDefault();
+            const q = qs(form, "input[name=q]").value.trim();
+            if (!q) return results.innerHTML = "<p class='info-text'>Introduceți un termen de căutare.</p>";
+            results.innerHTML = "<div class='loader'>Se caută utilizatorii...</div>";
+            try {
+                const data = await api.get(`/admin/user/search?q=${encodeURIComponent(q)}`);
+                if (!data.success) throw new Error(data.error);
+                results.innerHTML = "";
+                if (!data.users.length) return results.innerHTML = "<p class='info-text'>Niciun rezultat găsit.</p>";
+                data.users.forEach(u => results.appendChild(renderUserCard(u, meta)));
+            } catch (e) { results.innerHTML = `<p class='error-text'>${e.message}</p>`; }
+        };
     }
-  }
 
-  // --- Panels Initialization ---
-  async function initCreatePanel(root, meta) {
-    const form = qs(root, "#adminCreateForm");
-    const msg = qs(root, "#adminCreateMsg");
-    if (!form) return;
-
-    fillSelect(qs(form, "select[name=roleId]"), meta.roles, "-- Rol --");
-    fillSelect(
-      qs(form, "select[name=penitenciarId]"),
-      meta.penitenciars,
-      "-- Penitenciar --"
-    );
-
-    form.addEventListener("submit", async (ev) => {
-      ev.preventDefault();
-      setMsg(msg, "", "");
-      const fd = new FormData(form);
-      
-      const rVal = fd.get("roleId");
-      const pVal = fd.get("penitenciarId");
-
-      const payload = {
-        username: fd.get("username"),
-        password: fd.get("password"),
-        autoPassword: fd.get("autoPassword") === "on",
-        // Ensure values are Numbers, defaulting to 0
-        roleId: rVal === "" ? 0 : Number(rVal),
-        penitenciarId: pVal === "" ? 0 : Number(pVal),
-      };
-      try {
-        const data = await api.post("/admin/user/create", payload);
-        if (!data.success) throw new Error(data.error || "Eroare creare.");
-        let txt = `Utilizator creat: ${data.username}`;
-        if (data.autoPassword) txt += ` | Parolă: ${data.autoPassword}`;
-        setMsg(msg, txt, "success");
-        form.reset();
-      } catch (e) {
-        setMsg(msg, e.message || "Eroare creare.", "error");
-      }
-    });
-  }
-
-  async function initBulkPanel(root, meta) {
-    const form = qs(root, "#adminBulkForm");
-    const msg = qs(root, "#adminBulkMsg");
-    const report = qs(root, "#adminBulkReport");
-    if (!form) return;
-
-    fillSelect(qs(form, "select[name=roleId]"), meta.roles, "-- Rol --");
-    fillSelect(
-      qs(form, "select[name=penitenciarId]"),
-      meta.penitenciars,
-      "-- Penitenciar --"
-    );
-
-    form.addEventListener("submit", async (ev) => {
-      ev.preventDefault();
-      setMsg(msg, "", "");
-      report.textContent = "";
-      const fd = new FormData(form);
-      
-      const rVal = fd.get("roleId");
-      const pVal = fd.get("penitenciarId");
-
-      const payload = {
-        usernamesText: fd.get("usernamesText"),
-        // Ensure values are Numbers, defaulting to 0
-        roleId: rVal === "" ? 0 : Number(rVal),
-        penitenciarId: pVal === "" ? 0 : Number(pVal),
-        autoPassword: fd.get("autoPassword") === "on",
-        samePassword: fd.get("samePassword"),
-      };
-      try {
-        const data = await api.post("/admin/user/bulk", payload);
-        if (!data.success) throw new Error(data.error || "Eroare bulk.");
-        setMsg(
-          msg,
-          `Adăugate: ${data.okCount || 0}, Eșecuri: ${data.failCount || 0}`,
-          "success"
-        );
-        report.textContent = (data.report || []).join("\n");
-      } catch (e) {
-        setMsg(msg, e.message || "Eroare bulk.", "error");
-      }
-    });
-  }
-
-  async function initSearchPanel(root, meta) {
-    const form = qs(root, "#adminSearchForm");
-    const results = qs(root, "#adminSearchResults");
-    if (!form || !results) return;
-
-    form.addEventListener("submit", async (ev) => {
-      ev.preventDefault();
-      const q = qs(form, "input[name=q]").value.trim();
-      if (!q) {
-        results.textContent = "Introduceți un termen de căutare.";
-        return;
-      }
-      results.textContent = "Se caută...";
-      try {
-        const data = await api.get(
-          `/admin/user/search?q=${encodeURIComponent(q)}`
-        );
-        if (!data.success) throw new Error(data.error || "Eroare căutare.");
-        const users = data.users || [];
-        if (!users.length) {
-          results.textContent = "Nu a fost găsit niciun utilizator.";
-          return;
-        }
-        results.innerHTML = "";
-        users.forEach((u) => results.appendChild(renderUserCard(u, meta)));
-      } catch (e) {
-        results.textContent = e.message || "Eroare căutare.";
-      }
-    });
-  }
-
-  function setupTabs(root) {
-    const buttons = qsa(root, "[data-admin-tab]");
-    const panels = qsa(root, "[data-admin-panel]");
-    function show(name) {
-      panels.forEach((p) => {
-        p.style.display =
-          p.getAttribute("data-admin-panel") === name ? "" : "none";
-      });
-      buttons.forEach((b) => {
-        b.className = "admin-tab-btn"; 
-        if (b.getAttribute("data-admin-tab") === name) {
-          b.classList.add("active");
-        }
-      });
-      // Lazy load stats when tab is clicked
-      if (name === "stats") {
-        const container = qs(root, "[data-admin-panel=stats]");
-        // Simple check to prevent double init if we wanted, 
-        // but re-init refreshes data which is good.
-        initStatsPanel(root);
-      }
+    // --- Main Panels ---
+    async function initCreatePanel(root, meta) {
+        const form = qs(root, "#adminCreateForm");
+        const msg = qs(root, "#adminCreateMsg");
+        if (!form) return;
+        fillSelect(qs(form, "select[name=roleId]"), meta.roles, "-- Rol --");
+        fillSelect(qs(form, "select[name=penitenciarId]"), meta.penitenciars, "-- Penitenciar --");
+        form.onsubmit = async (ev) => {
+            ev.preventDefault();
+            const fd = new FormData(form);
+            const payload = {
+                username: fd.get("username"),
+                password: fd.get("password"),
+                autoPassword: fd.get("autoPassword") === "on",
+                roleId: Number(fd.get("roleId") || 0),
+                penitenciarId: Number(fd.get("penitenciarId") || 0)
+            };
+            try {
+                const data = await api.post("/admin/user/create", payload);
+                if (!data.success) throw new Error(data.error);
+                setMsg(msg, `Creat: ${data.username} ${data.autoPassword ? '| Pwd: ' + data.autoPassword : ''}`, "success");
+                form.reset();
+            } catch (e) { setMsg(msg, e.message, "error"); }
+        };
     }
-    buttons.forEach((b) =>
-      b.addEventListener("click", () => show(b.getAttribute("data-admin-tab")))
-    );
-    show("create"); // Default tab
-  }
 
-  // --- Main Render Function ---
-  async function renderAdminPage(mainEl) {
-    if (!mainEl) return;
-    mainEl.innerHTML = `<div class="admin-msg">Se încarcă administrarea...</div>`;
-    try {
-      const meta = await loadMeta();
-
-      mainEl.innerHTML = `
-        <div class="admin-page">
-          <header class="admin-header-main">
-            <h1 class="admin-title">Administrare</h1>
-            <p class="app-subtitle">Gestionează utilizatori, drepturi și anunțuri.</p>
-          </header>
-
-          <div class="admin-tabs">
-            <button type="button" class="admin-tab-btn" data-admin-tab="create">Adaugă User</button>
-            <button type="button" class="admin-tab-btn" data-admin-tab="bulk">Import Masiv</button>
-            <button type="button" class="admin-tab-btn" data-admin-tab="search">Caută & Editează</button>
-            <button type="button" class="admin-tab-btn" data-admin-tab="ann">Anunțuri</button>
-            <button type="button" class="admin-tab-btn" data-admin-tab="stats">Statistici</button>
-          </div>
-
-          <!-- CREATE PANEL -->
-          <section class="admin-panel" data-admin-panel="create">
-            <h2>👤 Adaugă utilizator nou</h2>
-            <form id="adminCreateForm" class="admin-form">
-              <div class="admin-grid-2">
-                <div class="f">
-                  <label>Username (lowercase)</label>
-                  <input type="text" name="username" autocomplete="off" placeholder="ex: popescu.ion">
-                </div>
-                <div class="f">
-                  <label>Parolă</label>
-                  <input type="text" name="password" autocomplete="off" placeholder="Parolă inițială">
-                  <label style="margin-top:6px; font-weight:400; font-size:0.8rem; color:#666;">
-                    <input type="checkbox" name="autoPassword"> Generează automat
-                  </label>
-                </div>
-                <div class="f">
-                  <label>Rol</label>
-                  <select name="roleId"></select>
-                </div>
-                <div class="f">
-                  <label>Penitenciar</label>
-                  <select name="penitenciarId"></select>
-                </div>
-              </div>
-              <div class="form-buttons right">
-                <button type="submit" class="btn-primary">Creează utilizator</button>
-              </div>
-              <div id="adminCreateMsg" class="admin-msg"></div>
-            </form>
-          </section>
-
-          <!-- BULK PANEL -->
-          <section class="admin-panel" data-admin-panel="bulk">
-            <h2>📥 Adaugă utilizatori în masă</h2>
-            <p style="font-size:0.85rem; color:#6b7280; margin-bottom:12px;">
-              Introduceți o listă de utilizatori (unul pe linie sau separați prin virgulă).
-            </p>
-            <form id="adminBulkForm" class="admin-form">
-              <textarea name="usernamesText" rows="6" placeholder="popescu.ion&#10;vasile.george&#10;..." style="font-family:monospace;"></textarea>
-
-              <div class="admin-grid-2">
-                <div class="f">
-                  <label>Rol (pentru toți)</label>
-                  <select name="roleId"></select>
-                </div>
-                <div class="f">
-                  <label>Penitenciar (pentru toți)</label>
-                  <select name="penitenciarId"></select>
-                </div>
-              </div>
-
-              <div style="background:#f3f4f6; padding:10px; border-radius:8px;">
-                <label style="margin-bottom:8px; display:block;">Setări Parolă</label>
-                <div class="admin-grid-2">
-                  <label style="font-weight:400;">
-                    <input type="checkbox" name="autoPassword"> Generare aleatorie unică
-                  </label>
-                  <div>
-                    <input type="text" name="samePassword" placeholder="Sau o parolă comună..." style="margin-top:0;">
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-buttons right">
-                <button type="submit" class="btn-primary">Procesează lista</button>
-              </div>
-              <pre id="adminBulkReport" class="admin-report"></pre>
-              <div id="adminBulkMsg" class="admin-msg"></div>
-            </form>
-          </section>
-
-          <!-- SEARCH PANEL -->
-          <section class="admin-panel" data-admin-panel="search">
-            <h2>🔎 Caută și gestionează</h2>
-            <form id="adminSearchForm" class="admin-form">
-               <div style="display:flex; gap:10px;">
-                 <div style="flex:1;">
-                    <input type="text" name="q" autocomplete="off" placeholder="Caută după nume sau ID..." style="width:100%;">
-                 </div>
-                 <button type="submit" class="btn-primary">Caută</button>
-               </div>
-            </form>
-            <div id="adminSearchResults" class="admin-results"></div>
-          </section>
-
-          <!-- ANNOUNCEMENTS PANEL -->
-          <section class="admin-panel" data-admin-panel="ann">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-               <h2>📢 Anunțuri sistem</h2>
-            </div>
-            <form id="adminAnnForm" class="admin-form" style="margin-bottom:20px;">
-              <label>Setează mesaj nou (înlocuiește orice anunț existent)</label>
-              <div style="display:flex; gap:10px; align-items:flex-start;">
-                <textarea name="message" rows="2" style="flex:1;" placeholder="Scrie un mesaj pentru toți utilizatorii..."></textarea>
-                <button type="submit" class="btn-primary" style="margin-top:4px;">Publică</button>
-              </div>
-            </form>
-            <div id="adminAnnMsg" class="admin-msg"></div>
-            <div id="adminAnnList" class="ann-list" style="margin-top:20px;"></div>
-          </section>
-
-          <!-- STATS PANEL (New) -->
-          <section class="admin-panel" data-admin-panel="stats">
-             <h2>📊 Statistici Utilizatori</h2>
-             
-             <!-- KPI Cards -->
-             <div class="admin-grid-3" style="margin-bottom: 24px;">
-               <div class="stat-card">
-                 <div class="stat-label">Useri Activi (< 3 luni)</div>
-                 <div class="stat-val" id="statActive">...</div>
-               </div>
-               <div class="stat-card">
-                 <div class="stat-label">Dezactivați ("INACTIV")</div>
-                 <div class="stat-val" id="statDeact">...</div>
-               </div>
-               <div class="stat-card">
-                 <div class="stat-label">Inactivi (> 3 luni)</div>
-                 <div class="stat-val" id="statInact">...</div>
-               </div>
-             </div>
-
-             <!-- Chart Container -->
-             <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:16px;">
-                <h3 style="margin-top:0; font-size:1rem; color:#475569; margin-bottom:12px;">Repartiție useri după penitenciar</h3>
-                <div style="height: 400px; position: relative;">
-                  <canvas id="usersByPrisonChart"></canvas>
-                </div>
-             </div>
-          </section>
-
-        </div>
-        
-        <!-- Extra Style for Stats -->
-        <style>
-          .admin-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-          .stat-card { background: #fff; padding: 16px; border: 1px solid #cbd5e1; border-radius: 8px; text-align: center; }
-          .stat-label { font-size: 0.85rem; color: #64748b; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
-          .stat-val { font-size: 1.8rem; font-weight: 700; color: #2563eb; }
-          @media(max-width: 700px) { .admin-grid-3 { grid-template-columns: 1fr; } }
-        </style>
-      `;
-
-      const root = mainEl.firstElementChild;
-      setupTabs(root);
-      await initCreatePanel(root, meta);
-      await initBulkPanel(root, meta);
-      await initSearchPanel(root, meta);
-      await initAnnouncements(root);
-      // initStatsPanel is called via tab click
-    } catch (err) {
-      mainEl.innerHTML = `<div class="admin-msg error">${
-        err.message || "Eroare la încărcare."
-      }</div>`;
+    async function initBulkPanel(root, meta) {
+        const form = qs(root, "#adminBulkForm");
+        const msg = qs(root, "#adminBulkMsg");
+        const report = qs(root, "#adminBulkReport");
+        if (!form) return;
+        fillSelect(qs(form, "select[name=roleId]"), meta.roles, "-- Rol --");
+        fillSelect(qs(form, "select[name=penitenciarId]"), meta.penitenciars, "-- Penitenciar --");
+        form.onsubmit = async (ev) => {
+            ev.preventDefault();
+            const fd = new FormData(form);
+            const payload = {
+                usernamesText: fd.get("usernamesText"),
+                roleId: Number(fd.get("roleId") || 0),
+                penitenciarId: Number(fd.get("penitenciarId") || 0),
+                autoPassword: fd.get("autoPassword") === "on"
+            };
+            try {
+                const data = await api.post("/admin/user/bulk", payload);
+                if (!data.success) throw new Error(data.error);
+                setMsg(msg, `Adăugate: ${data.okCount}, Eșecuri: ${data.failCount}`, "success");
+                report.textContent = (data.report || []).join("\n");
+            } catch (e) { setMsg(msg, e.message, "error"); }
+        };
     }
-  }
 
-  window.prisonModules = window.prisonModules || {};
-  window.prisonModules.admin = {
-    init({ userId, container }) {
-      renderAdminPage(container);
-    },
-  };
+    // --- Tabs ---
+    function setupTabs(root) {
+        const buttons = qsa(root, "[data-admin-tab]");
+        const panels = qsa(root, "[data-admin-panel]");
+        const show = (name) => {
+            panels.forEach(p => p.style.display = p.dataset.adminPanel === name ? "block" : "none");
+            buttons.forEach(b => b.classList.toggle("active", b.dataset.adminTab === name));
+            if (name === "stats") initStatsPanel(root);
+        };
+        buttons.forEach(b => b.onclick = () => show(b.dataset.adminTab));
+        show("create");
+    }
+
+    // --- Render ---
+    async function renderAdminPage(mainEl) {
+        try {
+            const meta = await loadMeta();
+            mainEl.innerHTML = `
+                <div class="admin-wrapper">
+                    <header class="admin-page-header">
+                        <h1>⚙️ Administrare Sistem</h1>
+                        <p>Panou de control pentru utilizatori, drepturi și monitorizare rprac.</p>
+                    </header>
+
+                    <div class="admin-tabs-nav">
+                        <button class="admin-tab-btn active" data-admin-tab="create">👤 Adaugă User</button>
+                        <button class="admin-tab-btn" data-admin-tab="bulk">📥 Import Masiv</button>
+                        <button class="admin-tab-btn" data-admin-tab="search">🔎 Căutare & Editare</button>
+                        <button class="admin-tab-btn" data-admin-tab="ann">📢 Anunțuri</button>
+                        <button class="admin-tab-btn" data-admin-tab="stats">📊 Statistici</button>
+                    </div>
+
+                    <main class="admin-content-area">
+                        <section class="admin-panel" data-admin-panel="create">
+                            <div class="panel-header"><h2>Creează Utilizator Nou</h2></div>
+                            <form id="adminCreateForm" class="modern-form">
+                                <div class="admin-grid-2">
+                                    <div class="f-group"><label>Username</label><input type="text" name="username" required></div>
+                                    <div class="f-group">
+                                        <label>Parolă</label>
+                                        <input type="text" name="password" placeholder="Parolă manuală">
+                                        <label class="check-label"><input type="checkbox" name="autoPassword"> Generează automat</label>
+                                    </div>
+                                    <div class="f-group"><label>Rol</label><select name="roleId" required></select></div>
+                                    <div class="f-group"><label>Penitenciar</label><select name="penitenciarId" required></select></div>
+                                </div>
+                                <div class="btn-row-end"><button type="submit" class="btn-primary">Creează Cont</button></div>
+                                <div id="adminCreateMsg"></div>
+                            </form>
+                        </section>
+
+                        <section class="admin-panel" data-admin-panel="bulk" style="display:none">
+                            <div class="panel-header"><h2>Import Masiv Utilizatori</h2></div>
+                            <form id="adminBulkForm" class="modern-form">
+                                <label>Listă usernames (unul pe linie sau virgulă)</label>
+                                <textarea name="usernamesText" rows="5" class="full-width-textarea" placeholder="popescu.ion, vasilescu.dan..."></textarea>
+                                <div class="admin-grid-2 mt-10">
+                                    <div class="f-group"><label>Rol Comun</label><select name="roleId"></select></div>
+                                    <div class="f-group"><label>Penitenciar Comun</label><select name="penitenciarId"></select></div>
+                                </div>
+                                <div class="bulk-pwd-settings mt-10">
+                                    <label class="check-label"><input type="checkbox" name="autoPassword"> Parole unice automate</label>
+                                </div>
+                                <div class="btn-row-end mt-10"><button type="submit" class="btn-primary">Procesează Importul</button></div>
+                                <pre id="adminBulkReport" class="report-box"></pre>
+                                <div id="adminBulkMsg"></div>
+                            </form>
+                        </section>
+
+                        <section class="admin-panel" data-admin-panel="search" style="display:none">
+                            <div class="panel-header"><h2>Căutare Utilizatori</h2></div>
+                            <div class="search-container-centered">
+                                <form id="adminSearchForm" class="search-bar-modern">
+                                    <input type="text" name="q" placeholder="Nume utilizator sau ID..." autocomplete="off">
+                                    <button type="submit" class="btn-primary">Caută</button>
+                                </form>
+                            </div>
+                            <div id="adminSearchResults" class="results-container"></div>
+                        </section>
+
+                        <section class="admin-panel" data-admin-panel="ann" style="display:none">
+                            <div class="panel-header"><h2>Anunțuri Globale</h2></div>
+                            <form id="adminAnnForm" class="modern-form">
+                                <div class="f-group">
+                                    <label>Mesaj Anunț</label>
+                                    <textarea name="message" rows="4" class="full-width-textarea" placeholder="Mesajul tău va apărea tuturor utilizatorilor rprac..."></textarea>
+                                </div>
+                                <div class="btn-full-width-container">
+                                    <button type="submit" class="btn-primary btn-full-width">Publică Anunț Sistem</button>
+                                </div>
+                                <div id="adminAnnMsg"></div>
+                            </form>
+                            <div id="adminAnnList" class="mt-20"></div>
+                        </section>
+
+                        <section class="admin-panel" data-admin-panel="stats" style="display:none">
+                            <div class="stats-kpi-grid">
+                                <div class="kpi-card active">
+                                    <span class="kpi-label">Activitate recentă</span>
+                                    <span class="kpi-val" id="statActive">0</span>
+                                </div>
+                                <div class="kpi-card deact">
+                                    <span class="kpi-label">Dezactivați</span>
+                                    <span class="kpi-val" id="statDeact">0</span>
+                                </div>
+                                <div class="kpi-card dormant">
+                                    <span class="kpi-label">Dormanți (>3 luni)</span>
+                                    <span class="kpi-val" id="statInact">0</span>
+                                </div>
+                            </div>
+                            <div class="chart-wrapper mt-20">
+                                <h3>Distribuție Utilizatori per Penitenciar</h3>
+                                <div class="canvas-holder"><canvas id="usersByPrisonChart"></canvas></div>
+                            </div>
+                        </section>
+                    </main>
+                </div>
+
+                <style>
+                    :root {
+                        --primary: #2563eb; --primary-hover: #1d4ed8;
+                        --bg: #f8fafc; --card: #ffffff;
+                        --text: #1e293b; --text-light: #64748b;
+                        --border: #e2e8f0; --danger: #dc2626;
+                        --success: #059669; --info: #0891b2;
+                    }
+
+                    .admin-wrapper { font-family: 'Inter', system-ui, sans-serif; color: var(--text); background: var(--bg); padding: 20px; max-width: 1100px; margin: 0 auto; }
+                    .admin-page-header { text-align: center; margin-bottom: 30px; }
+                    .admin-page-header h1 { font-size: 2.2rem; font-weight: 800; margin: 0; color: var(--text); }
+                    .admin-page-header p { color: var(--text-light); font-size: 1.1rem; margin-top: 8px; }
+
+                    /* Tabs */
+                    .admin-tabs-nav { display: flex; justify-content: center; gap: 8px; border-bottom: 2px solid var(--border); margin-bottom: 30px; }
+                    .admin-tab-btn { padding: 14px 24px; border: none; background: none; cursor: pointer; font-weight: 700; color: var(--text-light); transition: 0.2s; border-radius: 8px 8px 0 0; }
+                    .admin-tab-btn:hover { color: var(--primary); background: #f1f5f9; }
+                    .admin-tab-btn.active { color: var(--primary); border-bottom: 4px solid var(--primary); background: #fff; }
+
+                    /* Forms & Inputs */
+                    .modern-form { background: var(--card); padding: 30px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+                    .f-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; width: 100%; }
+                    .f-group label { font-weight: 700; font-size: 0.95rem; color: var(--text); }
+                    
+                    input[type="text"], input[type="password"], select, textarea { 
+                        width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; 
+                        transition: all 0.2s; background: #fff; color: var(--text); box-sizing: border-box;
+                    }
+                    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); ring: 2px solid #bfdbfe; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+                    .full-width-textarea { min-height: 120px; resize: vertical; }
+
+                    /* Buttons */
+                    .btn-primary { background: var(--primary); color: white; padding: 12px 24px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; }
+                    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+                    .btn-danger { background: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+                    
+                    /* Centering Search */
+                    .search-container-centered { display: flex; justify-content: center; margin-bottom: 30px; }
+                    .search-bar-modern { display: flex; gap: 0; width: 100%; max-width: 600px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-radius: 10px; overflow: hidden; }
+                    .search-bar-modern input { border-radius: 10px 0 0 10px; border-right: none; flex: 1; }
+                    .search-bar-modern button { border-radius: 0 10px 10px 0; padding: 0 30px; }
+
+                    /* Announcement Styling */
+                    .btn-full-width-container { width: 100%; margin-top: 10px; }
+                    .btn-full-width { width: 100%; display: block; font-size: 1.1rem; padding: 15px; }
+
+                    .ann-card-display { 
+                        display: flex; justify-content: space-between; align-items: center; 
+                        background: #334155; color: white; padding: 25px; border-radius: 12px; 
+                        margin-top: 20px; border: 1px solid #475569; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+                    }
+                    .ann-badge { font-size: 0.8rem; text-transform: uppercase; font-weight: 900; color: #fbbf24; letter-spacing: 0.05em; margin-bottom: 8px; display: block; }
+                    .ann-text-body { margin: 0; font-size: 1.15rem; line-height: 1.6; color: #f8fafc; font-weight: 500; }
+                    .btn-danger-outline { border: 2px solid #ef4444; color: #ef4444; background: transparent; font-weight: 700; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+                    .btn-danger-outline:hover { background: #ef4444; color: white; }
+
+                    /* KPI Cards */
+                    .stats-kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+                    .kpi-card { padding: 25px; border-radius: 15px; text-align: center; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+                    .kpi-card.active { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+                    .kpi-card.deact { background: linear-gradient(135deg, #475569, #334155); }
+                    .kpi-card.dormant { background: linear-gradient(135deg, #94a3b8, #64748b); }
+                    .kpi-label { font-size: 0.9rem; text-transform: uppercase; font-weight: 800; opacity: 0.9; letter-spacing: 0.025em; }
+                    .kpi-val { font-size: 2.5rem; font-weight: 900; display: block; margin-top: 5px; }
+
+                    /* User Card */
+                    .admin-user-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 35px; width: 100%; box-sizing: border-box; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); margin-bottom: 30px; }
+                    .admin-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+                    .left-col { border-right: 1px solid var(--border); padding-right: 40px; }
+                    .admin-user-title { margin-top: 0; font-size: 1.5rem; font-weight: 800; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; }
+
+                    .mt-10 { margin-top: 10px; } .mt-20 { margin-top: 20px; }
+                    .btn-row-end { display: flex; justify-content: flex-end; }
+                    
+                    @media (max-width: 1000px) { 
+                        .admin-two-col { grid-template-columns: 1fr; } .left-col { border-right: none; padding-right: 0; }
+                        .stats-kpi-grid { grid-template-columns: 1fr; }
+                    }
+                </style>
+            `;
+
+            const root = mainEl.firstElementChild;
+            setupTabs(root);
+            initCreatePanel(root, meta);
+            initBulkPanel(root, meta);
+            initSearchPanel(root, meta);
+            initAnnouncements(root);
+        } catch (err) {
+            mainEl.innerHTML = `<div class="admin-msg error">${err.message}</div>`;
+        }
+    }
+
+    window.prisonModules = window.prisonModules || {};
+    window.prisonModules.admin = {
+        init({ container }) { renderAdminPage(container); },
+    };
 })();

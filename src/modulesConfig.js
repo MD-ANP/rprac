@@ -1,7 +1,17 @@
-// src/modulesConfig.js
+/**
+ * Configurația centralizată a modulelor sistemului rprac.
+ * * Proprietăți:
+ * - key: Identificator unic folosit în frontend.
+ * - label: Numele afișat în interfață.
+ * - path: Ruta către fișierul HTML (null dacă nu are pagină proprie).
+ * - visible: Dacă apare în meniul principal de navigare.
+ * - oracleModuleId: ID-ul corespunzător din tabelul SPR_MODULES (null dacă nu are restricție DB).
+ * - requiredRoles: Array de ID-uri de roluri care au acces (ex: 7 pentru Admin).
+ * - minPermission: Nivelul minim de acces cerut ('R' - Citire, 'W' - Scriere).
+ */
 
-const modules = [
-  // --- VISIBLE IN NAV ---
+// 1. Module vizibile în meniul principal de navigare
+const navigationModules = [
   {
     key: "cautare",
     label: "Căutare",
@@ -10,28 +20,28 @@ const modules = [
     oracleModuleId: null
   },
   {
-    key: "adaugaDetinut", // <--- NEW MODULE
+    key: "adaugaDetinut",
     label: "Adaugă Deținut",
     path: "/app/index.html?module=adaugaDetinut",
     visible: true,
-    oracleModuleId: null, 
-    requiredRoles: [1, 7, 99] // Only these roles will see it
+    oracleModuleId: null,
+    requiredRoles: [1, 7, 99]
   },
   {
-    key: "comasare", // <--- NEW MODULE
+    key: "comasare",
     label: "Comasare",
     path: "/app/index.html?module=comasare",
     visible: true,
-    oracleModuleId: null, 
-    requiredRoles: [7, 99] // Only these roles will see it
+    oracleModuleId: null,
+    requiredRoles: [7, 99]
   },
   {
     key: "interogari",
     label: "Rapoarte & Interogări",
     path: "/app/index.html?module=interogari",
     visible: true,
-    oracleModuleId: null, 
-    requiredRoles: [7,99] // Only Role 7 sees this top-level item
+    oracleModuleId: null,
+    requiredRoles: [7, 99]
   },
   {
     key: "profil",
@@ -47,41 +57,23 @@ const modules = [
     visible: true,
     oracleModuleId: null,
     requiredRoles: [7]
-  },
-  {
-    key: "detinut",
-    label: "Dosar Deținut",
-    path: null,
-    visible: false, 
-    oracleModuleId: null,
-    requiredRoles: [] 
-  },
-  
-  { 
-    key: "garantii", 
-    label: "Garanții de Stat", 
-    visible: false, 
-    // You can assign a specific Module ID from SPR_MODULES if you create one in DB later.
-    // For now, no specific restriction beyond general access.
-    oracleModuleId: 39, 
-    minPermission: "R" 
-  },
-  // --- HIDDEN (PROFILE / SUB-MODULES) ---
-  {
-    key: "detinut",
-    label: "Dosar Deținut",
-    path: null,
-    visible: false, 
-    // IMPORTANT: Ensure no specific role is required to VIEW the base module.
-    // The specific 'Edit' permissions are handled inside the module routes.
-    oracleModuleId: null,
-    requiredRoles: [] 
-  },
-  // Medical Modules (Permission Check Only)
-  { key: "med_greva",   label: "Greva Foamei", visible: false, oracleModuleId: 7,  minPermission: "R" },
-  { key: "med_diag",    label: "Diagnoza",     visible: false, oracleModuleId: 8,  minPermission: "R" },
-  { key: "med_radio",   label: "Radiografie",  visible: false, oracleModuleId: 10, minPermission: "R" },
-  { key: "med_consult", label: "Consultare",   visible: false, oracleModuleId: 11, minPermission: "R" }
+  }
 ];
 
-module.exports = modules;
+// 2. Module de bază (Nucleu) - Accesibile dar ascunse din navigația principală
+const coreModules = [
+  {
+    key: "detinut",
+    label: "Dosar Deținut",
+    path: null,
+    visible: false,
+    oracleModuleId: null,
+    requiredRoles: []
+  }
+];
+
+// Exportăm toate modulele într-un singur array plat
+module.exports = [
+  ...navigationModules,
+  ...coreModules,
+];
