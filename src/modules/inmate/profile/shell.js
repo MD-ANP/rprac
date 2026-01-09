@@ -17,7 +17,7 @@
     { key: 'rude', label: 'Rude' },
     { key: 'complici', label: 'Complici' },
     { key: 'medicina', label: 'Medicină'},
-    { key: 'educatie', label: 'Educație'}, 
+    { key: 'educatie', label: 'Educație'},
     { key: 'psihologie', label: 'Psihologie' },
     { key: 'social', label: 'Social' },
     { key: 'securitate', label: 'Securitate' },
@@ -33,7 +33,8 @@
     'complici': '/modules/inmate/complici/client.js',
     'hotariri': '/modules/inmate/hotariri/client.js',
     'citatie': '/modules/inmate/citatie/client.js',
-    'miscari': '/modules/inmate/miscari/client.js'
+    'miscari': '/modules/inmate/miscari/client.js',
+    'regim': '/modules/inmate/regim/client.js'
   };
 
   let currentId = null;

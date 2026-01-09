@@ -1130,129 +1130,124 @@
   }
 
   // --- TRANSIT MAP (SVG) ---
+  // --- TRANSIT MAP (SVG) ---
   function renderTransitMap(list) {
-  if (!list.length) {
-    return `<div class="miscari-empty">
-              <div class="miscari-empty-icon">🧵</div>
-              <div class="miscari-empty-title">Fără mișcări înregistrate</div>
-              <div>Harta va apărea automat după ce adăugați cel puțin o mișcare.</div>
-            </div>`;
-  }
-
-  const perRow   = 6;     // max stations per row
-  const spacingX = 220;   // horizontal distance between stations
-  const spacingY = 180;   // vertical distance between rows
-
-  // 1) First pass: raw coordinates + bounds
-  const nodes = []; // { m, rx, ry }
-  let minX = Infinity, maxX = -Infinity;
-  let minY = Infinity, maxY = -Infinity;
-
-  for (let i = 0; i < list.length; i++) {
-    const m   = list[i];
-    const row = Math.floor(i / perRow);
-    const col = i % perRow;
-    const reversed = row % 2 === 1;
-
-    let rx = col * spacingX;
-    if (reversed) {
-      rx = (perRow - 1 - col) * spacingX;
-    }
-    const ry = row * spacingY;
-
-    nodes.push({ m, rx, ry });
-
-    if (rx < minX) minX = rx;
-    if (rx > maxX) maxX = rx;
-    if (ry < minY) minY = ry;
-    if (ry > maxY) maxY = ry;
-  }
-
-  if (!isFinite(minX)) {
-    minX = maxX = minY = maxY = 0;
-  }
-
-  // 2) Tight viewBox with padding
-  const padX = 140;
-  const padY = 110;
-
-  const spanX = (maxX - minX) || 1;
-  const spanY = (maxY - minY) || 1;
-
-  const width  = spanX + padX * 2;
-  const height = spanY + padY * 2;
-
-  let lines = "";
-  let stations = "";
-
-  // 3) Lines + stations
-  for (let i = 0; i < nodes.length; i++) {
-    const { m, rx, ry } = nodes[i];
-    const x = padX + (rx - minX);
-    const y = padY + (ry - minY);
-
-    // ---- LINES ----
-    if (i < nodes.length - 1) {
-      const n  = nodes[i + 1];
-      const nx = padX + (n.rx - minX);
-      const ny = padY + (n.ry - minY);
-
-      const color = getTypeColor(m);
-      const isLastSegment = i === nodes.length - 2;
-
-      lines += `<path d="M ${x} ${y} L ${nx} ${ny}"
-                      class="m-line ${isLastSegment ? "m-line-active" : ""}"
-                      stroke="${color}" />`;
+    if (!list.length) {
+      return `<div class="miscari-empty">
+                <div class="miscari-empty-icon">🧵</div>
+                <div class="miscari-empty-title">Fără mișcări înregistrate</div>
+                <div>Harta va apărea automat după ce adăugați cel puțin o mișcare.</div>
+              </div>`;
     }
 
-    // ---- LABEL CONTENT ----
-    const dateSplit = (m.ADATE_STR || "").split(" ");
-    const date = dateSplit[0] || "";
+    const perRow = 6;      // max stations per row
+    const spacingX = 220;  // horizontal distance
+    const spacingY = 220;  // increased vertical distance to avoid overlap
 
-    // BIG label = TYPE_NAME (PLECAT / ELIBERAT / SOSIT ...)
-    const typeRaw   = m.TYPE_NAME || "-";
-    const typeLabel = typeRaw.toUpperCase().substring(0, 18);
+    // 1) First pass: calculate coordinates
+    const nodes = [];
+    let minX = Infinity, maxX = -Infinity;
+    let minY = Infinity, maxY = -Infinity;
 
-    // Small chip = location (penitenciar / instanță / extern)
-    const placeRaw   = m.PENITENCIAR_NAME || m.INSTANTA_NAME || "Extern";
-    const placeLabel = placeRaw.substring(0, 28);
+    for (let i = 0; i < list.length; i++) {
+      const m = list[i];
+      const row = Math.floor(i / perRow);
+      const col = i % perRow;
+      const reversed = row % 2 === 1;
 
-    const isCurrent   = i === nodes.length - 1;
-    const typeColor   = getTypeColor(m);
-    const nodeColor   = typeColor;
-    const outlineColor = isCurrent ? "#22c55e" : "#ffffff";
+      let rx = col * spacingX;
+      if (reversed) {
+        rx = (perRow - 1 - col) * spacingX;
+      }
+      const ry = row * spacingY;
 
-    const extraClass = isCurrent ? "m-current-glow" : "";
+      nodes.push({ m, rx, ry, row, col });
 
-    stations += `
-      <g class="m-station ${extraClass}" transform="translate(${x},${y})"
-         onclick="window.miscariOps && window.miscariOps.editMiscare && miscariOps.editMiscare(${m.ID})">
-        <!-- station node -->
-        <circle r="30" fill="${nodeColor}" class="m-station-core"></circle>
-        <circle r="18" fill="${outlineColor}" class="m-station-outline"></circle>
+      if (rx < minX) minX = rx;
+      if (rx > maxX) maxX = rx;
+      if (ry < minY) minY = ry;
+      if (ry > maxY) maxY = ry;
+    }
 
-        <!-- date on top -->
-        <text x="0" y="-42" text-anchor="middle" class="m-station-date">${date}</text>
+    const padX = 140;
+    const padY = 120;
+    const width = ((maxX - minX) || 0) + padX * 2;
+    const height = ((maxY - minY) || 0) + padY * 2;
 
-        <!-- TYPE OF MISCARE in the middle -->
-        <text x="0" y="46" text-anchor="middle" class="m-station-label">${typeLabel}</text>
+    let lines = "";
+    let stations = "";
 
-        <!-- location chip below -->
-        <text x="0" y="68" text-anchor="middle" class="m-station-chip">${placeLabel}</text>
-      </g>
+    // 2) Draw Lines and Stations
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      const x = padX + (node.rx - minX);
+      const y = padY + (node.ry - minY);
+
+      // ---- LINE DRAWING WITH BREAK LOGIC ----
+      if (i < nodes.length - 1) {
+        const nextNode = nodes[i + 1];
+        const nx = padX + (nextNode.rx - minX);
+        const ny = padY + (nextNode.ry - minY);
+
+        // Logic: End the line if this station is a release/eliberare
+        const currentType = (node.m.TYPE_NAME || "").toUpperCase();
+        const isRelease = currentType.includes("ELIBER");
+
+        if (!isRelease) {
+          const color = getTypeColor(node.m);
+          const isLastSegment = i === nodes.length - 2;
+          
+          // If moving to a new row, use a slightly curved or dashed line to signify transition
+          lines += `<path d="M ${x} ${y} L ${nx} ${ny}" 
+                         class="m-line ${isLastSegment ? "m-line-active" : ""}" 
+                         stroke="${color}" 
+                         style="opacity: 0.6; stroke-width: 8;" />`;
+        }
+      }
+
+      // ---- STATION DESIGN ----
+      const m = node.m;
+      const date = (m.ADATE_STR || "").split(" ")[0] || "";
+      const typeLabel = (m.TYPE_NAME || "").toUpperCase().substring(0, 18);
+      const placeLabel = (m.PENITENCIAR_NAME || m.INSTANTA_NAME || "Extern").substring(0, 28);
+      
+      const isCurrent = i === nodes.length - 1;
+      const typeColor = getTypeColor(m);
+      const outlineColor = isCurrent ? "#22c55e" : "#ffffff";
+
+      stations += `
+        <g class="m-station ${isCurrent ? "m-current-glow" : ""}" transform="translate(${x},${y})"
+           onclick="window.miscariOps && window.miscariOps.editMiscare && miscariOps.editMiscare(${m.ID})">
+          
+          <circle r="28" fill="${typeColor}" class="m-station-core"></circle>
+          <circle r="16" fill="${outlineColor}" class="m-station-outline"></circle>
+
+          <g style="paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linecap: round; stroke-linejoin: round;">
+            <text x="0" y="-45" text-anchor="middle" class="m-station-date" style="stroke: #ffffff;">${date}</text>
+            <text x="0" y="50" text-anchor="middle" class="m-station-label" style="stroke: #ffffff;">${typeLabel}</text>
+            <text x="0" y="72" text-anchor="middle" class="m-station-chip" style="stroke: #ffffff; font-style: italic; fill: #6b7280;">${placeLabel}</text>
+          </g>
+        </g>
+      `;
+    }
+
+    return `
+      <svg class="miscari-map-svg" 
+           viewBox="0 0 ${width} ${height}" 
+           style="background: #fdfdfd; border-radius: 8px;">
+        <defs>
+          <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
+            <feOffset dx="0" dy="2" />
+            <feComponentTransfer><feFuncA type="linear" slope="0.2"/></feComponentTransfer>
+            <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        ${lines}
+        ${stations}
+      </svg>
     `;
   }
-
-  return `
-    <svg class="miscari-map-svg"
-         viewBox="0 0 ${width} ${height}"
-         preserveAspectRatio="xMidYMid meet">
-      ${lines}
-      ${stations}
-    </svg>
-  `;
-}
-
 
 
   function getTypeColor(m) {

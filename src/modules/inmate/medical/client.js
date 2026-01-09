@@ -1,331 +1,410 @@
-(function() {
+(function () {
     window.DetinutTabs = window.DetinutTabs || {};
-    let meta = null; // Caches dropdown data
-    let currentIdnp = null;
-    let permissions = {};
+    const api = window.prisonApi;
+    
+    let meta = {}; 
+    let userPerms = {}; 
+    let permsLoaded = false;
 
-    // --- CONFIGURATION ---
-    // IDs correspond to database module IDs: 7=Greva, 8=Diagnoza, 10=Radio, 11=Consult
-    const SUB_MODULES = [
-        { key: 'greva',       label: 'Greva Foamei',        moduleId: 7 },
-        { key: 'diagnoza',    label: 'Diagnoză Medicală',   moduleId: 8 },
-        { key: 'radiografie', label: 'Radiografie',         moduleId: 10 },
-        { key: 'consultare',  label: 'Consultare Externă',  moduleId: 11 }
-    ];
+    // --- CONSTANTS ---
+    const MODS = {
+        GREVA: 7,
+        DIAGNOZA: 8,
+        RADIOGRAFIE: 10,
+        CONSULTARE: 11
+    };
 
-    // --- PERMISSION HELPER ---
-    // Fetches permissions for the specific medical modules for current user
-    async function loadPermissions(userId) {
-        if (Object.keys(permissions).length > 0) return; // already loaded
+    // --- SHARED HELPERS ---
+    const getIdnp = () => window.currentDetinutData ? window.currentDetinutData.IDNP : null;
+    
+    // Date Formatter: YYYY-MM-DDTHH... -> DD.MM.YYYY
+    const fmt = (d) => {
+        if(!d) return '-';
+        if(d.length < 10) return d; 
+        const date = new Date(d);
+        if(isNaN(date.getTime())) return d;
+        const day = String(date.getDate()).padStart(2,'0');
+        const month = String(date.getMonth()+1).padStart(2,'0');
+        const year = date.getFullYear();
+        return `${day}.${month}.${year}`;
+    };
+
+    const opts = (list) => `<option value="">- Selectați -</option>` + (list || []).map(x => `<option value="${x.ID}">${x.NAME}</option>`).join('');
+
+    // --- DATA LOADING ---
+    async function ensureMeta() {
+        if (meta.loaded) return;
         try {
-            const res = await window.prisonApi.get(`/profile?userId=${userId}`);
-            if(res.success && res.permissions) {
-                res.permissions.forEach(p => {
-                    permissions[p.moduleId] = p.drept; // 'R', 'W' or null
-                });
+            const res = await api.get('/detinut/meta/medical');
+            if (res.success) {
+                meta = res; // Response is the object directly
+                meta.loaded = true;
             }
-        } catch(e) { console.error("Perms load error", e); }
+        } catch (e) { console.error("Meta load failed", e); }
     }
 
-    function getRight(moduleId) {
-        return permissions[moduleId] || null; // 'R', 'W', or null
-    }
-
-    // --- METADATA LOADER ---
-    async function fetchMeta() {
-        if(meta) return;
-        const res = await window.prisonApi.get('/detinut/meta/medical');
-        if(res.success) meta = res;
-        else throw new Error("Nu s-au putut încărca nomenclatoarele medicale.");
-    }
-
-    // --- HTML GENERATORS ---
-    function renderLayout(container, allowedTabs) {
-        injectMedModal();
-        
-        if (allowedTabs.length === 0) {
-            container.innerHTML = `<div class="admin-panel text-center"><p class="text-muted">Nu aveți drepturi de vizualizare pentru niciun sub-modul medical.</p></div>`;
-            return;
-        }
-
-        container.innerHTML = `
-          <div class="module-container">
-            <div class="module-sidebar">
-               <h4>Dosar Medical</h4>
-               <nav id="medNav">
-                 ${allowedTabs.map(t => `<button class="side-nav-btn" data-key="${t.key}">${t.label}</button>`).join('')}
-               </nav>
-            </div>
-            <div class="module-content" id="medContent">
-               <div class="loader-box">Selectați o categorie.</div>
-            </div>
-          </div>
-        `;
-
-        // Bind clicks
-        const navBtns = container.querySelectorAll('.side-nav-btn');
-        const content = container.querySelector('#medContent');
-
-        navBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                navBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                loadSubModule(btn.dataset.key, content);
-            });
-        });
-
-        // Click first
-        if (navBtns.length > 0) navBtns[0].click();
-    }
-
-    async function loadSubModule(key, container) {
-        container.innerHTML = '<div class="loader-box">Se încarcă...</div>';
-        
+    async function ensurePermissions() {
+        if (permsLoaded) return;
         try {
-            // Fetch data
-            const res = await window.prisonApi.get(`/detinut/${currentIdnp}/medical/${key}`);
-            if(!res.success) throw new Error(res.error);
+            const res = await api.get('/detinut/permissions/medical');
+            if (res.success) {
+                userPerms = res.perms || {};
+                permsLoaded = true;
+            }
+        } catch (e) { console.error("Perms load failed", e); }
+    }
 
-            // Re-verify Write permission from server response to be safe
-            const serverCanWrite = res.canWrite; 
+    const canEdit = (modId) => userPerms[modId] === 'W';
+
+    // Generic Modal Builder (Same as Regim)
+    function getModalHtml(id, title, formHtml, saveFunc) {
+        const style = `
+            <style>
+                .admin-form input, .admin-form select, .admin-form textarea, .admin-form .flatpickr-input { 
+                    width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; 
+                    margin-bottom: 10px; font-size: 0.95rem; box-sizing: border-box; background: #fff; color: #1e293b; font-family: inherit; transition: border-color 0.2s;
+                }
+                .admin-form input:focus, .admin-form select:focus, .admin-form textarea:focus { border-color: #2563eb; outline: none; box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
+                .admin-form input[readonly].flatpickr-input { background-color: #fff; cursor: pointer; }
+                .admin-form textarea { resize: vertical; min-height: 80px; }
+                .admin-form label { font-weight: 600; font-size: 0.85rem; color: #475569; margin-bottom: 4px; display:block; }
+                .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+                .f { margin-bottom: 5px; }
+            </style>
+        `;
+        return `
+            ${style}
+            <div class="modal-overlay" id="${id}">
+                <div class="modal-card">
+                    <div class="modal-header">
+                        <h3 class="modal-title">${title}</h3>
+                        <button class="btn-close" onclick="document.getElementById('${id}').classList.remove('open')">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <form onsubmit="return false;" class="admin-form">${formHtml}</form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-ghost" onclick="document.getElementById('${id}').classList.remove('open')">Anulează</button>
+                        <button class="btn-primary" onclick="${saveFunc}()">Salvează</button>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    // --- 1. GREVA FOAMEI ---
+    window.DetinutTabs['greva'] = {
+        render: async (container) => {
+            await Promise.all([ensureMeta(), ensurePermissions()]);
+            const idnp = getIdnp();
+            const editable = canEdit(MODS.GREVA);
+            if(!idnp) return container.innerHTML = '<div class="error-box">Lipsă IDNP</div>';
+
+            const loadData = async () => {
+                container.innerHTML = '<div class="loader-box">Se încarcă...</div>';
+                const res = await api.get(`/detinut/${idnp}/medical/greva`);
+                if(!res.success) return container.innerHTML = `<div class="error-box">${res.error}</div>`;
+                
+                const rowsHtml = (res.rows || []).map(r => `
+                    <tr>
+                        <td>${r.BDATE}</td>
+                        <td>${r.EDATE || '-'}</td>
+                        <td style="color:#ef4444; font-weight:600;">${r.MOTIV || '-'}</td>
+                        ${editable ? `<td class="text-center"><button class="btn-danger btn-tiny" onclick="window.grevaOps.del(${r.ID})">×</button></td>` : ''}
+                    </tr>
+                `).join('');
+
+                container.innerHTML = `
+                    <div class="admin-panel" style="border-top: 4px solid #ef4444;">
+                        <div class="flex-between mb-4">
+                            <h2 style="color:#b91c1c">⚠️ Greva Foamei</h2>
+                            ${editable ? `<button class="btn-primary" onclick="document.getElementById('modalGreva').classList.add('open')">Adaugă</button>` : ''}
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data Start</th><th>Data Stop</th><th>Motiv</th>
+                                        ${editable ? `<th>Acțiuni</th>` : ''}
+                                    </tr>
+                                </thead>
+                                <tbody>${rowsHtml || `<tr><td colspan="${editable ? 4 : 3}" class="text-center text-muted">Nu există înregistrări.</td></tr>`}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                    ${editable ? getModalHtml('modalGreva', 'Înregistrare Grevă', `
+                        <div class="grid-2">
+                            <div class="f"><label>Data Start</label><input class="dp" id="g_bdate"></div>
+                            <div class="f"><label>Data Stop</label><input class="dp" id="g_edate"></div>
+                        </div>
+                        <div class="f"><label>Motiv</label><select id="g_motiv">${opts(meta.motives)}</select></div>
+                    `, 'window.grevaOps.add') : ''}
+                `;
+                if(editable && window.flatpickr) window.flatpickr(".dp", { dateFormat: "d.m.Y" });
+            };
             
-            renderTable(container, key, res.rows, serverCanWrite);
-        } catch(e) {
-            container.innerHTML = `<div class="error-box">Eroare: ${e.message}</div>`;
-        }
-    }
-
-    function renderTable(container, key, rows, canWrite) {
-        let cols = [];
-        let rowMapper = null;
-        let title = "";
-
-        // Define Table Structure
-        if (key === 'greva') {
-            title = "Greva Foamei";
-            cols = ["Data Start", "Data Stop", "Motiv"];
-            rowMapper = r => `<td>${r.BDATE}</td><td>${r.EDATE||'—'}</td><td>${r.MOTIV||'—'}</td>`;
-        } else if (key === 'diagnoza') {
-            title = "Diagnoze Medicale";
-            cols = ["Data", "Cod", "Diagnostic", "Note"];
-            rowMapper = r => `<td>${r.ADATE}</td><td><span class="badge badge-none">${r.DIAGNOZ_COD||'?'}</span></td><td>${r.DIAGNOZ_NAME}</td><td>${r.NOTE||''}</td>`;
-        } else if (key === 'radiografie') {
-            title = "Radiografii";
-            cols = ["Data", "Rezultat", "Penitenciar", "Comentarii"];
-            rowMapper = r => `<td>${r.ADATE}</td><td><span class="badge ${r.REZULTAT==='Patologic'?'badge-write':'badge-read'}">${r.REZULTAT||'-'}</span></td><td>${r.PENITENCIAR||'-'}</td><td>${r.COMMENTS||''}</td>`;
-        } else if (key === 'consultare') {
-            title = "Consultări Externe";
-            cols = ["Data", "Doctor", "Instituție", "Investigație"];
-            rowMapper = r => `<td>${r.ADATE}</td><td>${r.NPP_DOCTOR||'-'}</td><td>${r.HOSPITAL||'-'}</td><td>${r.INVESTIGATIE||'-'}</td>`;
-        }
-
-        const btnAdd = canWrite ? `<button class="btn-primary btn-small" onclick="window.medOps.openAdd('${key}')">+ Adaugă</button>` : '';
-
-        let html = `
-            <div class="flex-between" style="border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:16px;">
-                <h3 style="margin:0; font-size:1.1rem; color:#1e293b;">${title}</h3>
-                ${btnAdd}
-            </div>
-            <div class="table-wrapper">
-                <table class="data-table">
-                    <thead>
-                        <tr>${cols.map(c => `<th>${c}</th>`).join('')}${canWrite ? '<th style="width:100px; text-align:center;">Acțiuni</th>' : ''}</tr>
-                    </thead>
-                    <tbody>
-        `;
-
-        if (rows.length === 0) {
-            html += `<tr><td colspan="${cols.length + (canWrite?1:0)}" class="table-empty">Nu există înregistrări.</td></tr>`;
-        } else {
-            html += rows.map(r => {
-                // Escape JSON for onclick safety
-                const safeJson = JSON.stringify(r).replace(/"/g, '&quot;');
-                let act = '';
-                if(canWrite) {
-                    act = `<td class="text-center">
-                        <button class="btn-ghost btn-tiny" onclick="window.medOps.openEdit('${key}', ${safeJson})">✏️</button>
-                        <button class="btn-danger btn-tiny" onclick="window.medOps.del('${key}', ${r.ID})">×</button>
-                    </td>`;
-                }
-                return `<tr>${rowMapper(r)}${act}</tr>`;
-            }).join('');
-        }
-
-        html += `</tbody></table></div>`;
-        container.innerHTML = html;
-    }
-
-    // --- MODAL & FORMS ---
-    function injectMedModal() {
-        if(document.getElementById('medModal')) return;
-        const html = `
-        <div class="modal-overlay" id="medModal">
-            <div class="modal-card">
-                <div class="modal-header">
-                    <h3 class="modal-title" id="medTitle">Înregistrare</h3>
-                    <button class="btn-close" onclick="window.medOps.close()">×</button>
-                </div>
-                <div class="modal-body">
-                    <form id="medForm" class="admin-form"></form>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-ghost" onclick="window.medOps.close()">Anulează</button>
-                    <button class="btn-primary" onclick="window.medOps.submit()">Salvează</button>
-                </div>
-            </div>
-        </div>`;
-        document.body.insertAdjacentHTML('beforeend', html);
-    }
-
-    // Builds form fields dynamically based on type
-    function getFormFields(key, d = {}) {
-        const today = new Date().toLocaleDateString('ro-RO');
-        const opts = (arr, selId) => (arr||[]).map(i => `<option value="${i.ID}" ${String(i.ID) === String(selId) ? 'selected' : ''}>${i.NAME}</option>`).join('');
-
-        if (key === 'greva') {
-            return `
-                <div class="admin-grid-2">
-                    <div class="f"><label>Data Start</label><input type="text" name="bdate" class="datepicker" value="${d.BDATE || today}" placeholder="DD.MM.YYYY"></div>
-                    <div class="f"><label>Data Stop</label><input type="text" name="edate" class="datepicker" value="${d.EDATE || ''}" placeholder="DD.MM.YYYY"></div>
-                </div>
-                <div class="f mt-4"><label>Motivul Grevei</label><select name="id_motiv" class="full-width"><option value="">- Selectează -</option>${opts(meta.motives, d.ID_MOTIV)}</select></div>
-            `;
-        }
-        if (key === 'diagnoza') {
-            return `
-                <div class="f"><label>Data Diagnosticului</label><input type="text" name="adate" class="datepicker" value="${d.ADATE || today}" placeholder="DD.MM.YYYY"></div>
-                <div class="f"><label>Diagnostic (ICD)</label><select name="id_diagnoz" class="full-width search-select"><option value="">- Caută Diagnostic -</option>${opts(meta.diagnoz, d.ID_DIAGNOZ)}</select></div>
-                <div class="f"><label>Note / Detalii</label><textarea name="note" rows="3" class="full-width">${d.NOTE || ''}</textarea></div>
-            `;
-        }
-        if (key === 'radiografie') {
-            return `
-                <div class="f"><label>Data Efectuării</label><input type="text" name="adate" class="datepicker" value="${d.ADATE || today}" placeholder="DD.MM.YYYY"></div>
-                <div class="admin-grid-2">
-                    <div class="f"><label>Rezultat</label><select name="id_resultat" class="full-width">${opts(meta.results, d.ID_RESULTAT)}</select></div>
-                    <div class="f"><label>Penitenciar</label><select name="id_penitenciar" class="full-width">${opts(meta.penitenciars, d.ID_PENETENTIAR)}</select></div>
-                </div>
-                <div class="f"><label>Comentarii</label><textarea name="comments" rows="2" class="full-width">${d.COMMENTS || ''}</textarea></div>
-            `;
-        }
-        if (key === 'consultare') {
-            return `
-                <div class="admin-grid-2">
-                    <div class="f"><label>Data Consult</label><input type="text" name="adate" class="datepicker" value="${d.ADATE || today}" placeholder="DD.MM.YYYY"></div>
-                    <div class="f"><label>Nume Doctor</label><input type="text" name="npp_doctor" value="${d.NPP_DOCTOR || ''}"></div>
-                </div>
-                <div class="f"><label>Instituție Medicală</label><select name="id_hospital" class="full-width">${opts(meta.hospitals, d.ID_HOSPITAL)}</select></div>
-                <div class="f"><label>Tip Investigație</label><select name="id_investigatii" class="full-width">${opts(meta.investigations, d.ID_INVESTIGATII)}</select></div>
-            `;
-        }
-        return '';
-    }
-
-    // --- GLOBAL OPERATIONS WRAPPER ---
-    // Exposed to allow inline onclick handlers in generated HTML
-    window.medOps = {
-        currentKey: null,
-        currentId: null,
-
-        openAdd: (key) => {
-            window.medOps.currentKey = key;
-            window.medOps.currentId = null;
-            const form = document.getElementById('medForm');
-            form.innerHTML = getFormFields(key, {});
-            document.getElementById('medTitle').textContent = `Adăugare ${key.toUpperCase()}`;
-            document.getElementById('medModal').classList.add('open');
-        },
-
-        openEdit: (key, data) => {
-            window.medOps.currentKey = key;
-            window.medOps.currentId = data.ID;
-            const form = document.getElementById('medForm');
-            form.innerHTML = getFormFields(key, data);
-            document.getElementById('medTitle').textContent = `Editare ${key.toUpperCase()}`;
-            document.getElementById('medModal').classList.add('open');
-        },
-
-        close: () => {
-            document.getElementById('medModal').classList.remove('open');
-        },
-
-        submit: async () => {
-            const key = window.medOps.currentKey;
-            const id = window.medOps.currentId;
-            const form = document.getElementById('medForm');
-            const fd = new FormData(form);
-            const payload = Object.fromEntries(fd);
-
-            try {
-                let url, method;
-                if (id) {
-                    url = `/detinut/medical/${key}/${id}`;
-                    method = 'PUT';
-                } else {
-                    url = `/detinut/${currentIdnp}/medical/${key}`;
-                    method = 'POST';
-                }
-
-                // Manually calling fetch to support PUT/POST correctly
-                const headers = { "Content-Type": "application/json" };
-                const userId = sessionStorage.getItem("prison.userId");
-                if (userId) headers["X-User-Id"] = userId;
-
-                const res = await fetch(`/api${url}`, {
-                    method: method,
-                    headers: headers,
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                
-                if(!data.success) throw new Error(data.error);
-                
-                window.medOps.close();
-                // Reload Module
-                const content = document.getElementById('medContent');
-                loadSubModule(key, content);
-
-            } catch (e) {
-                alert("Eroare: " + e.message);
-            }
-        },
-
-        del: async (key, id) => {
-            if(!confirm("Sigur ștergeți înregistrarea?")) return;
-            try {
-                await window.prisonApi.del(`/detinut/medical/${key}/${id}`);
-                const content = document.getElementById('medContent');
-                loadSubModule(key, content);
-            } catch(e) { alert(e.message); }
+            window.grevaOps = {
+                add: async () => {
+                    await api.post(`/detinut/${idnp}/medical/greva`, {
+                        bdate: document.getElementById('g_bdate').value,
+                        edate: document.getElementById('g_edate').value,
+                        id_motiv: document.getElementById('g_motiv').value
+                    });
+                    document.getElementById('modalGreva').classList.remove('open');
+                    loadData();
+                },
+                del: async (id) => { if(confirm('Ștergeți?')) { await api.del(`/detinut/medical/greva/${id}`); loadData(); } }
+            };
+            loadData();
         }
     };
 
-    // --- MAIN RENDER ---
+    // --- 2. DIAGNOZA ---
+    window.DetinutTabs['diagnoza'] = {
+        render: async (container) => {
+            await Promise.all([ensureMeta(), ensurePermissions()]);
+            const idnp = getIdnp();
+            const editable = canEdit(MODS.DIAGNOZA);
+
+            const loadData = async () => {
+                const res = await api.get(`/detinut/${idnp}/medical/diagnoza`);
+                const rows = (res.rows || []).map(r => `
+                    <tr>
+                        <td>${r.ADATE}</td>
+                        <td><span style="font-family:monospace; background:#f1f5f9; padding:2px 6px; border-radius:4px;">${r.DIAGNOZ_COD||'?'}</span></td>
+                        <td>${r.DIAGNOZ_NAME}</td>
+                        <td><small>${r.NOTE || ''}</small></td>
+                        ${editable ? `<td class="text-center"><button class="btn-danger btn-tiny" onclick="window.diagOps.del(${r.ID})">×</button></td>` : ''}
+                    </tr>
+                `).join('');
+
+                container.innerHTML = `
+                    <div class="admin-panel">
+                        <div class="flex-between mb-4">
+                            <h2>Diagnoze Medicale</h2>
+                            ${editable ? `<button class="btn-primary" onclick="document.getElementById('modalDiag').classList.add('open')">Adaugă</button>` : ''}
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th><th>Cod</th><th>Diagnostic</th><th>Note</th>
+                                        ${editable ? `<th>Acțiuni</th>` : ''}
+                                    </tr>
+                                </thead>
+                                <tbody>${rows || `<tr><td colspan="${editable ? 5 : 4}" class="text-center text-muted">Lipsă date.</td></tr>`}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                    ${editable ? getModalHtml('modalDiag', 'Adaugă Diagnoză', `
+                        <div class="f"><label>Data</label><input class="dp" id="d_adate"></div>
+                        <div class="f"><label>Diagnostic</label><select id="d_id">${opts(meta.diagnoz)}</select></div>
+                        <div class="f"><label>Note</label><textarea id="d_note"></textarea></div>
+                    `, 'window.diagOps.add') : ''}
+                `;
+                if(editable && window.flatpickr) window.flatpickr(".dp", { dateFormat: "d.m.Y" });
+            };
+            window.diagOps = {
+                add: async () => {
+                    await api.post(`/detinut/${idnp}/medical/diagnoza`, {
+                        adate: document.getElementById('d_adate').value,
+                        id_diagnoz: document.getElementById('d_id').value,
+                        note: document.getElementById('d_note').value
+                    });
+                    document.getElementById('modalDiag').classList.remove('open');
+                    loadData();
+                },
+                del: async(id) => { if(confirm('Ștergeți?')) { await api.del(`/detinut/medical/diagnoza/${id}`); loadData(); } }
+            };
+            loadData();
+        }
+    };
+
+    // --- 3. RADIOGRAFIE ---
+    window.DetinutTabs['radiografie'] = {
+        render: async (container) => {
+            await Promise.all([ensureMeta(), ensurePermissions()]);
+            const idnp = getIdnp();
+            const editable = canEdit(MODS.RADIOGRAFIE);
+
+            const loadData = async () => {
+                const res = await api.get(`/detinut/${idnp}/medical/radiografie`);
+                const rows = (res.rows || []).map(r => `
+                    <tr>
+                        <td>${r.ADATE}</td>
+                        <td><span style="${r.REZULTAT==='Patologic'?'color:#ef4444; font-weight:bold;':''}">${r.REZULTAT||'-'}</span></td>
+                        <td>${r.PENITENCIAR||'-'}</td>
+                        <td><small>${r.COMMENTS||''}</small></td>
+                        ${editable ? `<td class="text-center"><button class="btn-danger btn-tiny" onclick="window.radioOps.del(${r.ID})">×</button></td>` : ''}
+                    </tr>
+                `).join('');
+
+                container.innerHTML = `
+                    <div class="admin-panel">
+                        <div class="flex-between mb-4">
+                            <h2>Radiografie</h2>
+                            ${editable ? `<button class="btn-primary" onclick="document.getElementById('modalRadio').classList.add('open')">Adaugă</button>` : ''}
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th><th>Rezultat</th><th>Penitenciar</th><th>Comentarii</th>
+                                        ${editable ? `<th>Acțiuni</th>` : ''}
+                                    </tr>
+                                </thead>
+                                <tbody>${rows || `<tr><td colspan="${editable ? 5 : 4}" class="text-center text-muted">Lipsă date.</td></tr>`}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                    ${editable ? getModalHtml('modalRadio', 'Adaugă Radiografie', `
+                        <div class="f"><label>Data</label><input class="dp" id="r_adate"></div>
+                        <div class="grid-2">
+                            <div class="f"><label>Rezultat</label><select id="r_res">${opts(meta.results)}</select></div>
+                            <div class="f"><label>Penitenciar</label><select id="r_pen">${opts(meta.penitenciars)}</select></div>
+                        </div>
+                        <div class="f"><label>Comentarii</label><textarea id="r_comm"></textarea></div>
+                    `, 'window.radioOps.add') : ''}
+                `;
+                if(editable && window.flatpickr) window.flatpickr(".dp", { dateFormat: "d.m.Y" });
+            };
+            window.radioOps = {
+                add: async () => {
+                    await api.post(`/detinut/${idnp}/medical/radiografie`, {
+                        adate: document.getElementById('r_adate').value,
+                        id_resultat: document.getElementById('r_res').value,
+                        id_penitenciar: document.getElementById('r_pen').value,
+                        comments: document.getElementById('r_comm').value
+                    });
+                    document.getElementById('modalRadio').classList.remove('open');
+                    loadData();
+                },
+                del: async(id) => { if(confirm('Ștergeți?')) { await api.del(`/detinut/medical/radiografie/${id}`); loadData(); } }
+            };
+            loadData();
+        }
+    };
+
+    // --- 4. CONSULTARE ---
+    window.DetinutTabs['consultare'] = {
+        render: async (container) => {
+            await Promise.all([ensureMeta(), ensurePermissions()]);
+            const idnp = getIdnp();
+            const editable = canEdit(MODS.CONSULTARE);
+
+            const loadData = async () => {
+                const res = await api.get(`/detinut/${idnp}/medical/consultare`);
+                const rows = (res.rows || []).map(r => `
+                    <tr>
+                        <td>${r.ADATE}</td>
+                        <td>${r.NPP_DOCTOR||'-'}</td>
+                        <td>${r.HOSPITAL||'-'}</td>
+                        <td>${r.INVESTIGATIE||'-'}</td>
+                        ${editable ? `<td class="text-center"><button class="btn-danger btn-tiny" onclick="window.consOps.del(${r.ID})">×</button></td>` : ''}
+                    </tr>
+                `).join('');
+
+                container.innerHTML = `
+                    <div class="admin-panel">
+                        <div class="flex-between mb-4">
+                            <h2>Consultare Externă</h2>
+                            ${editable ? `<button class="btn-primary" onclick="document.getElementById('modalCons').classList.add('open')">Adaugă</button>` : ''}
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th><th>Doctor</th><th>Instituție</th><th>Investigație</th>
+                                        ${editable ? `<th>Acțiuni</th>` : ''}
+                                    </tr>
+                                </thead>
+                                <tbody>${rows || `<tr><td colspan="${editable ? 5 : 4}" class="text-center text-muted">Lipsă date.</td></tr>`}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                    ${editable ? getModalHtml('modalCons', 'Consultare Nouă', `
+                        <div class="grid-2">
+                            <div class="f"><label>Data</label><input class="dp" id="c_adate"></div>
+                            <div class="f"><label>Doctor (Nume)</label><input id="c_doc"></div>
+                        </div>
+                        <div class="f"><label>Spital / Instituție</label><select id="c_hosp">${opts(meta.hospitals)}</select></div>
+                        <div class="f"><label>Tip Investigație</label><select id="c_inv">${opts(meta.investigations)}</select></div>
+                    `, 'window.consOps.add') : ''}
+                `;
+                if(editable && window.flatpickr) window.flatpickr(".dp", { dateFormat: "d.m.Y" });
+            };
+            window.consOps = {
+                add: async () => {
+                    await api.post(`/detinut/${idnp}/medical/consultare`, {
+                        adate: document.getElementById('c_adate').value,
+                        npp_doctor: document.getElementById('c_doc').value,
+                        id_hospital: document.getElementById('c_hosp').value,
+                        id_investigatii: document.getElementById('c_inv').value
+                    });
+                    document.getElementById('modalCons').classList.remove('open');
+                    loadData();
+                },
+                del: async(id) => { if(confirm('Ștergeți?')) { await api.del(`/detinut/medical/consultare/${id}`); loadData(); } }
+            };
+            loadData();
+        }
+    };
+
+    // --- MASTER TAB: MEDICINA ---
     window.DetinutTabs['medicina'] = {
-        render: async (container, detinutId) => {
-             // 1. Get IDNP from global context
-             const idnp = window.currentDetinutData ? window.currentDetinutData.IDNP : null;
-             if (!idnp) { container.innerHTML = '<div class="error-box">Lipsă IDNP.</div>'; return; }
-             currentIdnp = idnp;
+        render: async (container) => {
+            await ensurePermissions(); // Cache perms first
+            
+            container.innerHTML = `
+                <style>
+                    .regim-sub-nav { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; overflow-x: auto; }
+                    .regim-pill { 
+                        background: white; border: 1px solid #cbd5e1; padding: 6px 14px; 
+                        border-radius: 18px; cursor: pointer; font-weight: 600; color: #475569; white-space: nowrap; font-size: 0.9rem;
+                        transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+                    }
+                    .regim-pill:hover { background: #f1f5f9; color: #0f172a; border-color: #94a3b8; }
+                    .regim-pill.active { background: #2563eb; color: white; border-color: #2563eb; }
+                    
+                    .pill-warn.active { background: #ef4444; border-color: #ef4444; }
 
-             // 2. Fetch Meta & Permissions
-             try {
-                 const userId = sessionStorage.getItem("prison.userId");
-                 await Promise.all([fetchMeta(), loadPermissions(userId)]);
-             } catch(e) {
-                 container.innerHTML = `<div class="error-box">${e.message}</div>`;
-                 return;
-             }
+                    #medSubContent { min-height: 400px; animation: fadeIn 0.3s ease-out; }
+                </style>
 
-             // 3. Filter Allowed Sub-Tabs
-             const allowedTabs = SUB_MODULES.filter(m => {
-                 const right = getRight(m.moduleId);
-                 // Allow if right is R or W
-                 return right === 'R' || right === 'W';
-             });
+                <div class="regim-sub-nav">
+                    <button class="regim-pill active" onclick="window.medMaster.switch('diagnoza', this)">🩺 Diagnoză</button>
+                    <button class="regim-pill" onclick="window.medMaster.switch('consultare', this)">🏥 Consultare</button>
+                    <button class="regim-pill" onclick="window.medMaster.switch('radiografie', this)">🦴 Radiografie</button>
+                    <div style="width:1px; background:#e2e8f0; margin:0 5px;"></div>
+                    <button class="regim-pill pill-warn" onclick="window.medMaster.switch('greva', this)">⚠️ Greva Foamei</button>
+                </div>
+                
+                <div id="medSubContent">
+                    <div class="loader-box">Se inițializează...</div>
+                </div>
+            `;
 
-             // 4. Render Sidebar
-             renderLayout(container, allowedTabs);
+            window.medMaster = {
+                switch: async (subKey, btnEl) => {
+                    container.querySelectorAll('.regim-pill').forEach(b => b.classList.remove('active'));
+                    if(btnEl) btnEl.classList.add('active');
+
+                    const contentDiv = document.getElementById('medSubContent');
+                    contentDiv.innerHTML = '<div class="loader-box">Se încarcă...</div>';
+
+                    const module = window.DetinutTabs[subKey];
+                    if (module && module.render) {
+                        try {
+                            await module.render(contentDiv);
+                        } catch (e) {
+                            contentDiv.innerHTML = `<div class="error-box">Eroare sub-modul: ${e.message}</div>`;
+                        }
+                    } else {
+                        contentDiv.innerHTML = `<div class="error-box">Sub-modulul '${subKey}' nu a fost găsit.</div>`;
+                    }
+                }
+            };
+            // Default load
+            window.medMaster.switch('diagnoza', container.querySelector('.regim-pill'));
         }
     };
 })();
