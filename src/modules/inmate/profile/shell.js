@@ -34,7 +34,8 @@
     'hotariri': '/modules/inmate/hotariri/client.js',
     'citatie': '/modules/inmate/citatie/client.js',
     'miscari': '/modules/inmate/miscari/client.js',
-    'regim': '/modules/inmate/regim/client.js'
+    'regim': '/modules/inmate/regim/client.js',
+    'securitate': '/modules/inmate/securitate/client.js'
   };
 
   let currentId = null;

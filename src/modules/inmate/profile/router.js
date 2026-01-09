@@ -88,8 +88,13 @@ router.get("/detinut/:id/general_full", async (req, res) => {
     const idnp = detinut.IDNP;
 
     // Fetch Sub-entities
-    const imgRes = await db.execute("SELECT IMAGE_TYPE FROM PRISON.IMAGES WHERE DETINUT_ID = :id ORDER BY IMAGE_TYPE ASC", { id });
-    const images = (imgRes.rows || []).map(i => ({ id: i.IMAGE_TYPE, type: i.IMAGE_TYPE, url: `/uploads/photos/${idnp.charAt(0)}/${idnp}/${i.IMAGE_TYPE}.webp?v=${Date.now()}` })); // <-- FIXED PATH
+    const imgRes = await db.execute("SELECT ID, IMAGE_TYPE FROM PRISON.IMAGES WHERE DETINUT_ID = :id ORDER BY ID DESC", { id });
+    const images = (imgRes.rows || []).map(i => ({ 
+        id: i.ID, 
+        type: i.IMAGE_TYPE, 
+        // We now use the unique DB ID for the filename to allow multiple images per category
+        url: `/uploads/photos/${idnp.charAt(0)}/${idnp}/${i.ID}.webp` 
+    }));
 
     const citRes = await db.execute(`SELECT C.ID, S.NAME, TO_CHAR(C.BDATE, 'DD.MM.YYYY') as BDATE FROM PRISON.SITIZEN C JOIN PRISON.SPR_SITIZEN S ON S.ID = C.ID_SITIZEN WHERE C.IDNP = :idnp`, { idnp });
     const actRes = await db.execute(`SELECT A.ID, A.NRDOCUMENT, TO_CHAR(A.ELIBERAT_DATA, 'DD.MM.YYYY') as ELIB_STR, TO_CHAR(A.VALABIL_PINA, 'DD.MM.YYYY') as EXP_STR, T.NAME as TIP_DOC FROM PRISON.ACTE A JOIN PRISON.SPR_TIP_DOCUMENT T ON T.ID = A.ID_TIP_DOCUMENT WHERE A.IDNP = :idnp`, { idnp });
@@ -159,41 +164,87 @@ router.delete("/detinut/address/:id", async (req, res) => {
 });
 
 // --- PHOTOS ---
+// --- PHOTOS (Updated for Multiple Images) ---
+// --- PHOTOS (Updated for Multiple Images per category) ---
 router.post("/detinut/:id/photos", upload.single('image'), async (req, res) => {
+    // 1. Permission Check
     if (!await canEditGeneral(getUid(req))) return res.status(403).json({success:false});
     
+    // 2. Validation
     if (!req.file) return res.status(400).json({success:false, error:"Lipsă fișier"});
-    const type = req.body.type || "1";
+    
+    // Parse type to Integer because DB column IMAGE_TYPE is NUMBER
+    const type = parseInt(req.body.type || "1", 10); 
     
     try {
-        // Get IDNP to build path
+        // 3. Get IDNP for folder path
         const dRes = await db.execute("SELECT IDNP FROM PRISON.DETINUTI WHERE ID=:id", {id:req.params.id});
         if(!dRes.rows.length) throw new Error("Deținut invalid");
         const idnp = dRes.rows[0].IDNP;
-        const dir1 = idnp.charAt(0);
         
+        // 4. Get the next ID manually from YOUR existing sequence
+        // We do this so we know the filename BEFORE we insert
+        const seqRes = await db.execute("SELECT PRISON.IMAGES_ID_SEQ.NEXTVAL as NEXT_ID FROM DUAL");
+        const newId = seqRes.rows[0].NEXT_ID;
+
+        // 5. Insert into DB 
+        // We explicitly pass 'newId'. The updated trigger will respect this value.
+        // We ignore the 'IMAGE' blob column (it will be NULL).
+        await db.execute(
+            "INSERT INTO PRISON.IMAGES (ID, DETINUT_ID, IMAGE_TYPE) VALUES (:id, :did, :t)", 
+            { id: newId, did: req.params.id, t: type }, 
+            { autoCommit: true }
+        );
+
+        // 6. Save File to Disk
+        const dir1 = idnp.charAt(0);
         const targetDir = path.join(PHOTOS_BASE_DIR, dir1, idnp);
         if(!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, {recursive:true});
         
-        const targetPath = path.join(targetDir, `${type}.webp`);
+        const targetPath = path.join(targetDir, `${newId}.webp`);
         
         await sharp(req.file.path)
-           .resize(600) // Reasonable max width
-           .webp({ quality: 80 })
-           .toFile(targetPath);
-           
-        // Cleanup temp
+            .resize(800)
+            .webp({ quality: 85 })
+            .toFile(targetPath);
+            
+        // Cleanup temp file
         fs.unlink(req.file.path, ()=>{});
-        
-        // Update DB Record
-        const check = await db.execute("SELECT 1 FROM PRISON.IMAGES WHERE DETINUT_ID=:id AND IMAGE_TYPE=:t", {id:req.params.id, t:type});
-        if(check.rows.length === 0) {
-             await db.execute("INSERT INTO PRISON.IMAGES (DETINUT_ID, IMAGE_TYPE) VALUES (:id, :t)", {id:req.params.id, t:type}, {autoCommit:true});
-        }
         
         res.json({success:true});
     } catch(e) {
         if(req.file) fs.unlink(req.file.path, ()=>{});
+        res.status(500).json({success:false, error:e.message});
+    }
+});
+
+router.delete("/detinut/photos/:imgId", async (req, res) => {
+    if (!await canEditGeneral(getUid(req))) return res.status(403).json({success:false});
+
+    try {
+        // 1. Find the record to get IDNP (for file path)
+        const sql = `
+            SELECT I.ID, D.IDNP 
+            FROM PRISON.IMAGES I
+            JOIN PRISON.DETINUTI D ON D.ID = I.DETINUT_ID
+            WHERE I.ID = :imgId
+        `;
+        const check = await db.execute(sql, { imgId: req.params.imgId });
+        if(!check.rows.length) return res.status(404).json({success:false, error:"Imaginea nu există"});
+
+        const { IDNP, ID } = check.rows[0];
+
+        // 2. Delete from Disk
+        const filePath = path.join(PHOTOS_BASE_DIR, IDNP.charAt(0), IDNP, `${ID}.webp`);
+        if(fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+
+        // 3. Delete from DB
+        await db.execute("DELETE FROM PRISON.IMAGES WHERE ID = :id", { id: req.params.imgId }, { autoCommit: true });
+
+        res.json({success:true});
+    } catch(e) {
         res.status(500).json({success:false, error:e.message});
     }
 });

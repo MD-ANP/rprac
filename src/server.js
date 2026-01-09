@@ -39,7 +39,7 @@ app.use("/api", require("./modules/reports/router"));
 // 3. Module Specifice Deținut (Inmate)
 const INMATE_ROUTES = [
     "profile", "medical", "garantii", "rude", 
-    "complici", "hotariri", "citatie", "miscari", "regim"
+    "complici", "hotariri", "citatie", "miscari", "regim","securitate"
 ];
 
 INMATE_ROUTES.forEach(route => {

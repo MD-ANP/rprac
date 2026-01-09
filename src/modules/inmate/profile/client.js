@@ -20,6 +20,22 @@
         return `<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-value" style="font-weight:600; color:#334155;">${safeVal(value)}</span></div>`;
     }
 
+    function getPhotoLabel(type) {
+        const types = { '1': 'Frontal', '2': 'Lateral', '3': 'Semne', '4': 'Tatuaj' };
+        return types[type] || 'Foto';
+    }
+
+    // New Delete Photo Function
+    window.delPhoto = async (id) => {
+        if(!confirm('Sigur ștergeți această fotografie?')) return;
+        try {
+            await window.prisonApi.del(`/detinut/photos/${id}`);
+            reload();
+        } catch(e) {
+            alert("Eroare la ștergere: " + e.message);
+        }
+    };
+
     function renderEditField(label, name, value, type='text', options=[]) {
         if(type === 'select') {
             const opts = options.map(o => `<option value="${o.ID}" ${String(o.ID) === String(value) ? 'selected' : ''}>${o.NAME}</option>`).join('');
@@ -227,9 +243,25 @@
                                 ${canEdit ? `<button class="btn-tiny" onclick="openPhotoModal()">Gestionare Foto</button>`:''}
                             </div>
                             <div class="gallery-row">
-                                ${images.map(img => `<div class="gallery-item"><a href="${img.url}" target="_blank"><img src="${img.url}"></a></div>`).join('')}
-                                ${images.length === 0 ? '<span class="text-muted p-2">Fără fotografii.</span>' : ''}
-                            </div>
+    ${images.map(img => `
+        <div class="gallery-item" style="position:relative; display:inline-block;">
+            <a href="${img.url}" target="_blank">
+                <img src="${img.url}" onerror="this.style.display='none'">
+            </a>
+            ${canEdit ? `
+                <button 
+                    onclick="delPhoto(${img.id})" 
+                    style="position:absolute; top:5px; right:5px; background:rgba(220,38,38,0.9); color:white; border:none; border-radius:50%; width:24px; height:24px; cursor:pointer; font-weight:bold; font-size:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 4px rgba(0,0,0,0.3);">
+                    ×
+                </button>
+            ` : ''}
+            <div style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.6); color:white; font-size:10px; padding:2px 5px; text-align:center;">
+                ${getPhotoLabel(img.type)}
+            </div>
+        </div>
+    `).join('')}
+    ${images.length === 0 ? '<span class="text-muted p-2">Fără fotografii.</span>' : ''}
+</div>
                         </div>
                     </div>
 
